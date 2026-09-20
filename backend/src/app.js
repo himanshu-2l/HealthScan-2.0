@@ -7,8 +7,8 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import labRoutes from './routes/labRoutes.js';
 import featureRoutes from './routes/featureRoutes.js';
 import { apiLimiter, reportLimiter } from './middleware/rateLimiter.js';
-// We can import cjs in ESM if needed
-import googleFitService from '../googleFitService.cjs';
+import session from 'express-session';
+import googleFitRoutes from './routes/googleFitRoutes.js';
 
 dotenv.config();
 
@@ -31,8 +31,8 @@ const securityHeaders = (req, res, next) => {
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   // Don't expose server info
   res.removeHeader('X-Powered-By');
-  // Permissions Policy
-  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  // Permissions Policy - Allow camera and microphone for HealthScan diagnostic tests
+  res.setHeader('Permissions-Policy', 'camera=(self), microphone=(self), geolocation=(self)');
   
   next();
 };
@@ -85,6 +85,19 @@ app.use(cors({
 // Body parsing with size limit
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+
+// Session middleware for OAuth & fit data
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'healthscan-session-secret',
+  resave: false,
+  saveUninitialized: true,
+  cookie: {
+    secure: false,
+    httpOnly: true,
+    sameSite: 'lax',
+    maxAge: 24 * 60 * 60 * 1000,
+  },
+}));
 
 // Apply global rate limiting
 app.use(apiLimiter);
@@ -158,6 +171,35 @@ app.use('/api/labs', labRoutes);
 
 // Feature Routes (symptoms, period, vaccinations, emergency, predictions, etc.)
 app.use('/api/features', featureRoutes);
+
+// Google Fit API routes
+app.use('/api/google-fit', googleFitRoutes);
+
+// Google OAuth callback endpoint
+app.get('/auth/google/callback', async (req, res) => {
+  const { code } = req.query;
+  const referer = req.get('referer') || '';
+  const frontendPort = referer.includes('5173') ? '5173' : '5174';
+  const baseUrl = `http://localhost:${frontendPort}`;
+
+  if (!code) {
+    return res.redirect(`${baseUrl}/dashboard?error=no_code`);
+  }
+
+  try {
+    const { createRequire } = await import('module');
+    const require = createRequire(import.meta.url);
+    const fitService = require('../../googleFitService.cjs');
+    const tokens = await fitService.getTokens(code);
+    req.session.googleFitTokens = tokens;
+    req.session.googleFitConnected = true;
+    const tokenString = Buffer.from(JSON.stringify(tokens)).toString('base64');
+    return res.redirect(`${baseUrl}/dashboard?google_fit=connected&token=${encodeURIComponent(tokenString)}`);
+  } catch (error) {
+    console.error('OAuth callback error:', error);
+    return res.redirect(`${baseUrl}/dashboard?error=auth_failed&message=${encodeURIComponent(error.message || 'OAuth failed')}`);
+  }
+});
 
 // 404 handler for unmatched routes
 app.use((req, res, next) => {
