@@ -72,6 +72,7 @@
     "jspdf-autotable": "^5.0.2",
     "lucide-react": "^0.462.0",
     "mongoose": "^9.3.1",
+    "morgan": "^1.12.1",
     "next-themes": "^0.3.0",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",

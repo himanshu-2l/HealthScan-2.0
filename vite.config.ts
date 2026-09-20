@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+﻿import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 
@@ -10,8 +10,8 @@ export default defineConfig({
     },
   },
   server: {
-    host: true, // This exposes the server to the network
-    port: 5173,
+    host: true,
+    port: 5174,
     strictPort: false,
     proxy: {
       '/api': {
