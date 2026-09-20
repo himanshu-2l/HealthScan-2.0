@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Activity, Loader2, Shield, Cpu, Lock } from 'lucide-react';
 
 const Login: React.FC = () => {
-    const { currentUser, loginWithGoogle } = useAuth();
+    const { currentUser, loginWithGoogle, loginAsDemo, isFirebaseConfigured } = useAuth();
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
     if (currentUser) {
@@ -60,8 +60,8 @@ const Login: React.FC = () => {
                         </span>
                     </div>
 
-                    {/* Primary Google Sign-in */}
-                    <div className="space-y-4">
+                    {/* Primary Google Sign-in & Demo Access */}
+                    <div className="space-y-3">
                         <Button
                             type="button"
                             disabled={isGoogleLoading}
@@ -93,10 +93,34 @@ const Login: React.FC = () => {
                             {isGoogleLoading ? 'Signing in...' : 'Continue with Google'}
                         </Button>
 
-                        {/* Secondary option hint */}
-                        <p className="text-center text-white/40 text-xs">
-                            Secure authentication powered by Google
-                        </p>
+                        <div className="relative flex py-1 items-center">
+                            <div className="flex-grow border-t border-white/10"></div>
+                            <span className="flex-shrink mx-2 text-white/30 text-xs uppercase">or</span>
+                            <div className="flex-grow border-t border-white/10"></div>
+                        </div>
+
+                        <Button
+                            type="button"
+                            onClick={loginAsDemo}
+                            className="w-full h-12 text-sm font-semibold bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white rounded-xl transition-all duration-200 shadow-md shadow-teal-500/20"
+                        >
+                            ⚡ Explore in Demo Mode (Instant Access)
+                        </Button>
+
+                        {!isFirebaseConfigured ? (
+                            <div className="p-3 rounded-xl bg-teal-500/10 border border-teal-500/20 text-xs text-teal-200/90 leading-relaxed text-left">
+                                <p className="font-semibold text-teal-300 flex items-center gap-1.5 mb-1">
+                                    <span>💡</span> Local Dev Quick Start
+                                </p>
+                                <p>
+                                    Firebase API keys are currently in placeholder mode. Click <strong>Explore in Demo Mode</strong> above to immediately test all health labs and dashboards without needing to set up Google Cloud/Firebase!
+                                </p>
+                            </div>
+                        ) : (
+                            <p className="text-center text-white/40 text-xs">
+                                Secure authentication powered by Google & Firebase
+                            </p>
+                        )}
                     </div>
 
                     {/* Divider */}

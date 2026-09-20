@@ -6,13 +6,22 @@ import {
     User,
     GoogleAuthProvider
 } from 'firebase/auth';
-import { auth, googleProvider } from '../lib/firebase';
+import { auth, googleProvider, isFirebaseConfigured } from '../lib/firebase';
 import { useToast } from '@/components/ui/use-toast';
 
+export interface AppUser {
+    uid: string;
+    displayName: string | null;
+    email: string | null;
+    photoURL: string | null;
+}
+
 interface AuthContextType {
-    currentUser: User | null;
+    currentUser: User | AppUser | null;
     loading: boolean;
+    isFirebaseConfigured: boolean;
     loginWithGoogle: () => Promise<void>;
+    loginAsDemo: () => void;
     logout: () => Promise<void>;
 }
 
@@ -27,57 +36,112 @@ export const useAuth = () => {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [currentUser, setCurrentUser] = useState<User | null>(null);
+    const [currentUser, setCurrentUser] = useState<User | AppUser | null>(null);
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            setCurrentUser(user);
-            setLoading(false);
-        });
+        const savedDemo = localStorage.getItem('healthscan_demo_user');
+        if (savedDemo) {
+            try {
+                setCurrentUser(JSON.parse(savedDemo));
+                setLoading(false);
+                return;
+            } catch (e) {
+                localStorage.removeItem('healthscan_demo_user');
+            }
+        }
 
-        return unsubscribe;
+        if (isFirebaseConfigured) {
+            const unsubscribe = onAuthStateChanged(auth, (user) => {
+                // If not in demo mode, use Firebase user
+                if (!localStorage.getItem('healthscan_demo_user')) {
+                    setCurrentUser(user);
+                }
+                setLoading(false);
+            });
+            return unsubscribe;
+        } else {
+            // Auto-provision demo session so hackathon judges & local testers never hit an auth wall
+            const defaultUser: AppUser = {
+                uid: 'demo-user-healthscan',
+                displayName: 'Alex Rivera',
+                email: 'alex.rivera@abdm',
+                photoURL: null
+            };
+            localStorage.setItem('healthscan_demo_user', JSON.stringify(defaultUser));
+            setCurrentUser(defaultUser);
+            setLoading(false);
+        }
     }, []);
 
+    const loginAsDemo = () => {
+        const demoUser: AppUser = {
+            uid: 'demo-user-healthscan',
+            displayName: 'Dr. Alex Mercer',
+            email: 'alex.mercer@healthscan.io',
+            photoURL: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=200&h=200&q=80'
+        };
+        localStorage.setItem('healthscan_demo_user', JSON.stringify(demoUser));
+        setCurrentUser(demoUser);
+        toast({
+            title: "Demo Mode Active",
+            description: "Signed in as Dr. Alex Mercer. All features are unlocked!",
+        });
+    };
+
     const loginWithGoogle = async () => {
+        if (!isFirebaseConfigured) {
+            toast({
+                variant: "destructive",
+                title: "Firebase Google Auth Not Configured",
+                description: "VITE_FIREBASE_API_KEY in .env contains placeholder values. Use Demo Mode to explore the app immediately, or provide real Firebase credentials in .env.",
+            });
+            return;
+        }
+
         try {
             await signInWithPopup(auth, googleProvider);
+            localStorage.removeItem('healthscan_demo_user');
             toast({
                 title: "Welcome back!",
                 description: "Successfully signed in with Google.",
             });
         } catch (error: any) {
             console.error("Login failed:", error);
+            const isApiKeyError = error.code === 'auth/invalid-api-key' || error.code === 'auth/api-key-not-valid';
             toast({
                 variant: "destructive",
-                title: "Login Failed",
-                description: error.message || "Failed to sign in with Google.",
+                title: "Google Sign-In Failed",
+                description: isApiKeyError
+                    ? "Invalid Firebase API key in .env. Click 'Continue in Demo Mode' below to test the app without setting up Firebase!"
+                    : (error.message || "Failed to sign in with Google."),
             });
         }
     };
 
     const logout = async () => {
+        localStorage.removeItem('healthscan_demo_user');
         try {
-            await signOut(auth);
-            toast({
-                title: "Signed out",
-                description: "You have been successfully signed out.",
-            });
+            if (isFirebaseConfigured) {
+                await signOut(auth);
+            }
         } catch (error: any) {
             console.error("Logout failed:", error);
-            toast({
-                variant: "destructive",
-                title: "Logout Error",
-                description: "Failed to sign out.",
-            });
         }
+        setCurrentUser(null);
+        toast({
+            title: "Signed out",
+            description: "You have been successfully signed out.",
+        });
     };
 
     const value = {
         currentUser,
         loading,
+        isFirebaseConfigured,
         loginWithGoogle,
+        loginAsDemo,
         logout
     };
 
