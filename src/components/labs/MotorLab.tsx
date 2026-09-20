@@ -677,6 +677,8 @@ export const MotorLab: React.FC = () => {
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const animationFrameIdRef = useRef<number | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => { isRecordingRef.current = isRecording; }, [isRecording]);
 
@@ -702,8 +704,11 @@ export const MotorLab: React.FC = () => {
     return () => {
       mounted = false;
       if (timerRef.current) window.clearInterval(timerRef.current);
+      if (animationFrameIdRef.current !== null) cancelAnimationFrame(animationFrameIdRef.current);
+      if (streamRef.current) streamRef.current.getTracks().forEach(track => track.stop());
       try { globalHandLandmarker?.close(); } catch { }
       globalHandLandmarker = undefined;
+      globalLastVideoTime = -1;
     };
   }, []);
 
@@ -722,6 +727,7 @@ export const MotorLab: React.FC = () => {
     try {
       setStatus("Requesting camera permission...");
       const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+      streamRef.current = stream;
       videoRef.current.srcObject = stream;
       await videoRef.current.play();
       setPermission("granted");
@@ -729,7 +735,7 @@ export const MotorLab: React.FC = () => {
 
       if (!renderLoopStartedRef.current) {
         renderLoopStartedRef.current = true;
-        requestAnimationFrame(predictWebcam);
+        animationFrameIdRef.current = requestAnimationFrame(predictWebcam);
       }
     } catch (err) {
       console.error("Camera error:", err);
@@ -926,16 +932,16 @@ export const MotorLab: React.FC = () => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
     if (!video || !canvas || !globalHandLandmarker) {
-      requestAnimationFrame(predictWebcam);
+      animationFrameIdRef.current = requestAnimationFrame(predictWebcam);
       return;
     }
     const ctx = canvas.getContext("2d");
     if (!ctx) {
-      requestAnimationFrame(predictWebcam);
+      animationFrameIdRef.current = requestAnimationFrame(predictWebcam);
       return;
     }
     if (video.videoWidth === 0 || video.videoHeight === 0) {
-      requestAnimationFrame(predictWebcam);
+      animationFrameIdRef.current = requestAnimationFrame(predictWebcam);
       return;
     }
     if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
@@ -1014,7 +1020,7 @@ export const MotorLab: React.FC = () => {
       setStatus("Error running model: Please run this lab on localhost, because due to the DeepLearning requirements, it cannot be run on vercel.");
     }
 
-    requestAnimationFrame(predictWebcam);
+    animationFrameIdRef.current = requestAnimationFrame(predictWebcam);
   }
 
   // --- Metrics ---

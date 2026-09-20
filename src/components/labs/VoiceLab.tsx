@@ -113,11 +113,6 @@ function autocorrelatePitch(buf: FloatArray, sampleRate: number) {
 
   const f0 = bestLag > 0 ? sampleRate / bestLag : null;
 
-  // Debug logging
-  if (f0) {
-    console.log(`Pitch detected: ${f0.toFixed(1)}Hz, correlation: ${bestCorr.toFixed(3)}, RMS: ${rms.toFixed(4)}`);
-  }
-
   return { f0, rms };
 }
 
@@ -624,14 +619,12 @@ export const VoiceLab: React.FC = () => {
         const avgAmplitude = dataArray.reduce((sum, val) => sum + Math.abs(val), 0) / dataArray.length;
 
         if (maxAmplitude > 0.001) {
-          console.log(`Audio detected - Max: ${maxAmplitude.toFixed(4)}, Avg: ${avgAmplitude.toFixed(4)}`);
           setAudioDetected(true);
         } else {
           setAudioDetected(false);
         }
 
         const { f0: autocorrF0, rms } = autocorrelatePitch(dataArray, audioCtx.sampleRate);
-        console.log(`Analysis result - RMS: ${rms.toFixed(4)}, Autocorr F0: ${autocorrF0 ? autocorrF0.toFixed(1) + 'Hz' : 'null'}`);
         setRms(rms);
 
         let finalF0 = autocorrF0;
@@ -639,9 +632,6 @@ export const VoiceLab: React.FC = () => {
         // Try FFT method as fallback if autocorrelation fails
         if (!finalF0 && rms > 0.001) {
           finalF0 = detectPitchFFT(analyser, audioCtx.sampleRate);
-          if (finalF0) {
-            console.log(`FFT fallback detected: ${finalF0.toFixed(1)}Hz`);
-          }
         }
 
         if (finalF0 && finalF0 >= 50 && finalF0 <= 800) {
@@ -654,7 +644,6 @@ export const VoiceLab: React.FC = () => {
             if (finalF0 > (peakF0.current || 0)) peakF0.current = finalF0;
           }
           setF0(finalF0);
-          console.log(`Pitch set: ${finalF0.toFixed(1)}Hz`);
 
           if (pitchHistory.current.length > 10) {
             const arr = pitchHistory.current;
@@ -709,8 +698,6 @@ export const VoiceLab: React.FC = () => {
     else if (j > 0.06) score += 0.3; // High jitter
 
     if (!f0) score += 0.3; // No pitch detected
-
-    console.log(`Risk calculation - RMS: ${loud.toFixed(4)}, Jitter: ${j.toFixed(4)}, F0: ${f0 || 'null'}, Score: ${score.toFixed(2)}`);
 
     return Math.min(1, score);
   }, [rms, jitter, f0]);
