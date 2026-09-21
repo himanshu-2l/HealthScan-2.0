@@ -11,7 +11,7 @@ import { Phone, Shield } from 'lucide-react';
 
 export default function EmergencyContactsPage() {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 transition-colors duration-200">
       <GlassNavbar />
 
       <main className="flex-1 pt-28 pb-16">
@@ -23,20 +23,20 @@ export default function EmergencyContactsPage() {
                 <div className="flex items-center gap-5">
                   <div className="relative">
                     <div className="p-5 bg-gradient-to-br from-rose-500/20 to-red-600/20 rounded-2xl border border-rose-500/20 shadow-lg shadow-rose-500/10">
-                      <Phone className="w-10 h-10 text-rose-400" />
+                      <Phone className="w-10 h-10 text-rose-600 dark:text-rose-400" />
                     </div>
                     <div className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 rounded-full animate-pulse" />
                   </div>
                   <div>
-                    <h1 className="text-4xl font-bold text-white tracking-tight">
+                    <h1 className="text-4xl font-bold text-slate-900 dark:text-white tracking-tight">
                       Emergency Contacts
                     </h1>
-                    <p className="text-white/50 mt-2 text-lg">
+                    <p className="text-slate-600 dark:text-slate-400 mt-2 text-lg">
                       Manage emergency contacts and medical ID
                     </p>
                   </div>
                 </div>
-                <Badge className="bg-rose-500/15 text-rose-400 border border-rose-500/25 px-4 py-2 text-sm font-medium rounded-full">
+                <Badge className="bg-rose-50 dark:bg-rose-950/20 text-rose-700 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/30 px-4 py-2 text-sm font-medium rounded-full shadow-sm">
                   <Shield className="w-4 h-4 mr-2" />
                   SOS Ready
                 </Badge>

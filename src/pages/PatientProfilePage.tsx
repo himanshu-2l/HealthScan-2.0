@@ -149,28 +149,26 @@ export default function PatientProfilePage() {
   const age = calculateAge(profile.dateOfBirth);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 transition-colors duration-200">
       <GlassNavbar />
 
       <div className="container mx-auto px-3 sm:px-4 pt-24 pb-12 flex-1 overflow-x-hidden">
         <div className="max-w-7xl mx-auto space-y-6">
           {/* Header */}
-          <div className="bg-white/[0.04] backdrop-blur-sm border border-white/[0.06] rounded-xl relative overflow-hidden p-4 sm:p-6 group">
-            <div className="absolute top-0 left-0 w-1 h-full bg-teal-500/50"></div>
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          <div className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm p-5 sm:p-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex items-center gap-3 sm:gap-4">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center text-white text-2xl sm:text-3xl font-bold border-4 border-white/5 ring-4 ring-white/5 flex-shrink-0">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center text-white text-2xl sm:text-3xl font-black shadow-md flex-shrink-0">
                   {profile.firstName?.[0]?.toUpperCase() || profile.lastName?.[0]?.toUpperCase() || 'U'}
                 </div>
                 <div className="min-w-0">
-                  <h1 className="text-xl sm:text-3xl font-bold text-white truncate">
+                  <h1 className="text-xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight truncate">
                     {profile.firstName || profile.lastName
                       ? `${profile.firstName} ${profile.lastName}`.trim()
                       : 'Patient Profile'}
                   </h1>
                   {age && (
-                    <p className="text-white/70 text-sm sm:text-base">
+                    <p className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm mt-1">
                       {age} years old • {profile.gender !== 'prefer-not-to-say' ? profile.gender : ''}
                       {profile.bloodGroup && ` • Blood Group: ${profile.bloodGroup}`}
                     </p>
@@ -180,7 +178,9 @@ export default function PatientProfilePage() {
               <Button
                 onClick={() => setIsEditing(!isEditing)}
                 variant={isEditing ? "default" : "outline"}
-                className={isEditing ? "bg-green-600 hover:bg-green-700 text-white border-0 shadow-lg shadow-green-900/20 w-full sm:w-auto" : "border-white/10 text-muted-foreground hover:bg-white/10 hover:text-foreground w-full sm:w-auto"}
+                className={isEditing 
+                  ? "bg-teal-600 hover:bg-teal-700 text-white rounded-xl shadow-sm font-semibold w-full sm:w-auto" 
+                  : "bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-white/10 rounded-xl font-semibold w-full sm:w-auto"}
               >
                 {isEditing ? (
                   <>
@@ -198,56 +198,64 @@ export default function PatientProfilePage() {
           </div>
 
           {/* Quick Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card className="bg-white/[0.04] backdrop-blur-sm border border-white/[0.06] rounded-xl">
-              <CardContent className="p-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <Card className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm">
+              <CardContent className="p-4 sm:p-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-white/60">Health Reports</p>
-                    <p className="text-2xl font-bold text-white">{stats.totalReports}</p>
+                    <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Health Reports</p>
+                    <p className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mt-1">{stats.totalReports}</p>
                   </div>
-                  <FileText className="w-8 h-8 text-teal-400" />
+                  <div className="p-2.5 rounded-xl bg-teal-50 dark:bg-teal-950/20 text-teal-600 dark:text-teal-400">
+                    <FileText className="w-6 h-6" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
-            <Card className="bg-white/[0.04] backdrop-blur-sm border border-white/[0.06] rounded-xl">
-              <CardContent className="p-4">
+            <Card className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm">
+              <CardContent className="p-4 sm:p-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-white/60">BP Readings</p>
-                    <p className="text-2xl font-bold text-white">{stats.totalBPReadings}</p>
+                    <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">BP Readings</p>
+                    <p className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mt-1">{stats.totalBPReadings}</p>
                   </div>
-                  <Heart className="w-8 h-8 text-red-400" />
+                  <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400">
+                    <Heart className="w-6 h-6" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
-            <Card className="bg-white/[0.04] backdrop-blur-sm border border-white/[0.06] rounded-xl">
-              <CardContent className="p-4">
+            <Card className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm">
+              <CardContent className="p-4 sm:p-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-white/60">Active Medications</p>
-                    <p className="text-2xl font-bold text-white">{stats.activeMedications}</p>
+                    <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Active Medications</p>
+                    <p className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mt-1">{stats.activeMedications}</p>
                   </div>
-                  <Pill className="w-8 h-8 text-purple-400" />
+                  <div className="p-2.5 rounded-xl bg-purple-50 dark:bg-purple-950/20 text-purple-600 dark:text-purple-400">
+                    <Pill className="w-6 h-6" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
-            <Card className="bg-white/[0.04] backdrop-blur-sm border border-white/[0.06] rounded-xl">
-              <CardContent className="p-4">
+            <Card className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm">
+              <CardContent className="p-4 sm:p-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-white/60">Allergies</p>
-                    <p className="text-2xl font-bold text-white">{stats.allergies}</p>
+                    <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Allergies</p>
+                    <p className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mt-1">{stats.allergies}</p>
                   </div>
-                  <AlertTriangle className="w-8 h-8 text-amber-400" />
+                  <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400">
+                    <AlertTriangle className="w-6 h-6" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </div>
 
           {/* Tabs */}
-          <div className="bg-white/[0.04] backdrop-blur-sm border border-white/[0.06] rounded-xl overflow-hidden">
-            <div className="p-3 sm:p-4 border-b border-white/[0.06] overflow-x-auto">
+          <div className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm overflow-hidden">
+            <div className="p-3 sm:p-4 border-b border-slate-200/80 dark:border-white/5 overflow-x-auto">
               <div className="flex flex-nowrap gap-2 min-w-max">
                 {[
                   { id: 'overview', label: 'Overview', icon: User },
@@ -262,20 +270,21 @@ export default function PatientProfilePage() {
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id as any)}
-                      className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full transition-all whitespace-nowrap ${activeTab === tab.id
-                        ? 'bg-white/[0.12] text-white border border-white/[0.15]'
-                        : 'bg-white/[0.04] text-white/60 border border-white/[0.06] hover:bg-white/[0.08] hover:text-white'
-                        }`}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all whitespace-nowrap text-xs sm:text-sm font-semibold ${
+                        activeTab === tab.id
+                          ? 'bg-teal-600 text-white shadow-sm'
+                          : 'bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-white/5'
+                      }`}
                     >
                       <Icon className="w-4 h-4 flex-shrink-0" />
-                      <span className="text-sm font-medium">{tab.label}</span>
+                      <span>{tab.label}</span>
                     </button>
                   );
                 })}
               </div>
             </div>
 
-            <CardContent className="p-6">
+            <CardContent className="p-5 sm:p-6">
               {/* Overview Tab */}
               {activeTab === 'overview' && (
                 <div className="space-y-6">

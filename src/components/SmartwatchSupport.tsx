@@ -221,33 +221,23 @@ export const SmartwatchSupport: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen p-6 md:p-8">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-4 mb-2">
-          <div className="p-3 bg-white/[0.04] backdrop-blur-sm border border-white/[0.06] rounded-2xl">
-            <Watch className="w-8 h-8 text-teal-400" />
-          </div>
-          <div className="flex-1">
-            <h1 className="text-2xl md:text-3xl font-bold text-white">
-              Smartwatch & Wearables
-            </h1>
-            <p className="text-white/60 mt-1">
-              Connect your devices to sync health data
-            </p>
-          </div>
-          <div className="bg-white/[0.04] backdrop-blur-sm border border-white/[0.06] rounded-full px-4 py-2">
-            <span className="text-teal-400 font-semibold">{connectedCount}</span>
-            <span className="text-white/60 ml-1">connected</span>
-          </div>
+    <div className="space-y-8">
+      {/* Telemetry Status Bar */}
+      <div className="flex items-center justify-between flex-wrap gap-3 pb-1">
+        <div className="flex items-center gap-2.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span className="text-sm font-semibold text-slate-900 dark:text-white">Continuous Health Telemetry</span>
+        </div>
+        <div className="bg-slate-100 dark:bg-white/[0.06] border border-slate-200/80 dark:border-white/10 rounded-full px-3.5 py-1 text-xs text-slate-700 dark:text-slate-300 font-medium">
+          <span className="text-teal-600 dark:text-teal-400 font-bold">{connectedCount}</span> of {SUPPORTED_DEVICES.length} connected
         </div>
       </div>
 
       {/* Data Sync Status Section */}
-      <div className="bg-white/[0.04] backdrop-blur-sm border border-white/[0.06] rounded-2xl p-6 mb-8">
-        <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-          <RefreshCw className="w-5 h-5 text-teal-400" />
-          Data Sync Status
+      <div className="bg-white dark:bg-slate-900/60 backdrop-blur-sm border border-slate-200/80 dark:border-white/10 rounded-2xl p-6 shadow-sm">
+        <h2 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+          <RefreshCw className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+          Data Synchronization Status
         </h2>
         <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
           {/* Circular Progress */}
@@ -260,7 +250,7 @@ export const SmartwatchSupport: React.FC = () => {
                 stroke="currentColor"
                 strokeWidth="8"
                 fill="none"
-                className="text-white/[0.06]"
+                className="text-slate-200 dark:text-white/10"
               />
               <circle
                 cx="48"
@@ -271,30 +261,30 @@ export const SmartwatchSupport: React.FC = () => {
                 fill="none"
                 strokeDasharray={251.2}
                 strokeDashoffset={251.2 - (251.2 * syncProgress) / 100}
-                className="text-teal-400 transition-all duration-500"
+                className="text-teal-600 dark:text-teal-400 transition-all duration-500"
                 strokeLinecap="round"
               />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-xl font-bold text-white">{Math.round(syncProgress)}%</span>
+              <span className="text-xl font-bold text-slate-900 dark:text-white">{Math.round(syncProgress)}%</span>
             </div>
           </div>
 
-          <div className="flex-1 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-white/60">Devices Connected</span>
-              <span className="text-white font-medium">{connectedCount} / {SUPPORTED_DEVICES.length}</span>
+          <div className="flex-1 space-y-3 w-full">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-slate-600 dark:text-slate-400">Devices Connected</span>
+              <span className="text-slate-900 dark:text-white font-semibold">{connectedCount} / {SUPPORTED_DEVICES.length}</span>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-white/60">Last Sync</span>
-              <span className="text-white font-medium flex items-center gap-2">
-                <Clock className="w-4 h-4 text-white/40" />
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-slate-600 dark:text-slate-400">Last Sync</span>
+              <span className="text-slate-900 dark:text-white font-medium flex items-center gap-1.5">
+                <Clock className="w-4 h-4 text-slate-400 dark:text-slate-500" />
                 {lastSyncTime ? formatTime(lastSyncTime) : 'Never'}
               </span>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-white/60">Data Categories Active</span>
-              <span className="text-white font-medium">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-slate-600 dark:text-slate-400">Data Categories Active</span>
+              <span className="text-slate-900 dark:text-white font-semibold">
                 {dataCategories.filter(c => c.synced).length} / {dataCategories.length}
               </span>
             </div>
@@ -303,26 +293,26 @@ export const SmartwatchSupport: React.FC = () => {
       </div>
 
       {/* Supported Devices Grid */}
-      <div className="mb-8">
-        <h2 className="text-lg font-semibold text-white mb-4">Supported Devices</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="space-y-4">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Supported Devices</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {devices.map((device) => (
             <div
               key={device.id}
-              className="bg-white/[0.04] backdrop-blur-sm border border-white/[0.06] rounded-2xl p-6"
+              className="bg-white dark:bg-slate-900/60 backdrop-blur-sm border border-slate-200/80 dark:border-white/10 rounded-2xl p-5 sm:p-6 shadow-sm transition-all"
             >
-              <div className="flex items-start justify-between mb-4">
+              <div className="flex items-start justify-between mb-4 gap-3">
                 <div className="flex items-center gap-3">
-                  <span className="text-3xl">{device.icon}</span>
+                  <span className="text-3xl select-none">{device.icon}</span>
                   <div>
-                    <h3 className="text-white font-semibold">{device.name}</h3>
-                    <p className="text-white/40 text-sm">{device.models}</p>
+                    <h3 className="text-slate-900 dark:text-white font-semibold text-base">{device.name}</h3>
+                    <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm">{device.models}</p>
                   </div>
                 </div>
                 {device.connected ? (
                   <button
                     onClick={() => handleDisconnect(device.id)}
-                    className="px-4 py-2 bg-teal-500/20 text-teal-400 rounded-full text-sm font-medium border border-teal-500/30 hover:bg-teal-500/30 transition-colors flex items-center gap-2"
+                    className="px-3.5 py-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 rounded-full text-xs sm:text-sm font-medium border border-emerald-200 dark:border-emerald-800/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors flex items-center gap-1.5 shadow-xs"
                   >
                     <CheckCircle className="w-4 h-4" />
                     Connected
@@ -330,7 +320,7 @@ export const SmartwatchSupport: React.FC = () => {
                 ) : (
                   <button
                     onClick={() => handleConnect(device.id)}
-                    className="px-4 py-2 bg-white/[0.04] text-white/60 rounded-full text-sm font-medium border border-white/[0.06] hover:bg-white/[0.08] hover:text-white transition-colors"
+                    className="px-4 py-1.5 bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 rounded-full text-xs sm:text-sm font-medium border border-slate-200/80 dark:border-white/10 hover:bg-teal-50 dark:hover:bg-teal-950/40 hover:text-teal-700 dark:hover:text-teal-300 hover:border-teal-200 dark:hover:border-teal-800/50 transition-colors shadow-xs"
                   >
                     Connect
                   </button>
@@ -338,11 +328,11 @@ export const SmartwatchSupport: React.FC = () => {
               </div>
 
               {/* Data Types Tags */}
-              <div className="flex flex-wrap gap-2 mb-4">
+              <div className="flex flex-wrap gap-1.5 mb-4">
                 {device.dataTypes.map((dataType) => (
                   <span
                     key={dataType}
-                    className="px-3 py-1 bg-white/[0.04] text-white/60 rounded-full text-xs border border-white/[0.06]"
+                    className="px-2.5 py-0.5 bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 rounded-full text-xs border border-slate-200/70 dark:border-white/10"
                   >
                     {dataType}
                   </span>
@@ -350,8 +340,8 @@ export const SmartwatchSupport: React.FC = () => {
               </div>
 
               {device.connected && device.lastSync && (
-                <div className="text-sm text-white/40 mb-4 flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
+                <div className="text-xs text-slate-500 dark:text-slate-400 mb-4 flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5" />
                   Last synced: {formatTime(device.lastSync)}
                 </div>
               )}
@@ -359,7 +349,7 @@ export const SmartwatchSupport: React.FC = () => {
               {/* Setup Instructions Accordion */}
               <button
                 onClick={() => setExpandedDevice(expandedDevice === device.id ? null : device.id)}
-                className="flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors"
+                className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
               >
                 {expandedDevice === device.id ? (
                   <ChevronUp className="w-4 h-4" />
@@ -370,14 +360,14 @@ export const SmartwatchSupport: React.FC = () => {
               </button>
 
               {expandedDevice === device.id && (
-                <div className="mt-4 pt-4 border-t border-white/[0.06]">
+                <div className="mt-4 pt-4 border-t border-slate-200/80 dark:border-white/10">
                   <ol className="space-y-2">
                     {device.setupSteps.map((step, index) => (
-                      <li key={index} className="flex items-start gap-3 text-sm text-white/60">
-                        <span className="flex-shrink-0 w-6 h-6 bg-white/[0.06] rounded-full flex items-center justify-center text-white/40 text-xs">
+                      <li key={index} className="flex items-start gap-2.5 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+                        <span className="flex-shrink-0 w-5 h-5 bg-slate-100 dark:bg-white/[0.08] border border-slate-200/80 dark:border-white/10 rounded-full flex items-center justify-center text-slate-600 dark:text-slate-300 text-[11px] font-semibold">
                           {index + 1}
                         </span>
-                        {step}
+                        <span>{step}</span>
                       </li>
                     ))}
                   </ol>
@@ -389,29 +379,29 @@ export const SmartwatchSupport: React.FC = () => {
       </div>
 
       {/* Health Data Categories */}
-      <div className="mb-8">
-        <h2 className="text-lg font-semibold text-white mb-4">Health Data Categories</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="space-y-4">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Health Data Categories</h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5">
           {dataCategories.map((category) => (
             <div
               key={category.id}
-              className={`bg-white/[0.04] backdrop-blur-sm border rounded-2xl p-4 text-center ${
+              className={`bg-white dark:bg-slate-900/60 backdrop-blur-sm border rounded-2xl p-4 text-center shadow-xs transition-all ${
                 category.synced 
-                  ? 'border-teal-500/30' 
-                  : 'border-white/[0.06]'
+                  ? 'border-teal-500/40 dark:border-teal-500/30' 
+                  : 'border-slate-200/80 dark:border-white/10'
               }`}
             >
-              <div className={`w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center ${
+              <div className={`w-11 h-11 mx-auto mb-2.5 rounded-xl flex items-center justify-center ${
                 category.synced 
-                  ? 'bg-teal-500/10' 
-                  : 'bg-white/[0.04]'
+                  ? 'bg-teal-50 dark:bg-teal-950/40 border border-teal-200/60 dark:border-teal-800/40' 
+                  : 'bg-slate-100 dark:bg-white/[0.04] border border-slate-200/60 dark:border-white/5'
               }`}>
                 {category.icon}
               </div>
-              <h3 className="text-white font-medium text-sm mb-1">{category.name}</h3>
-              <p className="text-white/40 text-xs">{category.source}</p>
+              <h3 className="text-slate-900 dark:text-white font-semibold text-sm mb-0.5">{category.name}</h3>
+              <p className="text-slate-500 dark:text-slate-400 text-xs">{category.source}</p>
               {category.synced && (
-                <div className="mt-2 flex items-center justify-center gap-1 text-teal-400 text-xs">
+                <div className="mt-2 inline-flex items-center justify-center gap-1 text-teal-600 dark:text-teal-400 text-xs font-semibold">
                   <CheckCircle className="w-3 h-3" />
                   Active
                 </div>
@@ -422,22 +412,22 @@ export const SmartwatchSupport: React.FC = () => {
       </div>
 
       {/* Help Section */}
-      <div className="bg-white/[0.04] backdrop-blur-sm border border-white/[0.06] rounded-2xl p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <Smartphone className="w-6 h-6 text-white/40" />
-          <h2 className="text-lg font-semibold text-white">Need Help?</h2>
+      <div className="bg-white dark:bg-slate-900/60 backdrop-blur-sm border border-slate-200/80 dark:border-white/10 rounded-2xl p-6 shadow-sm">
+        <div className="flex items-center gap-3 mb-3">
+          <Smartphone className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+          <h2 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-white">Need Setup Help?</h2>
         </div>
-        <p className="text-white/60 text-sm mb-4">
+        <p className="text-slate-600 dark:text-slate-400 text-sm mb-4 leading-relaxed">
           Having trouble connecting your device? Make sure your wearable is paired with your phone 
-          and the companion app is up to date. Most devices sync data through Google Fit or their 
-          native health apps.
+          and the companion app is running. Most devices sync continuously through Apple Health, Google Fit, 
+          or their native companion services.
         </p>
-        <div className="flex flex-wrap gap-3">
-          <span className="px-4 py-2 bg-white/[0.04] text-white/60 rounded-full text-sm border border-white/[0.06]">
+        <div className="flex flex-wrap gap-2.5">
+          <span className="px-3.5 py-1.5 bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 rounded-full text-xs sm:text-sm font-medium border border-slate-200/80 dark:border-white/10">
             Troubleshooting Guide
           </span>
-          <span className="px-4 py-2 bg-white/[0.04] text-white/60 rounded-full text-sm border border-white/[0.06]">
-            Contact Support
+          <span className="px-3.5 py-1.5 bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 rounded-full text-xs sm:text-sm font-medium border border-slate-200/80 dark:border-white/10">
+            Supported Firmware Specs
           </span>
         </div>
       </div>

@@ -290,20 +290,19 @@ export default function ReportsPage() {
   // Loading State with CardSkeleton
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 transition-colors duration-200">
         <GlassNavbar />
         <div className="pt-24 pb-20 px-3 sm:px-4 flex-1 overflow-x-hidden">
           <div className="max-w-5xl mx-auto space-y-6">
             {/* Header skeleton */}
-            <div className="text-center space-y-4 animate-pulse">
-              <div className="h-10 bg-white/10 rounded-lg w-64 mx-auto" />
-              <div className="h-5 bg-white/5 rounded w-96 mx-auto" />
+            <div className="text-center space-y-3 animate-pulse">
+              <div className="h-8 bg-slate-200 dark:bg-white/10 rounded-lg w-64 mx-auto" />
+              <div className="h-4 bg-slate-200 dark:bg-white/5 rounded w-80 mx-auto" />
             </div>
             {/* Filter bar skeleton */}
-            <div className="h-14 bg-white/5 rounded-xl" />
+            <div className="h-14 bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-white/10" />
             {/* Report cards skeleton */}
             <div className="space-y-4">
-              <CardSkeleton />
               <CardSkeleton />
               <CardSkeleton />
               <CardSkeleton />
@@ -315,54 +314,53 @@ export default function ReportsPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 transition-colors duration-200">
       <GlassNavbar />
 
       <div className="pt-24 pb-20 px-3 sm:px-4 flex-1 overflow-x-hidden">
         <div className="max-w-5xl mx-auto space-y-6">
           {/* Page Header */}
-          <div className="text-center space-y-3 animate-fade-in-up">
-            <div className="flex items-center justify-center gap-3 mb-2">
-              <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-500/20">
-                <FileText className="w-8 h-8 text-blue-400" />
+          <div className="text-center space-y-2 animate-fade-in-up">
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <div className="p-3 rounded-2xl bg-teal-50 dark:bg-teal-950/20 border border-teal-200/60 dark:border-teal-800/30 text-teal-600 dark:text-teal-400">
+                <FileText className="w-7 h-7" />
               </div>
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-white via-white to-white/60 bg-clip-text text-transparent">
-              Health Reports
+            <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+              Diagnostic Health Records
             </h1>
-            <p className="text-lg text-white/60 max-w-2xl mx-auto">
-              View and generate comprehensive health reports
+            <p className="text-sm text-slate-600 dark:text-slate-400 max-w-xl mx-auto">
+              Review and export your comprehensive medical screening history
             </p>
-            <div className="flex items-center justify-center gap-2 pt-2">
-              <span className="px-3 py-1 rounded-full text-sm bg-blue-500/10 text-blue-400 border border-blue-500/20">
+            <div className="flex items-center justify-center gap-2 pt-1">
+              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-teal-50 dark:bg-teal-950/20 text-teal-700 dark:text-teal-300 border border-teal-200/60 dark:border-teal-800/30">
                 {reports.length} Total Report{reports.length !== 1 ? 's' : ''}
               </span>
             </div>
           </div>
 
           {/* Filter Controls Bar */}
-          <div className="bg-white/[0.04] backdrop-blur-sm border border-white/[0.06] rounded-2xl p-4 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+          <div className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm p-4 sm:p-5 space-y-4">
             {/* Filter Pills Row */}
-            <div className="flex flex-wrap items-center gap-3 mb-4">
-              <span className="text-sm text-white/50 mr-1">Filter:</span>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mr-1">Filter:</span>
               
               {/* Report Type Pills */}
               {[
-                { key: 'all' as ReportFilter, label: 'All' },
-                { key: 'lab-results' as ReportFilter, label: 'Lab Results' },
-                { key: 'bp-reports' as ReportFilter, label: 'BP Reports' },
+                { key: 'all' as ReportFilter, label: 'All Records' },
+                { key: 'lab-results' as ReportFilter, label: 'Lab Screenings' },
+                { key: 'bp-reports' as ReportFilter, label: 'BP Diagnostics' },
                 { key: 'health-score' as ReportFilter, label: 'Health Score' },
               ].map(({ key, label }) => (
                 <button
                   key={key}
                   onClick={() => setActiveFilter(key)}
                   className={`
-                    px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200
+                    px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-200
                     ${activeFilter === key 
-                      ? 'bg-white/[0.10] border-white/[0.15] text-white' 
-                      : 'bg-white/[0.04] hover:bg-white/[0.08] border-white/[0.06] text-white/70 hover:text-white'
+                      ? 'bg-teal-600 text-white shadow-sm' 
+                      : 'bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-white/5'
                     }
-                    border
                   `}
                 >
                   {label}
@@ -372,20 +370,20 @@ export default function ReportsPage() {
               <div className="flex-1" />
 
               {/* Date Range Selector */}
-              <div className="flex items-center gap-1 bg-white/[0.04] rounded-full p-1 border border-white/[0.06]">
+              <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/[0.04] rounded-full p-1 border border-slate-200/60 dark:border-white/5">
                 {[
-                  { key: '7days' as DateRangeFilter, label: '7 days' },
-                  { key: '30days' as DateRangeFilter, label: '30 days' },
-                  { key: 'all' as DateRangeFilter, label: 'All time' },
+                  { key: '7days' as DateRangeFilter, label: '7d' },
+                  { key: '30days' as DateRangeFilter, label: '30d' },
+                  { key: 'all' as DateRangeFilter, label: 'All' },
                 ].map(({ key, label }) => (
                   <button
                     key={key}
                     onClick={() => setDateRange(key)}
                     className={`
-                      px-3 py-1 rounded-full text-xs font-medium transition-all duration-200
+                      px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200
                       ${dateRange === key 
-                        ? 'bg-white/[0.10] text-white' 
-                        : 'text-white/50 hover:text-white/70'
+                        ? 'bg-teal-600 text-white shadow-sm' 
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                       }
                     `}
                   >
@@ -397,18 +395,18 @@ export default function ReportsPage() {
 
             {/* Search Bar */}
             <div className="relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white/40 w-5 h-5" />
+              <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
               <input
                 type="text"
-                placeholder="Search reports by test name, date, or interpretation..."
+                placeholder="Search reports by test name, date, or clinical finding..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 bg-white/[0.04] border border-white/[0.06] rounded-xl focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500/50 text-white placeholder-white/40 transition-all"
+                className="w-full pl-10 pr-10 py-2.5 bg-slate-50 dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/30 text-xs sm:text-sm transition-all"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white/40 hover:text-white/70"
+                  className="absolute right-3.5 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-700 dark:hover:text-white"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -417,15 +415,15 @@ export default function ReportsPage() {
 
             {/* Clear Filters */}
             {hasActiveFilters && (
-              <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/[0.06]">
-                <span className="text-sm text-white/50">
+              <div className="flex items-center justify-between pt-3 border-t border-slate-200/80 dark:border-white/10">
+                <span className="text-xs text-slate-500 dark:text-slate-400">
                   Showing {filteredReports.length} of {reports.length} reports
                 </span>
                 <button
                   onClick={clearAllFilters}
-                  className="flex items-center gap-2 px-3 py-1.5 text-sm text-white/60 hover:text-white hover:bg-white/[0.06] rounded-lg transition-all"
+                  className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white rounded-lg transition-all"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-3.5 h-3.5" />
                   Clear all filters
                 </button>
               </div>
@@ -435,36 +433,36 @@ export default function ReportsPage() {
           {/* Reports List */}
           {filteredReports.length === 0 ? (
             /* Empty State */
-            <div className="bg-white/[0.04] backdrop-blur-sm border border-white/[0.06] rounded-2xl p-12 text-center animate-scale-in">
-              <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-teal-500/20 border border-teal-500/30 mb-6">
-                <FileText className="w-10 h-10 text-teal-400" />
+            <div className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm p-10 text-center">
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-teal-50 dark:bg-teal-950/20 text-teal-600 dark:text-teal-400 mb-4">
+                <FileText className="w-7 h-7" />
               </div>
-              <h3 className="text-2xl font-semibold text-white mb-3">
-                {reports.length === 0 ? 'No Reports Yet' : 'No Matching Reports'}
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+                {reports.length === 0 ? 'No Reports Generated Yet' : 'No Matching Reports Found'}
               </h3>
-              <p className="text-white/50 mb-8 max-w-md mx-auto">
+              <p className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm mb-6 max-w-md mx-auto">
                 {reports.length === 0
-                  ? 'Start by taking your first health assessment to generate your personalized health report.'
-                  : 'Try adjusting your search or filter criteria to find the reports you\'re looking for.'}
+                  ? 'Perform a diagnostic assessment in any of our Health Labs to generate your first clinical report.'
+                  : 'Try adjusting your search criteria or resetting filters to find records.'}
               </p>
               {reports.length === 0 ? (
                 <Link to="/labs">
-                  <Button className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-teal-500/20">
-                    <Plus className="w-5 h-5 mr-2" />
-                    Generate Your First Report
+                  <Button className="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-xl font-semibold shadow-sm text-sm">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Enter Health Labs
                   </Button>
                 </Link>
               ) : (
                 <button
                   onClick={clearAllFilters}
-                  className="px-6 py-3 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] rounded-xl text-white font-medium transition-all"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] text-slate-800 dark:text-slate-200 rounded-xl font-semibold text-xs transition-all"
                 >
-                  Clear All Filters
+                  Reset Filters
                 </button>
               )}
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3.5">
               {filteredReports.map((report, index) => {
                 const isExpanded = expandedReports.has(report.id);
                 const isGenerating = generatingReport === report.id;
@@ -472,38 +470,37 @@ export default function ReportsPage() {
                 return (
                   <div
                     key={report.id}
-                    className="bg-white/[0.04] backdrop-blur-sm border border-white/[0.06] rounded-xl overflow-hidden animate-fade-in-up hover:bg-white/[0.06] transition-all duration-300"
-                    style={{ animationDelay: `${index * 0.05}s` }}
+                    className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm overflow-hidden hover:border-teal-400/50 transition-all duration-300"
                   >
                     {/* Report Card Header */}
                     <div 
-                      className="p-5 cursor-pointer"
+                      className="p-4 sm:p-5 cursor-pointer"
                       onClick={() => toggleExpand(report.id)}
                     >
                       <div className="flex items-start gap-4">
                         {/* Left: Icon + Info */}
-                        <div className="flex items-start gap-4 flex-1">
+                        <div className="flex items-start gap-3.5 flex-1 min-w-0">
                           {/* Category Icon */}
-                          <div className={`flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center ${getCategoryColor(report.category)}`}>
+                          <div className={`flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center ${getCategoryColor(report.category)}`}>
                             {getCategoryIcon(report.category)}
                           </div>
                           
                           {/* Report Info */}
                           <div className="flex-1 min-w-0">
-                            <h3 className="text-lg font-semibold text-white mb-1 truncate">
+                            <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-1 truncate">
                               {getTestTypeLabel(report.testType)}
                             </h3>
-                            <div className="flex flex-wrap items-center gap-3 text-sm text-white/50">
+                            <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
                               <span className="flex items-center gap-1.5">
-                                <Calendar className="w-4 h-4" />
+                                <Calendar className="w-3.5 h-3.5" />
                                 {formatDate(report.testDate)}
                               </span>
                               <span className="flex items-center gap-1.5">
-                                <Clock className="w-4 h-4" />
+                                <Clock className="w-3.5 h-3.5" />
                                 {formatTime(report.testDate)}
                               </span>
                               {report.duration && (
-                                <span className="text-white/40">
+                                <span className="opacity-80">
                                   Duration: {formatDuration(report.duration)}
                                 </span>
                               )}
@@ -512,9 +509,9 @@ export default function ReportsPage() {
                         </div>
 
                         {/* Right: Status + Expand */}
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2.5">
                           {/* Risk Level Badge */}
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium capitalize ${getStatusBadgeClass(report.riskLevel)}`}>
+                          <span className={`px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${getStatusBadgeClass(report.riskLevel)}`}>
                             {report.riskLevel || 'N/A'}
                           </span>
                           
@@ -524,12 +521,12 @@ export default function ReportsPage() {
                               e.stopPropagation();
                               toggleExpand(report.id);
                             }}
-                            className="p-2 rounded-lg hover:bg-white/[0.08] text-white/50 hover:text-white transition-all"
+                            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/[0.08] text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all"
                           >
                             {isExpanded ? (
-                              <ChevronUp className="w-5 h-5" />
+                              <ChevronUp className="w-4 h-4" />
                             ) : (
-                              <ChevronDown className="w-5 h-5" />
+                              <ChevronDown className="w-4 h-4" />
                             )}
                           </button>
                         </div>
@@ -538,41 +535,37 @@ export default function ReportsPage() {
 
                     {/* Expanded Content */}
                     {isExpanded && (
-                      <div className="px-5 pb-5 space-y-4 border-t border-white/[0.06] pt-4">
+                      <div className="px-4 sm:px-5 pb-5 space-y-4 border-t border-slate-200/80 dark:border-white/5 pt-4">
                         {/* Score and Performance */}
                         {(report.score !== undefined || report.scorePercentage !== undefined) && (
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                             {report.score !== undefined && (
-                              <div className="bg-white/[0.04] rounded-xl p-4 border border-white/[0.06]">
-                                <div className="text-sm text-white/50 mb-1">Score</div>
-                                <div className="text-2xl font-bold text-white">
+                              <div className="bg-slate-50 dark:bg-white/[0.02] rounded-xl p-3.5 border border-slate-200/80 dark:border-white/10">
+                                <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Raw Score</div>
+                                <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
                                   {report.score}
-                                  {report.maxScore && <span className="text-white/40 text-lg"> / {report.maxScore}</span>}
+                                  {report.maxScore && <span className="text-slate-500 text-sm font-normal"> / {report.maxScore}</span>}
                                 </div>
                               </div>
                             )}
                             {report.scorePercentage !== undefined && (
-                              <div className="bg-white/[0.04] rounded-xl p-4 border border-white/[0.06]">
-                                <div className="text-sm text-white/50 mb-1">Performance</div>
-                                <div className="text-2xl font-bold text-white">
+                              <div className="bg-slate-50 dark:bg-white/[0.02] rounded-xl p-3.5 border border-slate-200/80 dark:border-white/10">
+                                <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Index Performance</div>
+                                <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
                                   {Math.round(report.scorePercentage)}%
                                 </div>
-                                <div className="h-1.5 bg-white/[0.08] rounded-full mt-2 overflow-hidden">
+                                <div className="h-1.5 bg-slate-200 dark:bg-white/10 rounded-full mt-2 overflow-hidden">
                                   <div
-                                    className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 transition-all"
+                                    className="h-full bg-gradient-to-r from-teal-500 to-emerald-400 transition-all"
                                     style={{ width: `${report.scorePercentage}%` }}
                                   />
                                 </div>
                               </div>
                             )}
                             {report.status && (
-                              <div className="bg-white/[0.04] rounded-xl p-4 border border-white/[0.06]">
-                                <div className="text-sm text-white/50 mb-1">Status</div>
-                                <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
-                                  report.status === 'final' 
-                                    ? 'bg-green-500/20 text-green-400' 
-                                    : 'bg-white/10 text-white/60'
-                                }`}>
+                              <div className="bg-slate-50 dark:bg-white/[0.02] rounded-xl p-3.5 border border-slate-200/80 dark:border-white/10">
+                                <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Diagnostic Status</div>
+                                <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/30 capitalize">
                                   {report.status}
                                 </span>
                               </div>
@@ -582,27 +575,27 @@ export default function ReportsPage() {
 
                         {/* Interpretation */}
                         {report.interpretation && (
-                          <div className="bg-blue-500/10 rounded-xl p-4 border-l-4 border-blue-500">
-                            <div className="flex items-start gap-2 mb-2">
-                              <AlertCircle className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
-                              <h4 className="font-semibold text-white">Interpretation</h4>
+                          <div className="bg-blue-50/50 dark:bg-blue-950/20 rounded-xl p-4 border border-blue-200/60 dark:border-blue-800/30">
+                            <div className="flex items-start gap-2 mb-1.5">
+                              <AlertCircle className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                              <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">Clinical Interpretation</h4>
                             </div>
-                            <p className="text-white/70 ml-7">{report.interpretation}</p>
+                            <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed ml-6">{report.interpretation}</p>
                           </div>
                         )}
 
                         {/* Recommendations */}
                         {report.recommendations && report.recommendations.length > 0 && (
-                          <div className="bg-green-500/10 rounded-xl p-4 border-l-4 border-green-500">
-                            <div className="flex items-start gap-2 mb-2">
-                              <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
-                              <h4 className="font-semibold text-white">Recommendations</h4>
+                          <div className="bg-emerald-50/50 dark:bg-emerald-950/20 rounded-xl p-4 border border-emerald-200/60 dark:border-emerald-800/30">
+                            <div className="flex items-start gap-2 mb-1.5">
+                              <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
+                              <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">Clinical Recommendations</h4>
                             </div>
-                            <ul className="space-y-1 ml-7">
+                            <ul className="space-y-1 ml-6 text-xs sm:text-sm text-slate-700 dark:text-slate-300">
                               {report.recommendations.map((rec, idx) => (
-                                <li key={idx} className="text-white/70 flex items-start gap-2">
-                                  <span className="text-green-400 mt-1">•</span>
-                                  {rec}
+                                <li key={idx} className="flex items-start gap-1.5">
+                                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">•</span>
+                                  <span>{rec}</span>
                                 </li>
                               ))}
                             </ul>
@@ -610,43 +603,43 @@ export default function ReportsPage() {
                         )}
 
                         {/* Raw Data (Collapsible) */}
-                        <details className="bg-white/[0.04] rounded-xl border border-white/[0.06] overflow-hidden">
-                          <summary className="cursor-pointer px-4 py-3 font-medium text-white hover:bg-white/[0.04] transition-all">
-                            View Raw Data
+                        <details className="bg-slate-50 dark:bg-white/[0.02] rounded-xl border border-slate-200/80 dark:border-white/10 overflow-hidden text-xs">
+                          <summary className="cursor-pointer px-4 py-2.5 font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.04] transition-all">
+                            View Raw Telemetry Payload
                           </summary>
-                          <pre className="p-4 bg-black/30 text-xs overflow-x-auto border-t border-white/[0.06] text-white/60">
+                          <pre className="p-4 bg-slate-100 dark:bg-black/30 text-xs overflow-x-auto border-t border-slate-200 dark:border-white/10 text-slate-800 dark:text-slate-300">
                             {JSON.stringify(report.data, null, 2)}
                           </pre>
                         </details>
 
                         {/* Action Buttons */}
-                        <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-white/[0.06]">
+                        <div className="flex flex-wrap items-center gap-2.5 pt-3 border-t border-slate-200/80 dark:border-white/10">
                           <Button
                             size="sm"
                             onClick={() => {
                               setSelectedReportForChat(report);
                               setChatOpen(true);
                             }}
-                            className="bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30"
+                            className="bg-purple-50 dark:bg-purple-950/20 hover:bg-purple-100 dark:hover:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/30 rounded-xl text-xs font-semibold h-8"
                           >
-                            <MessageCircle className="w-4 h-4 mr-2" />
-                            Chat with AI
+                            <MessageCircle className="w-3.5 h-3.5 mr-1.5" />
+                            Consult HealthScan AI
                           </Button>
                           
                           <Button
                             size="sm"
                             onClick={() => handleGeneratePDF(report)}
                             disabled={isGenerating}
-                            className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white border-0 shadow-lg shadow-blue-500/20"
+                            className="bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-semibold h-8 shadow-sm"
                           >
                             {isGenerating ? (
                               <>
-                                <Sparkles className="w-4 h-4 mr-2 animate-spin" />
+                                <Sparkles className="w-3.5 h-3.5 mr-1.5 animate-spin" />
                                 Generating...
                               </>
                             ) : (
                               <>
-                                <FileText className="w-4 h-4 mr-2" />
+                                <FileText className="w-3.5 h-3.5 mr-1.5" />
                                 Download PDF
                               </>
                             )}
@@ -656,10 +649,10 @@ export default function ReportsPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => downloadReport(report)}
-                            className="bg-white/[0.04] border-white/[0.10] text-white/70 hover:bg-white/[0.08] hover:text-white"
+                            className="bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-semibold h-8"
                           >
-                            <Download className="w-4 h-4 mr-2" />
-                            JSON
+                            <Download className="w-3.5 h-3.5 mr-1.5" />
+                            JSON Payload
                           </Button>
                           
                           <div className="flex-1" />
@@ -668,9 +661,9 @@ export default function ReportsPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleDelete(report.id)}
-                            className="bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500/20 hover:border-red-500/30"
+                            className="bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/30 rounded-xl text-xs font-semibold h-8"
                           >
-                            <Trash2 className="w-4 h-4 mr-2" />
+                            <Trash2 className="w-3.5 h-3.5 mr-1.5" />
                             Delete
                           </Button>
                         </div>
@@ -684,15 +677,17 @@ export default function ReportsPage() {
 
           {/* Generate Report CTA (if reports exist) */}
           {reports.length > 0 && (
-            <div className="bg-teal-500/10 backdrop-blur-sm border border-teal-500/20 rounded-2xl p-6 text-center animate-fade-in-up">
-              <h3 className="text-lg font-semibold text-white mb-2">Need More Tests?</h3>
-              <p className="text-white/50 mb-4">Take additional health assessments to get a complete picture of your health.</p>
-              <Link to="/labs">
-                <Button className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white px-6 py-2.5 rounded-xl font-medium shadow-lg shadow-teal-500/20">
-                  <Plus className="w-5 h-5 mr-2" />
-                  Take New Assessment
-                </Button>
-              </Link>
+            <div className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm p-6 text-center space-y-2">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">Need Additional Biomarker Screening?</h3>
+              <p className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm max-w-md mx-auto">Take additional computer-vision health lab assessments to complete your profile.</p>
+              <div className="pt-2">
+                <Link to="/labs">
+                  <Button className="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-xl font-semibold shadow-sm text-xs sm:text-sm">
+                    <Plus className="w-4 h-4 mr-1.5" />
+                    Enter Health Labs
+                  </Button>
+                </Link>
+              </div>
             </div>
           )}
         </div>

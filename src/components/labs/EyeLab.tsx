@@ -818,20 +818,20 @@ export const EyeLab: React.FC = () => {
   const avgRTDisplay = avgRT ? Math.round(avgRT) : 0;
 
   return (
-    <div className="space-y-8 pt-24 min-h-screen pb-12">
-
+    <div className="space-y-6 pb-8">
       {/* Header */}
-      <div className="text-center space-y-4 glass-panel p-6 relative overflow-hidden max-w-4xl mx-auto">
-        <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500/50"></div>
-        <div className="flex items-center justify-center gap-3 mb-2">
-          <Eye className="w-8 h-8 text-indigo-400" />
-          <h1 className="text-4xl font-bold text-foreground">Eye & Cognition Lab</h1>
+      <div className="text-center space-y-3 bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 p-6 shadow-sm max-w-4xl mx-auto">
+        <div className="flex items-center justify-center gap-3 mb-1">
+          <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+            <Eye className="w-6 h-6" />
+          </div>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Eye & Cognition Lab</h1>
         </div>
-        <p className="text-lg text-muted-foreground">
-          Validated micro-assessments for reaction time, attention, and working memory.
+        <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 max-w-xl mx-auto">
+          Validated micro-assessments for reaction time, attentional filtering, and working memory
         </p>
-        <Badge className="bg-indigo-500/20 text-indigo-300 border-indigo-500/20 mt-2 flex items-center gap-2 w-fit mx-auto">
-          <Brain className="w-3 h-3" /> Cognitive Battery
+        <Badge className="bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/40 text-xs px-3 py-1 rounded-full flex items-center gap-1.5 w-fit mx-auto">
+          <Brain className="w-3.5 h-3.5" /> Neuro-Cognitive Battery
         </Badge>
       </div>
 
@@ -840,43 +840,42 @@ export const EyeLab: React.FC = () => {
       ) : currentTest === 'wordlist' ? (
         <WordListTest />
       ) : currentTest ? (
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Test Area */}
-            <Card className="glass-panel border-0 relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-1 h-full bg-blue-500/50"></div>
-              <CardHeader className="bg-white/5 border-b border-white/5">
+            <Card className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm overflow-hidden">
+              <CardHeader className="bg-slate-50/60 dark:bg-white/[0.02] border-b border-slate-200/80 dark:border-white/5 py-4">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-foreground capitalize flex items-center gap-2">
-                    {currentTest === 'saccade' && <Target className="w-5 h-5 text-blue-400" />}
-                    {currentTest === 'stroop' && <Brain className="w-5 h-5 text-blue-400" />}
+                  <CardTitle className="text-slate-900 dark:text-white capitalize flex items-center gap-2 text-base font-semibold">
+                    {currentTest === 'saccade' && <Target className="w-4 h-4 text-blue-600 dark:text-blue-400" />}
+                    {currentTest === 'stroop' && <Brain className="w-4 h-4 text-blue-600 dark:text-blue-400" />}
                     {currentTest} Test
                   </CardTitle>
                   <div className="flex gap-2">
                     {testPhase === 'running' || testPhase === 'complete' ? (
-                      <Button variant="outline" size="sm" onClick={resetTest} className="border-white/10 hover:bg-white/5 text-muted-foreground hover:text-foreground"><Square className="w-4 h-4 mr-1" />Exit</Button>
+                      <Button variant="outline" size="sm" onClick={resetTest} className="border-slate-200/80 dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-slate-200 rounded-xl text-xs"><Square className="w-3.5 h-3.5 mr-1" />Exit</Button>
                     ) : null}
                   </div>
                 </div>
-                <CardDescription className="text-muted-foreground">{status}</CardDescription>
+                <CardDescription className="text-xs text-slate-500 dark:text-slate-400">{status}</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-5 p-5">
                 {testPhase === 'running' && (
-                  <div className="space-y-3">
-                    <Progress value={testProgress} className="h-2 bg-white/10" indicatorClassName="bg-blue-500" />
-                    <p className="text-sm text-muted-foreground text-center font-medium">Trial {currentTrial} of {totalTrials}</p>
+                  <div className="space-y-2">
+                    <Progress value={testProgress} className="h-2 bg-slate-100 dark:bg-white/10" indicatorClassName="bg-blue-600" />
+                    <p className="text-xs text-slate-500 dark:text-slate-400 text-center font-medium">Trial {currentTrial} of {totalTrials}</p>
                   </div>
                 )}
 
                 <div
                   ref={containerRef}
-                  className="relative bg-black/40 rounded-lg aspect-video select-none border border-white/10 overflow-hidden"
+                  className="relative bg-slate-950 rounded-xl aspect-video select-none border border-slate-200/80 dark:border-white/10 overflow-hidden shadow-inner"
                   onClick={onSaccadeClick}
                 >
                   {/* Saccade */}
                   {currentTest === 'saccade' && saccadeTarget.visible && (
                     <div
-                      className="absolute w-6 h-6 rounded-full bg-destructive/90 shadow"
+                      className="absolute w-6 h-6 rounded-full bg-rose-500 shadow-md animate-pulse"
                       style={{ left: `${saccadeTarget.x}%`, top: `${saccadeTarget.y}%`, transform: 'translate(-50%, -50%)' }}
                       aria-label="Saccade target"
                     />
@@ -885,39 +884,38 @@ export const EyeLab: React.FC = () => {
                   {/* Stroop */}
                   {currentTest === 'stroop' && stroopStimulus.word && testPhase === 'running' && (
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="text-center space-y-6">
-                        <div className="text-6xl font-bold filter drop-shadow-lg" style={{ color: stroopStimulus.color }}>
+                      <div className="text-center space-y-5">
+                        <div className="text-5xl font-extrabold filter drop-shadow-md" style={{ color: stroopStimulus.color }}>
                           {stroopStimulus.word.toUpperCase()}
                         </div>
-                        <div className="flex gap-3 justify-center">
+                        <div className="flex gap-2.5 justify-center">
                           {['red', 'blue', 'green', 'yellow'].map(c => (
-                            <Button key={c} variant="outline" onClick={() => onStroopAnswer(c)} className="text-base px-6 py-3 font-semibold border-2 hover:brightness-110 transition-all" style={{ backgroundColor: `${c === 'yellow' ? '#EAB308' : c}`, color: 'white', borderColor: 'transparent' }}>
+                            <Button key={c} variant="outline" onClick={() => onStroopAnswer(c)} className="text-sm px-4 py-2 font-semibold border-2 hover:brightness-110 transition-all rounded-xl" style={{ backgroundColor: `${c === 'yellow' ? '#EAB308' : c}`, color: 'white', borderColor: 'transparent' }}>
                               {c}
                             </Button>
                           ))}
                         </div>
-                        <p className="text-sm text-muted-foreground font-medium">Shortcuts: R / B / G / Y</p>
+                        <p className="text-xs text-slate-400 font-medium">Shortcuts: R / B / G / Y</p>
                       </div>
                     </div>
                   )}
 
-
                   {/* States */}
                   {testPhase === 'instructions' && (
                     <div className="absolute inset-0 grid place-items-center">
-                      <div className="text-center p-8">
-                        <Brain className="w-16 h-16 mx-auto mb-4 animate-pulse text-indigo-400" />
-                        <p className="text-xl font-semibold text-foreground mb-2">Get ready…</p>
-                        <p className="text-sm text-muted-foreground">Starting in 4 seconds</p>
+                      <div className="text-center p-6">
+                        <Brain className="w-12 h-12 mx-auto mb-3 animate-pulse text-indigo-400" />
+                        <p className="text-lg font-semibold text-white mb-1">Get ready…</p>
+                        <p className="text-xs text-slate-400">Starting in 4 seconds</p>
                       </div>
                     </div>
                   )}
                   {testPhase === 'complete' && (
                     <div className="absolute inset-0 grid place-items-center">
-                      <div className="text-center p-8">
-                        <TrendingUp className="w-16 h-16 mx-auto mb-4 text-green-400" />
-                        <p className="text-xl font-semibold text-foreground mb-2">Test Complete</p>
-                        <p className="text-sm text-muted-foreground">Check your results below</p>
+                      <div className="text-center p-6">
+                        <TrendingUp className="w-12 h-12 mx-auto mb-3 text-emerald-400" />
+                        <p className="text-lg font-semibold text-white mb-1">Test Complete</p>
+                        <p className="text-xs text-slate-400">Review your response latency below</p>
                       </div>
                     </div>
                   )}
@@ -926,56 +924,57 @@ export const EyeLab: React.FC = () => {
             </Card>
 
             {/* Results */}
-            <Card className="glass-panel border-0 relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-1 h-full bg-green-500/50"></div>
-              <CardHeader className="bg-white/5 border-b border-white/5">
-                <CardTitle className="text-foreground flex items-center gap-2"><TrendingUp className="w-5 h-5 text-green-400" /> Real-time Results</CardTitle>
-                <CardDescription className="text-muted-foreground">Objective performance metrics</CardDescription>
+            <Card className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm overflow-hidden">
+              <CardHeader className="bg-slate-50/60 dark:bg-white/[0.02] border-b border-slate-200/80 dark:border-white/5 py-4">
+                <CardTitle className="text-slate-900 dark:text-white flex items-center gap-2 text-base font-semibold">
+                  <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Objective Metrics
+                </CardTitle>
+                <CardDescription className="text-xs text-slate-500 dark:text-slate-400">Reaction time & stimulus precision</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6 pt-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-5 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                    <div className="text-sm font-medium text-blue-200 mb-2">Avg RT</div>
-                    <div className="text-3xl font-bold text-blue-400">{avgRTDisplay} ms</div>
+              <CardContent className="space-y-5 p-5">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="text-center p-3.5 rounded-xl bg-blue-50 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-800/30">
+                    <div className="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wider mb-1">Avg RT</div>
+                    <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">{avgRTDisplay} ms</div>
                   </div>
-                  <div className="text-center p-5 rounded-lg bg-green-500/10 border border-green-500/20">
-                    <div className="text-sm font-medium text-green-200 mb-2">Accuracy</div>
-                    <div className="text-3xl font-bold text-green-400">{accuracy.toFixed(0)}%</div>
+                  <div className="text-center p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-800/30">
+                    <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider mb-1">Accuracy</div>
+                    <div className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">{accuracy.toFixed(0)}%</div>
                   </div>
-                  <div className="text-center p-5 rounded-lg bg-purple-500/10 border border-purple-500/20">
-                    <div className="text-sm font-medium text-purple-200 mb-2">Hits / Misses</div>
-                    <div className="text-3xl font-bold text-purple-400">{counts.hits} / {counts.misses}</div>
+                  <div className="text-center p-3.5 rounded-xl bg-purple-50 dark:bg-purple-950/20 border border-purple-200/60 dark:border-purple-800/30">
+                    <div className="text-xs font-semibold text-purple-700 dark:text-purple-300 uppercase tracking-wider mb-1">Hits / Misses</div>
+                    <div className="text-xl font-bold text-purple-700 dark:text-purple-300">{counts.hits} / {counts.misses}</div>
                   </div>
-                  <div className="text-center p-5 rounded-lg bg-orange-500/10 border border-orange-500/20">
-                    <div className="text-sm font-medium text-orange-200 mb-2">False Alarms</div>
-                    <div className="text-3xl font-bold text-orange-400">{counts.fas}</div>
+                  <div className="text-center p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/30">
+                    <div className="text-xs font-semibold text-amber-700 dark:text-amber-300 uppercase tracking-wider mb-1">False Alarms</div>
+                    <div className="text-xl font-bold text-amber-700 dark:text-amber-300">{counts.fas}</div>
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  <div className="text-sm font-medium text-foreground mb-3">Reaction Time Trend</div>
-                  <div className="h-48 bg-white/5 rounded-lg border border-white/10 p-4">
+                <div className="space-y-2">
+                  <div className="text-xs font-semibold text-slate-700 dark:text-slate-300">Reaction Time Latency Trend</div>
+                  <div className="h-44 bg-slate-50 dark:bg-black/30 rounded-xl border border-slate-200/80 dark:border-white/10 p-3">
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={chartData} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
-                        <XAxis dataKey="trial" tickLine={false} axisLine={false} stroke="#9ca3af" />
-                        <YAxis tickLine={false} axisLine={false} stroke="#9ca3af" />
+                      <LineChart data={chartData} margin={{ top: 8, right: 12, left: -10, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e140" />
+                        <XAxis dataKey="trial" tickLine={false} axisLine={false} stroke="#94a3b8" fontSize={11} />
+                        <YAxis tickLine={false} axisLine={false} stroke="#94a3b8" fontSize={11} />
                         <Tooltip
-                          formatter={(v: any) => [`${v} ms`, 'RT']}
-                          contentStyle={{ backgroundColor: '#1e1e1e', border: '1px solid #333', color: '#fff' }}
+                          formatter={(v: any) => [`${v} ms`, 'Reaction Time']}
+                          contentStyle={{ backgroundColor: 'var(--tooltip-bg, #0f172a)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}
                         />
-                        <Line type="monotone" dataKey="rt" dot={false} strokeWidth={2} stroke="#3b82f6" />
+                        <Line type="monotone" dataKey="rt" dot={false} strokeWidth={2.5} stroke="#3b82f6" />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
                 </div>
 
-                <div className="flex gap-3 pt-2">
-                  <Button variant="outline" className="flex-1 border-white/10 bg-white/5 hover:bg-white/10 text-foreground" onClick={() => generateReport(currentTest, trialResults)} disabled={testPhase !== 'complete'}>
-                    <FileText className="w-4 h-4 mr-2" /> Generate Report
+                <div className="flex gap-2.5 pt-1">
+                  <Button variant="outline" className="flex-1 rounded-xl border-slate-200/80 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-800 dark:text-slate-200 text-xs sm:text-sm" onClick={() => generateReport(currentTest, trialResults)} disabled={testPhase !== 'complete'}>
+                    <FileText className="w-4 h-4 mr-1.5" /> Save Report
                   </Button>
-                  <Button variant="outline" className="flex-1 border-white/10 bg-white/5 hover:bg-white/10 text-foreground" onClick={() => startTest(currentTest)}>
-                    <RefreshCw className="w-4 h-4 mr-2" /> Restart Test
+                  <Button variant="outline" className="flex-1 rounded-xl border-slate-200/80 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-800 dark:text-slate-200 text-xs sm:text-sm" onClick={() => startTest(currentTest)}>
+                    <RefreshCw className="w-4 h-4 mr-1.5" /> Restart
                   </Button>
                 </div>
               </CardContent>
@@ -983,125 +982,113 @@ export const EyeLab: React.FC = () => {
           </div>
         </div>
       ) : (
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {tests.map(({ id, title, description, icon: Icon }) => (
-              <Card key={id} className="glass-panel border-0 relative overflow-hidden group cursor-pointer hover:scale-[1.02] transition-all duration-300" onClick={() => startTest(id as TestType)}>
-                <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500/50"></div>
-                <CardHeader className="text-center pb-4 z-10 relative">
-                  <div className="p-3 bg-indigo-500/10 rounded-2xl w-fit mx-auto mb-4 border border-indigo-500/20">
-                    <Icon className="w-8 h-8 text-indigo-400 group-hover:scale-110 transition-transform" />
+              <Card key={id} className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm overflow-hidden group cursor-pointer hover:border-indigo-400/50 hover:shadow-md transition-all duration-300 flex flex-col justify-between" onClick={() => startTest(id as TestType)}>
+                <CardHeader className="text-center p-5 pb-3">
+                  <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200/60 dark:border-indigo-800/40 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mx-auto mb-3 group-hover:scale-110 transition-transform">
+                    <Icon className="w-6 h-6" />
                   </div>
-                  <CardTitle className="text-foreground group-hover:text-indigo-400 transition-colors text-lg">{title}</CardTitle>
-                  <CardDescription className="text-muted-foreground mt-2">{description}</CardDescription>
+                  <CardTitle className="text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors text-base font-semibold">{title}</CardTitle>
+                  <CardDescription className="text-slate-500 dark:text-slate-400 text-xs mt-1.5 leading-relaxed">{description}</CardDescription>
                 </CardHeader>
-                <CardContent className="pt-0 pb-6 z-10 relative">
-                  <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white border-0 shadow-lg shadow-indigo-900/20">Start Test</Button>
+                <CardContent className="p-5 pt-0">
+                  <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-xs text-xs sm:text-sm font-medium">Start Test</Button>
                 </CardContent>
               </Card>
             ))}
-
-            {/* If any prior test completed, offer a combined export */}
-            {(sessionResults.saccade.length > 0 || sessionResults.stroop.length > 0 || sessionResults.digitspan.length > 0 || sessionResults.wordlist.length > 0) && (
-              <Card className="glass-panel border-0 mt-6 relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-1 h-full bg-purple-500/50"></div>
-                <CardHeader className="bg-white/5 border-b border-white/5">
-                  <CardTitle className="text-foreground flex items-center gap-2"><FileText className="w-5 h-5 text-purple-400" /> Export Past Results</CardTitle>
-                  <CardDescription className="text-muted-foreground">Download the most recent results from each test</CardDescription>
-                </CardHeader>
-                <CardContent className="pt-6">
-                  <div className="flex flex-wrap gap-3">
-                    {(['saccade', 'stroop', 'digitspan', 'wordlist'] as const).map(key => (
-                      sessionResults[key].length > 0 ? (
-                        <Button key={key} variant="outline" onClick={() => generateReport(key, sessionResults[key])} className="border-white/10 bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-foreground">
-                          Download {key} report
-                        </Button>
-                      ) : null
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
           </div>
+
+          {/* If any prior test completed, offer a combined export */}
+          {(sessionResults.saccade.length > 0 || sessionResults.stroop.length > 0 || sessionResults.digitspan.length > 0 || sessionResults.wordlist.length > 0) && (
+            <Card className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm overflow-hidden mt-6">
+              <CardHeader className="bg-slate-50/60 dark:bg-white/[0.02] border-b border-slate-200/80 dark:border-white/5 py-4">
+                <CardTitle className="text-slate-900 dark:text-white flex items-center gap-2 text-base font-semibold"><FileText className="w-4 h-4 text-purple-600 dark:text-purple-400" /> Export Past Results</CardTitle>
+                <CardDescription className="text-xs text-slate-500 dark:text-slate-400">Download the most recent results from each test</CardDescription>
+              </CardHeader>
+              <CardContent className="p-4 sm:p-5">
+                <div className="flex flex-wrap gap-2.5">
+                  {(['saccade', 'stroop', 'digitspan', 'wordlist'] as const).map(key => (
+                    sessionResults[key].length > 0 ? (
+                      <Button key={key} variant="outline" onClick={() => generateReport(key, sessionResults[key])} className="border-slate-200/80 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 rounded-xl text-xs">
+                        Download {key} report
+                      </Button>
+                    ) : null
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       )}
 
       {/* Advanced Analysis Report - Inline below test blocks */}
       {analysisResults && (
-        <div ref={reportRef} className="max-w-6xl mx-auto px-4 space-y-8 mt-12">
-          <div className="text-center glass-panel p-6 border-0 relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-1 h-full bg-purple-500/50"></div>
-            <h2 className="text-3xl font-bold text-foreground mb-3">Comprehensive Cognitive Analysis Report</h2>
-            <p className="text-lg text-muted-foreground">Advanced clinical assessment for {analysisResults.testType} test</p>
+        <div ref={reportRef} className="max-w-4xl mx-auto space-y-6 mt-8">
+          <div className="text-center bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 p-6 shadow-sm">
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-1.5 tracking-tight">Cognitive Assessment Report</h2>
+            <p className="text-sm text-slate-600 dark:text-slate-400">Clinical evaluation for {analysisResults.testType} assessment</p>
           </div>
 
           {/* Summary Overview */}
-          <Card className="glass-panel border-0 relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-1 h-full bg-blue-500/50"></div>
-            <CardHeader className="bg-white/5 border-b border-white/5">
-              <CardTitle className="text-foreground flex items-center gap-2">
-                <Brain className="w-5 h-5 text-blue-400" />
+          <Card className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm overflow-hidden">
+            <CardHeader className="bg-slate-50/60 dark:bg-white/[0.02] border-b border-slate-200/80 dark:border-white/5 py-4">
+              <CardTitle className="text-slate-900 dark:text-white flex items-center gap-2 text-base font-semibold">
+                <Brain className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                 Assessment Summary
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="text-center p-6 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                  <div className="text-sm font-medium text-blue-200 mb-2">Overall Quality</div>
-                  <div className="text-3xl font-bold text-blue-400 mb-3">{analysisResults.qualityScore}/100</div>
-                  <Badge className={analysisResults.qualityScore >= 80 ? "bg-green-500/20 text-green-400 hover:bg-green-500/30" : analysisResults.qualityScore >= 60 ? "bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30" : "bg-red-500/20 text-red-400 hover:bg-red-500/30"}>
-                    {analysisResults.qualityScore >= 80 ? "Excellent" : analysisResults.qualityScore >= 60 ? "Good" : "Needs Improvement"}
+            <CardContent className="p-5 sm:p-6">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
+                <div className="text-center p-4 rounded-xl bg-blue-50 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-800/30">
+                  <div className="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wider mb-1">Quality Score</div>
+                  <div className="text-2xl font-bold text-blue-700 dark:text-blue-300 mb-1">{analysisResults.qualityScore}/100</div>
+                  <Badge className={`text-xs ${analysisResults.qualityScore >= 80 ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300" : "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300"} border-0`}>
+                    {analysisResults.qualityScore >= 80 ? "Optimal" : "Checkup Indicated"}
                   </Badge>
                 </div>
-                <div className="text-center p-6 rounded-lg bg-green-500/10 border border-green-500/20">
-                  <div className="text-sm font-medium text-green-200 mb-2">Risk Level</div>
-                  <div className="text-3xl font-bold text-green-400 mb-3">{analysisResults.riskLevel}</div>
-                  <Badge className={
-                    analysisResults.riskLevel === 'Low' ? "bg-green-500/20 text-green-400 hover:bg-green-500/30" :
-                      analysisResults.riskLevel === 'Medium' ? "bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30" :
-                        "bg-red-500/20 text-red-400 hover:bg-red-500/30"
-                  }>
-                    {analysisResults.riskLevel === 'Low' ? <CheckCircle className="w-3 h-3 mr-1" /> :
-                      analysisResults.riskLevel === 'Medium' ? <AlertTriangle className="w-3 h-3 mr-1" /> :
-                        <XCircle className="w-3 h-3 mr-1" />}
+                <div className="text-center p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-800/30">
+                  <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider mb-1">Risk Profile</div>
+                  <div className="text-2xl font-bold text-emerald-700 dark:text-emerald-300 mb-1">{analysisResults.riskLevel}</div>
+                  <Badge className={`text-xs ${analysisResults.riskLevel === 'Low' ? "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-200" : "bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200"} border-0`}>
                     {analysisResults.riskLevel} Risk
                   </Badge>
                 </div>
-                <div className="text-center p-6 rounded-lg bg-purple-500/10 border border-purple-500/20">
-                  <div className="text-sm font-medium text-purple-200 mb-2">Avg Reaction Time</div>
-                  <div className="text-3xl font-bold text-purple-400">{Math.round(analysisResults.avgReactionTime)}ms</div>
+                <div className="text-center p-4 rounded-xl bg-purple-50 dark:bg-purple-950/20 border border-purple-200/60 dark:border-purple-800/30">
+                  <div className="text-xs font-semibold text-purple-700 dark:text-purple-300 uppercase tracking-wider mb-1">Avg RT</div>
+                  <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">{Math.round(analysisResults.avgReactionTime)}ms</div>
                 </div>
-                <div className="text-center p-6 rounded-lg bg-orange-500/10 border border-orange-500/20">
-                  <div className="text-sm font-medium text-orange-200 mb-2">Accuracy</div>
-                  <div className="text-3xl font-bold text-orange-400">{analysisResults.accuracy.toFixed(1)}%</div>
+                <div className="text-center p-4 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/30">
+                  <div className="text-xs font-semibold text-amber-700 dark:text-amber-300 uppercase tracking-wider mb-1">Accuracy</div>
+                  <div className="text-2xl font-bold text-amber-700 dark:text-amber-300">{analysisResults.accuracy.toFixed(1)}%</div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Cognitive Characteristics */}
-          <Card className="glass-panel border-0 relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-1 h-full bg-green-500/50"></div>
-            <CardHeader className="bg-white/5 border-b border-white/5">
-              <CardTitle className="text-foreground flex items-center gap-2">
-                <Activity className="w-5 h-5 text-green-400" />
+          {/* Cognitive Profile */}
+          <Card className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm overflow-hidden">
+            <CardHeader className="bg-slate-50/60 dark:bg-white/[0.02] border-b border-slate-200/80 dark:border-white/5 py-4">
+              <CardTitle className="text-slate-900 dark:text-white flex items-center gap-2 text-base font-semibold">
+                <Activity className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                 Cognitive Profile
               </CardTitle>
-              <CardDescription className="text-muted-foreground">Detailed assessment of cognitive functions</CardDescription>
+              <CardDescription className="text-xs text-slate-500 dark:text-slate-400">Detailed assessment of executive functions</CardDescription>
             </CardHeader>
-            <CardContent className="pt-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <CardContent className="p-5 sm:p-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {Object.entries(analysisResults.cognitiveCharacteristics).map(([key, value]) => {
                   const displayName = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
                   return (
-                    <div key={key} className="space-y-3 p-4 bg-white/5 rounded-lg border border-white/10">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium text-foreground">{displayName}</span>
-                        <span className="text-sm font-semibold text-muted-foreground">{value}/100</span>
+                    <div key={key} className="space-y-2.5 p-3.5 bg-slate-50 dark:bg-white/[0.02] rounded-xl border border-slate-200/80 dark:border-white/10">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">{displayName}</span>
+                        <span className="font-bold text-slate-600 dark:text-slate-400">{value}/100</span>
                       </div>
-                      <Progress value={value} className="h-3 bg-white/10" indicatorClassName={value >= 80 ? "bg-green-500" : value >= 60 ? "bg-yellow-500" : "bg-red-500"} />
-                      <div className="text-xs font-medium text-muted-foreground/80">
-                        {value >= 80 ? "Excellent" : value >= 60 ? "Good" : value >= 40 ? "Fair" : "Needs Improvement"}
+                      <Progress value={value} className="h-2 bg-slate-200 dark:bg-white/10" indicatorClassName={value >= 80 ? "bg-emerald-500" : value >= 60 ? "bg-amber-500" : "bg-rose-500"} />
+                      <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                        {value >= 80 ? "High Performance" : value >= 60 ? "Average" : "Mild Attentional Deficit"}
                       </div>
                     </div>
                   );
@@ -1111,159 +1098,57 @@ export const EyeLab: React.FC = () => {
           </Card>
 
           {/* Clinical Findings */}
-          <Card className="glass-panel border-0 relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-1 h-full bg-purple-500/50"></div>
-            <CardHeader className="bg-white/5 border-b border-white/5">
-              <CardTitle className="text-foreground flex items-center gap-2">
-                <FileText className="w-5 h-5 text-purple-400" />
+          <Card className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm overflow-hidden">
+            <CardHeader className="bg-slate-50/60 dark:bg-white/[0.02] border-b border-slate-200/80 dark:border-white/5 py-4">
+              <CardTitle className="text-slate-900 dark:text-white flex items-center gap-2 text-base font-semibold">
+                <FileText className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                 Clinical Findings
               </CardTitle>
-              <CardDescription className="text-muted-foreground">Professional cognitive assessment results</CardDescription>
+              <CardDescription className="text-xs text-slate-500 dark:text-slate-400">Professional cognitive latency telemetry</CardDescription>
             </CardHeader>
-            <CardContent className="pt-6">
-              <div className="space-y-4">
+            <CardContent className="p-5 sm:p-6">
+              <div className="space-y-3.5">
                 {analysisResults.clinicalFindings.map((finding, index) => (
-                  <div key={index} className="border border-white/10 rounded-lg p-5 bg-white/5">
-                    <div className="flex items-start justify-between mb-3">
+                  <div key={index} className="border border-slate-200/80 dark:border-white/10 rounded-xl p-4 bg-slate-50/50 dark:bg-white/[0.02]">
+                    <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <Badge className="bg-white/10 text-muted-foreground border-white/10">{finding.category}</Badge>
-                        <Badge className={
-                          finding.severity === 'Normal' ? 'bg-green-500/20 text-green-300' :
-                            finding.severity === 'Mild' ? 'bg-yellow-500/20 text-yellow-300' :
-                              finding.severity === 'Moderate' ? 'bg-orange-500/20 text-orange-300' : 'bg-red-500/20 text-red-300'
-                        }>
-                          {finding.severity === 'Normal' ? <CheckCircle className="w-3 h-3 mr-1" /> :
-                            finding.severity === 'Mild' ? <AlertTriangle className="w-3 h-3 mr-1" /> :
-                              finding.severity === 'Moderate' ? <AlertTriangle className="w-3 h-3 mr-1" /> :
-                                <XCircle className="w-3 h-3 mr-1" />}
+                        <Badge className="bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 border-0 text-[11px]">{finding.category}</Badge>
+                        <Badge className={`text-[11px] ${
+                          finding.severity === 'Normal' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300' :
+                            'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300'
+                        } border-0`}>
                           {finding.severity}
                         </Badge>
                       </div>
                     </div>
-                    <h4 className="font-semibold text-foreground mb-2 text-lg">{finding.finding}</h4>
-                    <p className="text-sm text-muted-foreground leading-relaxed">{finding.clinicalSignificance}</p>
+                    <h4 className="font-semibold text-slate-900 dark:text-white mb-1 text-sm sm:text-base">{finding.finding}</h4>
+                    <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{finding.clinicalSignificance}</p>
                   </div>
                 ))}
               </div>
             </CardContent>
           </Card>
 
-          {/* Disease Risk Assessment */}
-          {analysisResults.diseaseRiskAssessment.length > 0 && (
-            <Card className="glass-panel border-0 relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-1 h-full bg-red-500/50"></div>
-              <CardHeader className="bg-white/5 border-b border-white/5">
-                <CardTitle className="text-foreground flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5 text-red-400" />
-                  Disease Risk Assessment
-                </CardTitle>
-                <CardDescription className="text-muted-foreground">AI-powered analysis of neurological condition risks</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <div className="space-y-5">
-                  {analysisResults.diseaseRiskAssessment.map((assessment, index) => (
-                    <div key={index} className="border border-white/10 rounded-lg p-5 bg-white/5">
-                      <div className="flex items-start justify-between mb-4">
-                        <h4 className="font-semibold text-foreground text-lg">{assessment.condition}</h4>
-                        <div className="flex items-center gap-3">
-                          <Badge className={
-                            assessment.riskLevel === 'Low' ? 'bg-green-500/20 text-green-300' :
-                              assessment.riskLevel === 'Medium' ? 'bg-yellow-500/20 text-yellow-300' : 'bg-red-500/20 text-red-300'
-                          }>
-                            {assessment.riskLevel === 'Low' ? <CheckCircle className="w-3 h-3 mr-1" /> :
-                              assessment.riskLevel === 'Medium' ? <AlertTriangle className="w-3 h-3 mr-1" /> :
-                                <XCircle className="w-3 h-3 mr-1" />}
-                            {assessment.riskLevel} Risk
-                          </Badge>
-                          <span className="text-xs font-medium text-muted-foreground">{assessment.confidence.toFixed(0)}% confidence</span>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="bg-red-500/10 rounded-lg p-4 border border-red-500/20">
-                          <h5 className="text-sm font-semibold text-red-200 mb-3">Risk Factors:</h5>
-                          <ul className="text-sm text-red-100/80 space-y-2">
-                            {assessment.riskFactors.map((factor, idx) => (
-                              <li key={idx} className="flex items-start gap-2">
-                                <span className="text-red-400 font-bold mt-1">•</span>
-                                <span>{factor}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                        <div className="bg-blue-500/10 rounded-lg p-4 border border-blue-500/20">
-                          <h5 className="text-sm font-semibold text-blue-200 mb-3">Clinical Markers:</h5>
-                          <ul className="text-sm text-blue-100/80 space-y-2">
-                            {assessment.clinicalMarkers.map((marker, idx) => (
-                              <li key={idx} className="flex items-start gap-2">
-                                <span className="text-blue-400 font-bold mt-1">•</span>
-                                <span>{marker}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Clinical Recommendations */}
-          <Card className="glass-panel border-0 relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-1 h-full bg-yellow-500/50"></div>
-            <CardHeader className="bg-white/5 border-b border-white/5">
-              <CardTitle className="text-foreground flex items-center gap-2">
-                <Zap className="w-5 h-5 text-yellow-400" />
-                Clinical Recommendations
-              </CardTitle>
-              <CardDescription className="text-muted-foreground">Personalized healthcare guidance based on assessment</CardDescription>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <div className="space-y-4">
-                {analysisResults.recommendations.map((recommendation, index) => (
-                  <div key={index} className="flex items-start gap-4 p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
-                    <CheckCircle className="w-5 h-5 text-yellow-400 mt-0.5 flex-shrink-0" />
-                    <span className="text-sm text-yellow-100/90 leading-relaxed">{recommendation}</span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Report Generation */}
-          <Card className="glass-panel border-0 relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500/50"></div>
-            <CardHeader className="bg-white/5 border-b border-white/5">
-              <CardTitle className="text-foreground flex items-center gap-2">
-                <FileText className="w-5 h-5 text-indigo-400" />
-                Export Report
-              </CardTitle>
-              <CardDescription className="text-muted-foreground">Download your comprehensive cognitive assessment</CardDescription>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <div className="flex gap-4">
-                <Button
-                  onClick={() => generateReport(currentTest, trialResults)}
-                  disabled={!currentTest}
-                  className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white border-0 shadow-lg shadow-indigo-900/20"
-                >
-                  <FileText className="w-4 h-4 mr-2" />
-                  Download Detailed Report
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => startTest(currentTest)}
-                  disabled={!currentTest}
-                  className="flex-1 border-white/10 bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-foreground"
-                >
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Retake Test
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Recommendations & Export */}
+          <div className="flex gap-3 pt-2">
+            <Button
+              onClick={() => generateReport(currentTest, trialResults)}
+              disabled={!currentTest}
+              className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-xs"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              Export Cognitive Report
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => startTest(currentTest)}
+              disabled={!currentTest}
+              className="flex-1 border-slate-200/80 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-800 dark:text-slate-200 rounded-xl"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Retake Test
+            </Button>
+          </div>
         </div>
       )}
     </div>

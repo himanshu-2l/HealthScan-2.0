@@ -119,26 +119,26 @@ const GaitLab = () => {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6 min-h-[calc(100vh-80px)] bg-background/50 backdrop-blur-sm">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-8">
       {/* Left Panel: Video Feed */}
       <div className="lg:col-span-2 space-y-6">
-        <Card className="overflow-hidden border-primary/20 bg-slate-900/40 backdrop-blur-md relative group">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4">
+        <Card className="overflow-hidden border border-slate-200/80 dark:border-white/10 bg-white dark:bg-slate-900/60 rounded-2xl shadow-sm relative group">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 border-b border-slate-200/80 dark:border-white/5 bg-slate-50/60 dark:bg-white/[0.02]">
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-              <CardTitle className="text-lg font-medium">Precision Video Analysis</CardTitle>
+              <div className="w-2.5 h-2.5 rounded-full bg-teal-500 animate-pulse" />
+              <CardTitle className="text-base font-semibold text-slate-900 dark:text-white">Precision Gait Kinematics</CardTitle>
             </div>
-            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
-              {isRecording ? 'LIVE STREAM' : 'STANDBY'}
+            <Badge variant="outline" className="bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800/40 text-xs">
+              {isRecording ? 'STREAMING ACTIVE' : 'CALIBRATED STANDBY'}
             </Badge>
           </CardHeader>
-          <div className="relative aspect-video bg-neutral-900 mx-4 mb-4 rounded-xl overflow-hidden border border-white/5 shadow-2xl">
+          <div className="relative aspect-video bg-slate-950 mx-4 my-4 rounded-xl overflow-hidden border border-slate-200/80 dark:border-white/10 shadow-inner">
             <video
               ref={videoRef}
               autoPlay
               playsInline
               muted
-              className="absolute inset-0 w-full h-full object-cover opacity-80"
+              className="absolute inset-0 w-full h-full object-cover opacity-85"
             />
             <canvas
               ref={canvasRef}
@@ -147,27 +147,27 @@ const GaitLab = () => {
               className="absolute inset-0 w-full h-full z-10"
             />
             {!isRecording && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[2px] z-20">
+              <div className="absolute inset-0 flex items-center justify-center bg-slate-950/40 backdrop-blur-[2px] z-20">
                 <Button 
                   onClick={toggleRecording}
                   size="lg"
-                  className="rounded-full w-16 h-16 bg-primary hover:scale-110 transition-transform shadow-lg shadow-primary/50"
+                  className="rounded-full w-14 h-14 bg-teal-600 hover:bg-teal-700 hover:scale-105 transition-all shadow-lg text-white"
                 >
-                  <Play className="fill-current" />
+                  <Play className="fill-current w-5 h-5 ml-0.5" />
                 </Button>
               </div>
             )}
             
             {/* UI Overlays */}
-            <div className="absolute top-4 right-4 z-20 flex flex-col gap-2">
+            <div className="absolute top-3 right-3 z-20 flex flex-col gap-2">
                {isRecording && (
                  <motion.div 
                    initial={{ opacity: 0, x: 20 }}
                    animate={{ opacity: 1, x: 0 }}
-                   className="bg-black/60 backdrop-blur-md p-3 rounded-lg border border-white/10"
+                   className="bg-slate-950/80 backdrop-blur-md px-3 py-2 rounded-xl border border-white/10 shadow-xs"
                  >
-                   <p className="text-[10px] text-white/50 uppercase tracking-widest font-bold mb-1">FPS</p>
-                   <p className="text-xl font-mono text-primary font-bold">30.0</p>
+                   <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">RATE</p>
+                   <p className="text-sm font-mono text-teal-400 font-bold">30.0 FPS</p>
                  </motion.div>
                )}
             </div>
@@ -178,9 +178,9 @@ const GaitLab = () => {
                <Button 
                  onClick={toggleRecording}
                  variant="destructive"
-                 className="w-full max-w-[200px] shadow-lg shadow-red-500/20"
+                 className="w-full max-w-[200px] shadow-sm rounded-xl"
                >
-                 <Square className="mr-2 h-4 w-4" /> Stop Analysis
+                 <Square className="mr-2 h-4 w-4" /> Stop Gait Analysis
                </Button>
              )}
           </div>
@@ -188,45 +188,45 @@ const GaitLab = () => {
 
         {/* Real-time Charts */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card className="bg-slate-900/40 border-primary/10">
+          <Card className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm overflow-hidden">
             <CardHeader className="p-4 pb-0">
-               <CardTitle className="text-sm font-medium flex items-center gap-2">
-                 <Pulse className="w-4 h-4 text-primary" /> Postural Stability
+               <CardTitle className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                 <Pulse className="w-4 h-4 text-blue-600 dark:text-blue-400" /> Postural Center Stability
                </CardTitle>
             </CardHeader>
-            <div className="h-[200px] p-4">
+            <div className="h-[180px] p-3 sm:p-4">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={realtimeHistory}>
                   <defs>
                     <linearGradient id="stabilityColor" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#4facfe" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#4facfe" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e130" vertical={false} />
                   <Tooltip 
-                    contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #ffffff20', borderRadius: '8px' }}
+                    contentStyle={{ backgroundColor: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
                   />
-                  <Area type="monotone" dataKey="stability" stroke="#4facfe" fillOpacity={1} fill="url(#stabilityColor)" strokeWidth={3} isAnimationActive={false} />
+                  <Area type="monotone" dataKey="stability" stroke="#3b82f6" fillOpacity={1} fill="url(#stabilityColor)" strokeWidth={2.5} isAnimationActive={false} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
           </Card>
 
-          <Card className="bg-slate-900/40 border-primary/10">
+          <Card className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm overflow-hidden">
             <CardHeader className="p-4 pb-0">
-               <CardTitle className="text-sm font-medium flex items-center gap-2">
-                 <Layers className="w-4 h-4 text-purple-400" /> Gait Symmetry
+               <CardTitle className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                 <Layers className="w-4 h-4 text-purple-600 dark:text-purple-400" /> Bilateral Gait Symmetry
                </CardTitle>
             </CardHeader>
-            <div className="h-[200px] p-4">
+            <div className="h-[180px] p-3 sm:p-4">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={realtimeHistory}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e130" vertical={false} />
                   <Tooltip 
-                     contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #ffffff20', borderRadius: '8px' }}
+                     contentStyle={{ backgroundColor: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
                   />
-                  <Line type="monotone" dataKey="symmetry" stroke="#a855f7" strokeWidth={3} dot={false} isAnimationActive={false} />
+                  <Line type="monotone" dataKey="symmetry" stroke="#a855f7" strokeWidth={2.5} dot={false} isAnimationActive={false} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -236,34 +236,34 @@ const GaitLab = () => {
 
       {/* Right Panel: AI Insights */}
       <div className="space-y-6">
-        <Card className="bg-slate-900/60 border-primary/20 backdrop-blur-xl h-full">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="w-5 h-5 text-primary" /> Clinical Telemetry
+        <Card className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm overflow-hidden h-full">
+          <CardHeader className="bg-slate-50/60 dark:bg-white/[0.02] border-b border-slate-200/80 dark:border-white/5 py-4">
+            <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
+              <Activity className="w-4 h-4 text-teal-600 dark:text-teal-400" /> Clinical Telemetry
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-8">
+          <CardContent className="space-y-6 p-5">
             <div className="space-y-4">
                <div>
-                 <div className="flex justify-between mb-2">
-                   <span className="text-sm text-white/50">Overall Balance</span>
-                   <span className="font-mono text-primary">{metrics?.balance?.toFixed(1) || 0}%</span>
+                 <div className="flex justify-between mb-1.5 text-xs sm:text-sm">
+                   <span className="text-slate-600 dark:text-slate-400">Overall Balance Score</span>
+                   <span className="font-mono font-bold text-teal-600 dark:text-teal-400">{metrics?.balance?.toFixed(1) || 0}%</span>
                  </div>
-                 <Progress value={metrics?.balance || 0} className="h-2 bg-white/5" />
+                 <Progress value={metrics?.balance || 0} className="h-2 bg-slate-100 dark:bg-white/10" />
                </div>
                
                <div>
-                 <div className="flex justify-between mb-2">
-                   <span className="text-sm text-white/50">Lateral Sway</span>
-                   <span className="font-mono text-purple-400">{(metrics?.stability?.lateralSway || 0).toFixed(2)} cm</span>
+                 <div className="flex justify-between mb-1.5 text-xs sm:text-sm">
+                   <span className="text-slate-600 dark:text-slate-400">Lateral Sway Deviation</span>
+                   <span className="font-mono font-bold text-purple-600 dark:text-purple-400">{(metrics?.stability?.lateralSway || 0).toFixed(2)} cm</span>
                  </div>
-                 <Progress value={(metrics?.stability?.lateralSway || 0) * 5} className="h-2 bg-white/5" />
+                 <Progress value={(metrics?.stability?.lateralSway || 0) * 5} className="h-2 bg-slate-100 dark:bg-white/10" />
                </div>
             </div>
 
-            <div className="pt-6 border-t border-white/5">
-              <h4 className="text-xs uppercase tracking-widest font-bold text-white/40 mb-4 flex items-center gap-2">
-                <Info className="w-3 h-3" /> AI Clinical Assessment
+            <div className="pt-4 border-t border-slate-200/80 dark:border-white/10">
+              <h4 className="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-1.5">
+                <Info className="w-3.5 h-3.5" /> AI Kinematic Assessment
               </h4>
               <AnimatePresence mode="wait">
                 {isRecording ? (
@@ -271,10 +271,10 @@ const GaitLab = () => {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     key="recording"
-                    className="p-4 rounded-xl bg-primary/5 border border-primary/10"
+                    className="p-4 rounded-xl bg-teal-50 dark:bg-teal-950/20 border border-teal-200/60 dark:border-teal-800/30"
                   >
-                    <p className="text-sm leading-relaxed text-white/80">
-                      Analyzing gait cycles... detecting stance and swing phases. Tracking center of mass trajectory.
+                    <p className="text-xs sm:text-sm leading-relaxed text-teal-950 dark:text-teal-200">
+                      Tracking stance and swing phases across step cycles. Joint angles and center-of-mass trajectory in tolerance.
                     </p>
                   </motion.div>
                 ) : (
@@ -282,27 +282,27 @@ const GaitLab = () => {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     key="idle"
-                    className="p-6 rounded-xl bg-white/5 border border-white/10 text-center"
+                    className="p-5 rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/10 text-center"
                   >
-                    <Wind className="w-12 h-12 text-white/10 mx-auto mb-4" />
-                    <p className="text-sm text-white/40">
-                      Start recording to generate a live neural assessment based on gait patterns.
+                    <Wind className="w-8 h-8 text-slate-300 dark:text-white/20 mx-auto mb-2" />
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Start recording to generate live kinematic trajectory and neural assessment.
                     </p>
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
 
-            <div className="pt-6">
-               <Card className="bg-blue-500/10 border-blue-500/20 p-4">
-                 <div className="flex items-start gap-4">
-                   <div className="p-2 bg-blue-500/20 rounded-lg">
-                      <Ruler className="w-4 h-4 text-blue-400" />
+            <div className="pt-2">
+               <Card className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-800/30 p-3.5 rounded-xl">
+                 <div className="flex items-start gap-3">
+                   <div className="p-1.5 bg-blue-500/10 rounded-lg text-blue-600 dark:text-blue-400">
+                      <Ruler className="w-4 h-4" />
                    </div>
                    <div>
-                     <p className="text-xs font-bold text-blue-400 uppercase tracking-tighter">Clinical Note</p>
-                     <p className="text-sm text-blue-100/80 mt-1">
-                       Keep the camera at hip height for best joint angle estimation results.
+                     <p className="text-[11px] font-bold text-blue-700 dark:text-blue-300 uppercase tracking-wider">Protocol Guidance</p>
+                     <p className="text-xs text-blue-900 dark:text-blue-200 mt-0.5 leading-relaxed">
+                       Keep the camera stable at hip height with full lower-limb visibility.
                      </p>
                    </div>
                  </div>

@@ -11,7 +11,7 @@ import { Mic, Wand2 } from 'lucide-react';
 
 export default function VoiceEntryPage() {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 transition-colors duration-200">
       <GlassNavbar />
 
       <main className="flex-1 pt-28 pb-16">
@@ -23,20 +23,20 @@ export default function VoiceEntryPage() {
                 <div className="flex items-center gap-5">
                   <div className="relative">
                     <div className="p-5 bg-gradient-to-br from-blue-500/20 to-indigo-600/20 rounded-2xl border border-blue-500/20 shadow-lg shadow-blue-500/10">
-                      <Mic className="w-10 h-10 text-blue-400" />
+                      <Mic className="w-10 h-10 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full animate-pulse" />
                   </div>
                   <div>
-                    <h1 className="text-4xl font-bold text-white tracking-tight">
+                    <h1 className="text-4xl font-bold text-slate-900 dark:text-white tracking-tight">
                       Voice Entry
                     </h1>
-                    <p className="text-white/50 mt-2 text-lg">
+                    <p className="text-slate-600 dark:text-slate-400 mt-2 text-lg">
                       Speak to record your health readings
                     </p>
                   </div>
                 </div>
-                <Badge className="bg-blue-500/15 text-blue-400 border border-blue-500/25 px-4 py-2 text-sm font-medium rounded-full">
+                <Badge className="bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/30 px-4 py-2 text-sm font-medium rounded-full shadow-sm">
                   <Wand2 className="w-4 h-4 mr-2" />
                   Hands-free
                 </Badge>

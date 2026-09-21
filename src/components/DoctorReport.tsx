@@ -564,39 +564,25 @@ Please provide observations, potential concerns, and any recommendations for the
   const hasAnyData = bpReadings.length > 0 || glucoseReadings.length > 0 || healthReadings || patientProfile || medicalId;
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-teal-500/10 rounded-xl border border-teal-500/20">
-            <FileText className="w-6 h-6 text-teal-400" />
-          </div>
-          <div>
-            <h2 className="text-xl font-semibold text-white">Doctor Report</h2>
-            <p className="text-sm text-white/50">Generate comprehensive health reports</p>
-          </div>
-        </div>
-        <Badge className="bg-teal-500/15 text-teal-400 border border-teal-500/20 px-4 py-2 rounded-full self-start sm:self-auto">
-          <Sparkles className="w-4 h-4 mr-2" />
-          Generate Report
-        </Badge>
-      </div>
-
+    <div className="space-y-6">
       {/* Date Range Selector */}
-      <div className="bg-white/[0.04] backdrop-blur-sm border border-white/[0.06] rounded-2xl p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <Calendar className="w-5 h-5 text-white/60" />
-          <span className="text-white font-medium">Report Date Range</span>
+      <div className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm p-5 sm:p-6">
+        <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
+          <div className="flex items-center gap-2.5">
+            <Calendar className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+            <span className="text-slate-900 dark:text-white font-bold text-sm sm:text-base">Filter Historical Interval</span>
+          </div>
+          <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Selected: {dateRangeOptions.find(o => o.value === dateRange)?.label}</span>
         </div>
         <div className="flex flex-wrap gap-2">
           {dateRangeOptions.map((option) => (
             <button
               key={option.value}
               onClick={() => setDateRange(option.value)}
-              className={`px-5 py-2.5 rounded-full text-sm font-medium transition-all ${
+              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
                 dateRange === option.value
-                  ? 'bg-white/[0.12] text-white border border-white/[0.15]'
-                  : 'bg-white/[0.04] text-white/60 border border-transparent hover:bg-white/[0.08]'
+                  ? 'bg-teal-600 text-white shadow-sm'
+                  : 'bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-white/5'
               }`}
             >
               {option.label}
@@ -606,124 +592,123 @@ Please provide observations, potential concerns, and any recommendations for the
       </div>
 
       {/* Patient Summary Card */}
-      <div className="bg-white/[0.04] backdrop-blur-sm border border-white/[0.06] rounded-2xl p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-blue-500/15 rounded-xl">
-            <User className="w-5 h-5 text-blue-400" />
+      <div className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm p-5 sm:p-6">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="p-2 bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/30 rounded-xl">
+            <User className="w-5 h-5" />
           </div>
-          <h3 className="text-lg font-semibold text-white">Patient Summary</h3>
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Patient Demographics & Identifiers</h3>
         </div>
         {patientProfile || medicalId ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
-            <div>
-              <p className="text-white/40 text-sm mb-1">Name</p>
-              <p className="text-white font-medium">{patientProfile?.name || 'Not provided'}</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div className="p-3 bg-slate-50/70 dark:bg-white/[0.02] border border-slate-200/60 dark:border-white/5 rounded-xl">
+              <p className="text-slate-500 dark:text-slate-400 text-xs font-medium mb-1">Full Name</p>
+              <p className="text-slate-900 dark:text-white font-bold text-sm truncate">{patientProfile?.name || 'Not provided'}</p>
             </div>
-            <div>
-              <p className="text-white/40 text-sm mb-1">Age</p>
-              <p className="text-white font-medium">{patientProfile?.age ? `${patientProfile.age} years` : 'Not provided'}</p>
+            <div className="p-3 bg-slate-50/70 dark:bg-white/[0.02] border border-slate-200/60 dark:border-white/5 rounded-xl">
+              <p className="text-slate-500 dark:text-slate-400 text-xs font-medium mb-1">Age</p>
+              <p className="text-slate-900 dark:text-white font-bold text-sm">{patientProfile?.age ? `${patientProfile.age} yrs` : 'Not provided'}</p>
             </div>
-            <div>
-              <p className="text-white/40 text-sm mb-1">Gender</p>
-              <p className="text-white font-medium capitalize">{patientProfile?.gender || 'Not provided'}</p>
+            <div className="p-3 bg-slate-50/70 dark:bg-white/[0.02] border border-slate-200/60 dark:border-white/5 rounded-xl">
+              <p className="text-slate-500 dark:text-slate-400 text-xs font-medium mb-1">Gender</p>
+              <p className="text-slate-900 dark:text-white font-bold text-sm capitalize">{patientProfile?.gender || 'Not provided'}</p>
             </div>
-            <div>
-              <p className="text-white/40 text-sm mb-1">Blood Type</p>
-              <p className="text-white font-medium">{medicalId?.bloodType || 'Not provided'}</p>
+            <div className="p-3 bg-slate-50/70 dark:bg-white/[0.02] border border-slate-200/60 dark:border-white/5 rounded-xl">
+              <p className="text-slate-500 dark:text-slate-400 text-xs font-medium mb-1">Blood Type</p>
+              <p className="text-slate-900 dark:text-white font-bold text-sm">{medicalId?.bloodType || 'Not provided'}</p>
             </div>
-            <div>
-              <p className="text-white/40 text-sm mb-1">Allergies</p>
-              <p className="text-white font-medium">
+            <div className="p-3 bg-slate-50/70 dark:bg-white/[0.02] border border-slate-200/60 dark:border-white/5 rounded-xl">
+              <p className="text-slate-500 dark:text-slate-400 text-xs font-medium mb-1">Known Allergies</p>
+              <p className="text-slate-900 dark:text-white font-bold text-sm truncate">
                 {medicalId?.allergies?.length ? medicalId.allergies.join(', ') : 'None reported'}
               </p>
             </div>
           </div>
         ) : (
-          <div className="text-center py-8">
-            <User className="w-12 h-12 text-white/20 mx-auto mb-3" />
-            <p className="text-white/40">No patient information available</p>
-            <p className="text-white/30 text-sm mt-1">Add patient profile to see information here</p>
+          <div className="text-center py-6">
+            <User className="w-10 h-10 text-slate-300 dark:text-white/20 mx-auto mb-2" />
+            <p className="text-slate-600 dark:text-slate-400 text-sm">No patient profile configured</p>
           </div>
         )}
       </div>
 
       {/* Vital Signs Summary */}
-      <div className="bg-white/[0.04] backdrop-blur-sm border border-white/[0.06] rounded-2xl p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-rose-500/15 rounded-xl">
-            <Activity className="w-5 h-5 text-rose-400" />
+      <div className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm p-5 sm:p-6">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="p-2 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 border border-rose-200/60 dark:border-rose-800/30 rounded-xl">
+            <Activity className="w-5 h-5" />
           </div>
-          <h3 className="text-lg font-semibold text-white">Vital Signs Summary</h3>
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Vital Signs Telemetry</h3>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
           {/* Blood Pressure */}
-          <div className="bg-white/[0.03] border border-white/[0.04] rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Heart className="w-4 h-4 text-rose-400" />
-              <span className="text-white/50 text-xs">Blood Pressure</span>
+          <div className="bg-rose-50/40 dark:bg-rose-950/15 border border-rose-200/60 dark:border-rose-800/30 rounded-xl p-4">
+            <div className="flex items-center gap-1.5 mb-2">
+              <Heart className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+              <span className="text-rose-700 dark:text-rose-300 text-xs font-semibold">Blood Pressure</span>
             </div>
-            <div className="text-2xl font-bold text-white">
+            <div className="text-2xl font-black text-slate-900 dark:text-white">
               {bpStats ? `${bpStats.latest.systolic}/${bpStats.latest.diastolic}` : '--/--'}
             </div>
-            <p className="text-white/40 text-xs mt-1">mmHg (latest)</p>
+            <p className="text-slate-500 dark:text-slate-400 text-xs mt-1">mmHg (latest)</p>
             {bpStats && (
-              <p className="text-teal-400/80 text-xs mt-2">
+              <p className="text-teal-700 dark:text-teal-300 text-xs font-semibold mt-2">
                 Avg: {bpStats.avgSystolic}/{bpStats.avgDiastolic}
               </p>
             )}
           </div>
 
           {/* Glucose */}
-          <div className="bg-white/[0.03] border border-white/[0.04] rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Droplet className="w-4 h-4 text-emerald-400" />
-              <span className="text-white/50 text-xs">Glucose</span>
+          <div className="bg-emerald-50/40 dark:bg-emerald-950/15 border border-emerald-200/60 dark:border-emerald-800/30 rounded-xl p-4">
+            <div className="flex items-center gap-1.5 mb-2">
+              <Droplet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <span className="text-emerald-700 dark:text-emerald-300 text-xs font-semibold">Blood Glucose</span>
             </div>
-            <div className="text-2xl font-bold text-white">
+            <div className="text-2xl font-black text-slate-900 dark:text-white">
               {glucoseStats?.latest?.fasting || glucoseStats?.latest?.postMeal || '--'}
             </div>
-            <p className="text-white/40 text-xs mt-1">mg/dL (latest)</p>
+            <p className="text-slate-500 dark:text-slate-400 text-xs mt-1">mg/dL (latest)</p>
             {glucoseStats?.avgFasting && (
-              <p className="text-teal-400/80 text-xs mt-2">
+              <p className="text-teal-700 dark:text-teal-300 text-xs font-semibold mt-2">
                 Avg: {glucoseStats.avgFasting}
               </p>
             )}
           </div>
 
           {/* Heart Rate */}
-          <div className="bg-white/[0.03] border border-white/[0.04] rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Activity className="w-4 h-4 text-violet-400" />
-              <span className="text-white/50 text-xs">Heart Rate</span>
+          <div className="bg-purple-50/40 dark:bg-purple-950/15 border border-purple-200/60 dark:border-purple-800/30 rounded-xl p-4">
+            <div className="flex items-center gap-1.5 mb-2">
+              <Activity className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+              <span className="text-purple-700 dark:text-purple-300 text-xs font-semibold">Pulse</span>
             </div>
-            <div className="text-2xl font-bold text-white">
+            <div className="text-2xl font-black text-slate-900 dark:text-white">
               {healthReadings?.heartRate || '--'}
             </div>
-            <p className="text-white/40 text-xs mt-1">bpm</p>
+            <p className="text-slate-500 dark:text-slate-400 text-xs mt-1">bpm</p>
           </div>
 
           {/* Temperature */}
-          <div className="bg-white/[0.03] border border-white/[0.04] rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Thermometer className="w-4 h-4 text-amber-400" />
-              <span className="text-white/50 text-xs">Temperature</span>
+          <div className="bg-amber-50/40 dark:bg-amber-950/15 border border-amber-200/60 dark:border-amber-800/30 rounded-xl p-4">
+            <div className="flex items-center gap-1.5 mb-2">
+              <Thermometer className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              <span className="text-amber-700 dark:text-amber-300 text-xs font-semibold">Body Temp</span>
             </div>
-            <div className="text-2xl font-bold text-white">
+            <div className="text-2xl font-black text-slate-900 dark:text-white">
               {healthReadings?.temperature || '--'}
             </div>
-            <p className="text-white/40 text-xs mt-1">°F</p>
+            <p className="text-slate-500 dark:text-slate-400 text-xs mt-1">°F</p>
           </div>
 
           {/* SpO2 */}
-          <div className="bg-white/[0.03] border border-white/[0.04] rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Activity className="w-4 h-4 text-blue-400" />
-              <span className="text-white/50 text-xs">SpO2</span>
+          <div className="bg-blue-50/40 dark:bg-blue-950/15 border border-blue-200/60 dark:border-blue-800/30 rounded-xl p-4">
+            <div className="flex items-center gap-1.5 mb-2">
+              <Activity className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <span className="text-blue-700 dark:text-blue-300 text-xs font-semibold">Oxygen (SpO2)</span>
             </div>
-            <div className="text-2xl font-bold text-white">
+            <div className="text-2xl font-black text-slate-900 dark:text-white">
               {healthReadings?.spO2 || '--'}
             </div>
-            <p className="text-white/40 text-xs mt-1">%</p>
+            <p className="text-slate-500 dark:text-slate-400 text-xs mt-1">%</p>
           </div>
         </div>
       </div>
@@ -733,25 +718,26 @@ Please provide observations, potential concerns, and any recommendations for the
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* BP Trend */}
           {bpChartData.length > 0 && (
-            <div className="bg-white/[0.04] backdrop-blur-sm border border-white/[0.06] rounded-2xl p-6">
-              <div className="flex items-center gap-3 mb-6">
-                <TrendingUp className="w-5 h-5 text-rose-400" />
-                <h3 className="text-white font-medium">Blood Pressure Trend</h3>
+            <div className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm p-5 sm:p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <TrendingUp className="w-5 h-5 text-rose-500" />
+                <h3 className="text-slate-900 dark:text-white font-bold text-sm sm:text-base">Blood Pressure Trajectory</h3>
               </div>
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart data={bpChartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                  <XAxis dataKey="date" stroke="#ffffff30" tick={{ fill: '#ffffff50', fontSize: 10 }} />
-                  <YAxis domain={[60, 180]} stroke="#ffffff30" tick={{ fill: '#ffffff50', fontSize: 10 }} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.2)" />
+                  <XAxis dataKey="date" stroke="#94a3b8" tick={{ fill: '#64748b', fontSize: 10 }} />
+                  <YAxis domain={[60, 180]} stroke="#94a3b8" tick={{ fill: '#64748b', fontSize: 10 }} />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: 'rgba(10, 10, 15, 0.95)',
+                      backgroundColor: 'rgba(15, 23, 42, 0.95)',
                       border: '1px solid rgba(255,255,255,0.1)',
-                      borderRadius: '8px',
+                      borderRadius: '12px',
+                      color: '#fff',
                     }}
                   />
-                  <Line type="monotone" dataKey="systolic" stroke="#f43f5e" strokeWidth={2} dot={{ r: 3 }} name="Systolic" />
-                  <Line type="monotone" dataKey="diastolic" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 3 }} name="Diastolic" />
+                  <Line type="monotone" dataKey="systolic" stroke="#f43f5e" strokeWidth={2.5} dot={{ r: 3 }} name="Systolic" />
+                  <Line type="monotone" dataKey="diastolic" stroke="#8b5cf6" strokeWidth={2.5} dot={{ r: 3 }} name="Diastolic" />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -759,25 +745,26 @@ Please provide observations, potential concerns, and any recommendations for the
 
           {/* Glucose Trend */}
           {glucoseChartData.length > 0 && (
-            <div className="bg-white/[0.04] backdrop-blur-sm border border-white/[0.06] rounded-2xl p-6">
-              <div className="flex items-center gap-3 mb-6">
-                <TrendingUp className="w-5 h-5 text-emerald-400" />
-                <h3 className="text-white font-medium">Glucose Trend</h3>
+            <div className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm p-5 sm:p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <TrendingUp className="w-5 h-5 text-emerald-500" />
+                <h3 className="text-slate-900 dark:text-white font-bold text-sm sm:text-base">Glucose Trajectory</h3>
               </div>
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart data={glucoseChartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                  <XAxis dataKey="date" stroke="#ffffff30" tick={{ fill: '#ffffff50', fontSize: 10 }} />
-                  <YAxis domain={[50, 300]} stroke="#ffffff30" tick={{ fill: '#ffffff50', fontSize: 10 }} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.2)" />
+                  <XAxis dataKey="date" stroke="#94a3b8" tick={{ fill: '#64748b', fontSize: 10 }} />
+                  <YAxis domain={[50, 300]} stroke="#94a3b8" tick={{ fill: '#64748b', fontSize: 10 }} />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: 'rgba(10, 10, 15, 0.95)',
+                      backgroundColor: 'rgba(15, 23, 42, 0.95)',
                       border: '1px solid rgba(255,255,255,0.1)',
-                      borderRadius: '8px',
+                      borderRadius: '12px',
+                      color: '#fff',
                     }}
                   />
-                  <Line type="monotone" dataKey="fasting" stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} name="Fasting" />
-                  <Line type="monotone" dataKey="postMeal" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3 }} name="Post-Meal" />
+                  <Line type="monotone" dataKey="fasting" stroke="#10b981" strokeWidth={2.5} dot={{ r: 3 }} name="Fasting" />
+                  <Line type="monotone" dataKey="postMeal" stroke="#f59e0b" strokeWidth={2.5} dot={{ r: 3 }} name="Post-Meal" />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -788,164 +775,160 @@ Please provide observations, potential concerns, and any recommendations for the
       {/* Medications & Conditions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Medications */}
-        <div className="bg-white/[0.04] backdrop-blur-sm border border-white/[0.06] rounded-2xl p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-violet-500/15 rounded-xl">
-              <Pill className="w-5 h-5 text-violet-400" />
+        <div className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm p-5 sm:p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-purple-50 dark:bg-purple-950/20 text-purple-600 dark:text-purple-400 border border-purple-200/60 dark:border-purple-800/30 rounded-xl">
+              <Pill className="w-5 h-5" />
             </div>
-            <h3 className="text-lg font-semibold text-white">Medications</h3>
+            <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Prescribed Medications</h3>
           </div>
           {medicalId?.medications?.length ? (
             <div className="flex flex-wrap gap-2">
               {medicalId.medications.map((med, idx) => (
                 <span
                   key={idx}
-                  className="px-3 py-1.5 bg-violet-500/10 text-violet-300 border border-violet-500/20 rounded-full text-sm"
+                  className="px-3 py-1 bg-purple-50 dark:bg-purple-950/20 text-purple-700 dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/30 rounded-lg text-xs font-semibold"
                 >
                   {med}
                 </span>
               ))}
             </div>
           ) : (
-            <div className="text-center py-6">
-              <Pill className="w-10 h-10 text-white/20 mx-auto mb-2" />
-              <p className="text-white/40 text-sm">No medications recorded</p>
+            <div className="text-center py-5">
+              <Pill className="w-8 h-8 text-slate-300 dark:text-white/20 mx-auto mb-1.5" />
+              <p className="text-slate-500 dark:text-slate-400 text-xs">No active medications recorded</p>
             </div>
           )}
         </div>
 
         {/* Conditions */}
-        <div className="bg-white/[0.04] backdrop-blur-sm border border-white/[0.06] rounded-2xl p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-amber-500/15 rounded-xl">
-              <AlertCircle className="w-5 h-5 text-amber-400" />
+        <div className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm p-5 sm:p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/30 rounded-xl">
+              <AlertCircle className="w-5 h-5" />
             </div>
-            <h3 className="text-lg font-semibold text-white">Medical Conditions</h3>
+            <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Active Medical Conditions</h3>
           </div>
           {medicalId?.conditions?.length ? (
             <div className="flex flex-wrap gap-2">
               {medicalId.conditions.map((cond, idx) => (
                 <span
                   key={idx}
-                  className="px-3 py-1.5 bg-amber-500/10 text-amber-300 border border-amber-500/20 rounded-full text-sm"
+                  className="px-3 py-1 bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/30 rounded-lg text-xs font-semibold"
                 >
                   {cond}
                 </span>
               ))}
             </div>
           ) : (
-            <div className="text-center py-6">
-              <AlertCircle className="w-10 h-10 text-white/20 mx-auto mb-2" />
-              <p className="text-white/40 text-sm">No conditions recorded</p>
+            <div className="text-center py-5">
+              <AlertCircle className="w-8 h-8 text-slate-300 dark:text-white/20 mx-auto mb-1.5" />
+              <p className="text-slate-500 dark:text-slate-400 text-xs">No chronic conditions recorded</p>
             </div>
           )}
         </div>
       </div>
 
       {/* AI Summary */}
-      <div className="bg-white/[0.04] backdrop-blur-sm border border-white/[0.06] rounded-2xl p-6">
-        <div className="flex items-center justify-between mb-6">
+      <div className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm p-5 sm:p-6">
+        <div className="flex items-center justify-between flex-wrap gap-4 mb-5">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-500/15 rounded-xl">
-              <Sparkles className="w-5 h-5 text-emerald-400" />
+            <div className="p-2 bg-teal-50 dark:bg-teal-950/20 text-teal-600 dark:text-teal-400 border border-teal-200/60 dark:border-teal-800/30 rounded-xl">
+              <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-white">AI Clinical Summary</h3>
-              <p className="text-white/40 text-sm">Powered by Gemini AI</p>
+              <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Clinical AI Summary</h3>
+              <p className="text-slate-500 dark:text-slate-400 text-xs">Synthesized clinical observations for physician review</p>
             </div>
           </div>
           <Button
             onClick={generateAISummary}
             disabled={isGeneratingAI || !hasAnyData}
-            className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl px-4 py-2 h-auto disabled:opacity-50"
+            className="bg-teal-600 hover:bg-teal-700 text-white rounded-xl px-4 py-2 text-xs font-semibold h-auto shadow-sm disabled:opacity-50"
           >
             {isGeneratingAI ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Generating...
+                <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                Analyzing Metrics...
               </>
             ) : (
               <>
-                <Sparkles className="w-4 h-4 mr-2" />
-                Generate Summary
+                <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                Generate AI Synthesis
               </>
             )}
           </Button>
         </div>
         {aiError && (
-          <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl mb-4">
-            <p className="text-rose-400 text-sm">{aiError}</p>
+          <div className="p-4 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800/40 rounded-xl mb-4">
+            <p className="text-rose-700 dark:text-rose-300 text-xs font-medium">{aiError}</p>
           </div>
         )}
         {aiSummary ? (
-          <div className="p-5 bg-emerald-500/5 border border-emerald-500/20 rounded-xl">
-            <p className="text-white/80 leading-relaxed whitespace-pre-wrap">{aiSummary}</p>
+          <div className="p-5 bg-teal-50/40 dark:bg-teal-950/15 border border-teal-200/60 dark:border-teal-800/30 rounded-xl">
+            <p className="text-slate-800 dark:text-slate-200 text-sm leading-relaxed whitespace-pre-wrap">{aiSummary}</p>
           </div>
         ) : (
-          <div className="text-center py-8">
-            <Sparkles className="w-12 h-12 text-white/20 mx-auto mb-3" />
-            <p className="text-white/40">Click "Generate Summary" to create an AI-powered clinical summary</p>
-            {!import.meta.env.VITE_GEMINI_API_KEY && (
-              <p className="text-amber-400/80 text-sm mt-2">Note: Gemini API key not configured</p>
-            )}
+          <div className="text-center py-6">
+            <Sparkles className="w-10 h-10 text-slate-300 dark:text-white/20 mx-auto mb-2" />
+            <p className="text-slate-600 dark:text-slate-400 text-xs">Click "Generate AI Synthesis" to evaluate longitudinal trends</p>
           </div>
         )}
       </div>
 
       {/* Export Options */}
-      <div className="bg-white/[0.04] backdrop-blur-sm border border-white/[0.06] rounded-2xl p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-blue-500/15 rounded-xl">
-            <FileDown className="w-5 h-5 text-blue-400" />
+      <div className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm p-5 sm:p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2 bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/30 rounded-xl">
+            <FileDown className="w-5 h-5" />
           </div>
-          <h3 className="text-lg font-semibold text-white">Export & Share</h3>
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Export & Share Documents</h3>
         </div>
         <div className="flex flex-wrap gap-3">
           <Button
             onClick={handleCopyToClipboard}
             variant="ghost"
-            className="bg-white/[0.04] hover:bg-white/[0.08] text-white border border-white/[0.08] rounded-xl px-5 py-3 h-auto"
+            className="bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-semibold h-auto"
           >
-            <Copy className="w-4 h-4 mr-2" />
-            Copy to Clipboard
+            <Copy className="w-4 h-4 mr-2 text-slate-500" />
+            Copy Text Summary
           </Button>
           <Button
             onClick={handleDownloadPDF}
             variant="ghost"
-            className="bg-white/[0.04] hover:bg-white/[0.08] text-white border border-white/[0.08] rounded-xl px-5 py-3 h-auto"
+            className="bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-semibold h-auto"
           >
-            <Download className="w-4 h-4 mr-2" />
-            Download PDF
+            <Download className="w-4 h-4 mr-2 text-slate-500" />
+            Download PDF Report
           </Button>
           <Button
             onClick={handleShareEmail}
             variant="ghost"
-            className="bg-white/[0.04] hover:bg-white/[0.08] text-white border border-white/[0.08] rounded-xl px-5 py-3 h-auto"
+            className="bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-semibold h-auto"
           >
-            <Mail className="w-4 h-4 mr-2" />
+            <Mail className="w-4 h-4 mr-2 text-slate-500" />
             Share via Email
           </Button>
           <Button
             onClick={handlePrint}
             variant="ghost"
-            className="bg-white/[0.04] hover:bg-white/[0.08] text-white border border-white/[0.08] rounded-xl px-5 py-3 h-auto"
+            className="bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-semibold h-auto"
           >
-            <Printer className="w-4 h-4 mr-2" />
-            Print Report
+            <Printer className="w-4 h-4 mr-2 text-slate-500" />
+            Print Format
           </Button>
         </div>
       </div>
 
       {/* Empty State */}
       {!hasAnyData && (
-        <div className="bg-white/[0.04] backdrop-blur-sm border border-white/[0.06] rounded-2xl p-12 text-center">
-          <div className="w-20 h-20 bg-teal-500/10 rounded-3xl flex items-center justify-center mx-auto mb-6">
-            <FileText className="w-10 h-10 text-teal-400/60" />
+        <div className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm p-10 text-center">
+          <div className="w-14 h-14 bg-teal-50 dark:bg-teal-950/20 text-teal-600 dark:text-teal-400 rounded-2xl flex items-center justify-center mx-auto mb-3">
+            <FileText className="w-7 h-7" />
           </div>
-          <h3 className="text-xl font-semibold text-white mb-3">No Health Data Available</h3>
-          <p className="text-white/50 max-w-md mx-auto">
-            Start tracking your health metrics to generate comprehensive reports for your physician.
-            Add blood pressure readings, glucose levels, and update your patient profile.
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">No Clinical Data Recorded Yet</h3>
+          <p className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm max-w-md mx-auto">
+            Take a quick health lab screening or enter vitals to populate your physician report.
           </p>
         </div>
       )}

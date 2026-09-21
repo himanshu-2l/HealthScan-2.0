@@ -232,30 +232,39 @@ export const MentalHealthLab: React.FC = () => {
   const gad7Complete = !gad7Answers.some(a => a === undefined);
 
   return (
-    <div className="space-y-8 pt-24 min-h-screen pb-12">
+    <div className="space-y-6 pb-8">
       {/* Header */}
-      <div className="text-center space-y-4 glass-panel p-6 relative overflow-hidden max-w-4xl mx-auto">
-        <div className="absolute top-0 left-0 w-1 h-full bg-purple-500/50"></div>
-        <div className="flex items-center justify-center gap-3 mb-2">
-          <Brain className="w-8 h-8 text-purple-400" />
-          <h1 className="text-4xl font-bold text-foreground">Mental Health Lab</h1>
+      <div className="text-center space-y-3 bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm p-6 max-w-4xl mx-auto">
+        <div className="flex items-center justify-center gap-3 mb-1">
+          <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-600 dark:text-purple-400">
+            <Brain className="w-6 h-6" />
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">Mental Health Lab</h1>
         </div>
-        <p className="text-lg text-muted-foreground">PHQ-9 (Depression) and GAD-7 (Anxiety) Screening</p>
-        <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/20 mt-2">Self-Assessment</Badge>
+        <p className="text-sm text-slate-600 dark:text-slate-400">Standardized PHQ-9 (Depression) and GAD-7 (Anxiety) Clinical Screenings</p>
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-50 dark:bg-purple-950/20 text-purple-700 dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/30">
+          Clinical Self-Assessment
+        </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4">
+      <div className="max-w-4xl mx-auto px-1 sm:px-4">
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-          <TabsList className="grid w-full grid-cols-3 bg-white/5 border border-white/10">
-            <TabsTrigger value="phq9" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-white/5 transition-all text-muted-foreground">
+          <TabsList className="grid w-full grid-cols-3 bg-slate-100 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 p-1 rounded-xl">
+            <TabsTrigger 
+              value="phq9" 
+              className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 data-[state=active]:shadow-sm font-semibold text-slate-600 dark:text-slate-400 text-xs sm:text-sm transition-all"
+            >
               PHQ-9
             </TabsTrigger>
-            <TabsTrigger value="gad7" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-white/5 transition-all text-muted-foreground">
+            <TabsTrigger 
+              value="gad7" 
+              className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-purple-600 dark:data-[state=active]:text-purple-400 data-[state=active]:shadow-sm font-semibold text-slate-600 dark:text-slate-400 text-xs sm:text-sm transition-all"
+            >
               GAD-7
             </TabsTrigger>
             <TabsTrigger
               value="results"
-              className="data-[state=active]:bg-green-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-white/5 transition-all text-muted-foreground"
+              className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-emerald-600 dark:data-[state=active]:text-emerald-400 data-[state=active]:shadow-sm font-semibold text-slate-600 dark:text-slate-400 text-xs sm:text-sm transition-all disabled:opacity-40"
               disabled={!phq9Complete || !gad7Complete}
             >
               Results
@@ -272,7 +281,7 @@ export const MentalHealthLab: React.FC = () => {
             />
             {phq9Complete && (
               <div className="mt-4 text-center">
-                <Button onClick={() => setActiveTab('gad7')} className="bg-blue-600 hover:bg-blue-700">
+                <Button onClick={() => setActiveTab('gad7')} className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-sm px-6">
                   Continue to GAD-7 →
                 </Button>
               </div>
@@ -289,8 +298,8 @@ export const MentalHealthLab: React.FC = () => {
             />
             {gad7Complete && (
               <div className="mt-4 text-center">
-                <Button onClick={calculateResults} className="bg-purple-600 hover:bg-purple-700">
-                  View Results
+                <Button onClick={calculateResults} className="bg-teal-600 hover:bg-teal-700 text-white rounded-xl shadow-sm px-6">
+                  View Assessment Results
                 </Button>
               </div>
             )}
@@ -298,19 +307,18 @@ export const MentalHealthLab: React.FC = () => {
 
           <TabsContent value="results" className="mt-6">
             {results && (
-              <Card className="glass-panel border-0 relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-1 h-full bg-blue-500/50"></div>
-                <CardHeader className="bg-white/5 border-b border-white/5">
-                  <CardTitle className="text-foreground">Mental Health Assessment Results</CardTitle>
-                  <CardDescription className="text-muted-foreground">
+              <Card className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm overflow-hidden">
+                <CardHeader className="bg-slate-50/60 dark:bg-white/[0.02] border-b border-slate-200/80 dark:border-white/5 py-4 px-6">
+                  <CardTitle className="text-xl font-bold text-slate-900 dark:text-white">Mental Health Assessment Results</CardTitle>
+                  <CardDescription className="text-slate-600 dark:text-slate-400 text-xs">
                     Generated: {new Date(results.timestamp).toLocaleString()}
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-6 pt-6">
+                <CardContent className="space-y-6 p-6">
                   {/* Overall Score */}
-                  <div className="text-center p-6 bg-gradient-to-tr from-purple-500/10 to-blue-500/10 rounded-lg border border-purple-500/20">
-                    <div className="text-sm text-purple-200 mb-2">Overall Mental Health Score</div>
-                    <div className="text-5xl font-bold text-purple-400 mb-2 filter drop-shadow-md">{results.overall.overallScore}/100</div>
+                  <div className="text-center p-6 bg-purple-50/50 dark:bg-purple-950/20 rounded-2xl border border-purple-200/70 dark:border-purple-800/30">
+                    <div className="text-xs font-semibold text-purple-700 dark:text-purple-300 uppercase tracking-wider mb-1">Overall Mental Health Score</div>
+                    <div className="text-5xl font-black text-slate-900 dark:text-white mb-2">{results.overall.overallScore}<span className="text-xl font-normal text-slate-500">/100</span></div>
                     <Badge className={getSeverityBadge(results.overall.riskLevel)}>
                       {results.overall.riskLevel.toUpperCase()} RISK
                     </Badge>
@@ -318,48 +326,48 @@ export const MentalHealthLab: React.FC = () => {
 
                   {/* PHQ-9 Results */}
                   <div className="space-y-3">
-                    <h3 className="font-semibold text-lg text-foreground">PHQ-9 (Depression) Results</h3>
+                    <h3 className="font-bold text-base text-slate-900 dark:text-white">PHQ-9 (Depression) Results</h3>
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-blue-500/10 p-4 rounded border border-blue-500/20">
-                        <div className="text-sm text-blue-200">Score</div>
-                        <div className="text-2xl font-bold text-blue-400">{results.phq9.score}/27</div>
+                      <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-xl border border-blue-200/60 dark:border-blue-800/30">
+                        <div className="text-xs font-semibold text-blue-700 dark:text-blue-300">Score</div>
+                        <div className="text-2xl font-black text-slate-900 dark:text-white">{results.phq9.score}<span className="text-sm font-normal text-slate-500">/27</span></div>
                       </div>
-                      <div className="bg-blue-500/10 p-4 rounded border border-blue-500/20">
-                        <div className="text-sm text-blue-200">Severity</div>
-                        <Badge className={`mt-2 ${getSeverityBadge(results.phq9.severity)}`}>
+                      <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-xl border border-blue-200/60 dark:border-blue-800/30">
+                        <div className="text-xs font-semibold text-blue-700 dark:text-blue-300">Severity</div>
+                        <Badge className={`mt-1.5 ${getSeverityBadge(results.phq9.severity)}`}>
                           {results.phq9.severity.toUpperCase()}
                         </Badge>
                       </div>
                     </div>
-                    <div className="bg-blue-500/5 p-4 rounded-lg border border-blue-500/10">
-                      <p className="text-muted-foreground">{results.phq9.interpretation}</p>
+                    <div className="bg-slate-50 dark:bg-white/[0.02] p-4 rounded-xl border border-slate-200/80 dark:border-white/10">
+                      <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{results.phq9.interpretation}</p>
                     </div>
                   </div>
 
                   {/* GAD-7 Results */}
                   <div className="space-y-3">
-                    <h3 className="font-semibold text-lg text-foreground">GAD-7 (Anxiety) Results</h3>
+                    <h3 className="font-bold text-base text-slate-900 dark:text-white">GAD-7 (Anxiety) Results</h3>
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-green-500/10 p-4 rounded border border-green-500/20">
-                        <div className="text-sm text-green-200">Score</div>
-                        <div className="text-2xl font-bold text-green-400">{results.gad7.score}/21</div>
+                      <div className="bg-emerald-50 dark:bg-emerald-950/20 p-4 rounded-xl border border-emerald-200/60 dark:border-emerald-800/30">
+                        <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">Score</div>
+                        <div className="text-2xl font-black text-slate-900 dark:text-white">{results.gad7.score}<span className="text-sm font-normal text-slate-500">/21</span></div>
                       </div>
-                      <div className="bg-green-500/10 p-4 rounded border border-green-500/20">
-                        <div className="text-sm text-green-200">Severity</div>
-                        <Badge className={`mt-2 ${getSeverityBadge(results.gad7.severity)}`}>
+                      <div className="bg-emerald-50 dark:bg-emerald-950/20 p-4 rounded-xl border border-emerald-200/60 dark:border-emerald-800/30">
+                        <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">Severity</div>
+                        <Badge className={`mt-1.5 ${getSeverityBadge(results.gad7.severity)}`}>
                           {results.gad7.severity.toUpperCase()}
                         </Badge>
                       </div>
                     </div>
-                    <div className="bg-green-500/5 p-4 rounded-lg border border-green-500/10">
-                      <p className="text-muted-foreground">{results.gad7.interpretation}</p>
+                    <div className="bg-slate-50 dark:bg-white/[0.02] p-4 rounded-xl border border-slate-200/80 dark:border-white/10">
+                      <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{results.gad7.interpretation}</p>
                     </div>
                   </div>
 
                   {/* Recommendations */}
                   <div className="space-y-3">
-                    <h3 className="font-semibold text-lg text-foreground">Recommendations</h3>
-                    <ul className="list-disc list-inside space-y-2 text-sm text-muted-foreground/90">
+                    <h3 className="font-bold text-base text-slate-900 dark:text-white">Clinical Recommendations</h3>
+                    <ul className="list-disc list-inside space-y-1.5 text-sm text-slate-600 dark:text-slate-300">
                       {results.overall.recommendations.map((rec, idx) => (
                         <li key={idx}>{rec}</li>
                       ))}
@@ -367,8 +375,8 @@ export const MentalHealthLab: React.FC = () => {
                   </div>
 
                   {/* Disclaimer */}
-                  <div className="text-xs text-yellow-100/80 p-4 bg-yellow-500/10 rounded-lg border-l-4 border-yellow-500 border-y border-r border-yellow-500/20">
-                    <strong className="text-yellow-400">⚠️ Important Disclaimer:</strong> These screening tools are for self-assessment purposes only and are not diagnostic.
+                  <div className="text-xs text-amber-800 dark:text-amber-200 p-4 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200/80 dark:border-amber-800/40 leading-relaxed">
+                    <strong className="text-amber-900 dark:text-amber-300">⚠️ Important Disclaimer:</strong> These screening tools are for self-assessment purposes only and are not diagnostic.
                     They do not replace professional mental health evaluation. If you are experiencing severe symptoms or thoughts of self-harm,
                     please seek immediate professional help or contact a crisis helpline.
                   </div>

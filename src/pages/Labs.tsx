@@ -170,11 +170,17 @@ const LabsPage: React.FC = () => {
         <header className="sticky top-0 z-40 w-full bg-white/95 dark:bg-[#070A11]/95 backdrop-blur-md border-b border-slate-200 dark:border-white/[0.08] transition-colors">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-3">
             <button
-              onClick={() => navigate('/app')}
+              onClick={() => {
+                if (window.history.length > 2) {
+                  navigate(-1);
+                } else {
+                  navigate('/labs');
+                }
+              }}
               className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] border border-slate-200 dark:border-white/[0.08] text-sm font-semibold text-slate-700 dark:text-slate-200 transition active:scale-[0.98]"
             >
               <ArrowRight className="w-4 h-4 rotate-180" />
-              <span>Back to Labs</span>
+              <span>Back</span>
             </button>
             <div className="ml-auto flex items-center gap-2">
               <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center text-slate-950 font-bold text-[10px]">

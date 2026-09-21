@@ -51,21 +51,21 @@ export default function CaregiverDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 transition-colors duration-200">
       {/* Simple Header - Standalone, no main navbar */}
-      <header className="sticky top-0 z-50 bg-slate-900/80 backdrop-blur-lg border-b border-white/10">
+      <header className="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-b border-slate-200/80 dark:border-white/10">
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             {/* Logo and Title */}
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-teal-500/20 rounded-xl border border-teal-500/30">
-                <Shield className="w-6 h-6 text-teal-400" />
+              <div className="p-2 bg-teal-50 dark:bg-teal-500/20 rounded-xl border border-teal-200/80 dark:border-teal-500/30">
+                <Shield className="w-6 h-6 text-teal-600 dark:text-teal-400" />
               </div>
               <div>
-                <h1 className="text-lg md:text-xl font-bold text-white">
+                <h1 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white">
                   HealthScan
                 </h1>
-                <p className="text-xs md:text-sm text-teal-400">
+                <p className="text-xs md:text-sm font-medium text-teal-600 dark:text-teal-400">
                   Caregiver View
                 </p>
               </div>
@@ -77,7 +77,7 @@ export default function CaregiverDashboard() {
                 variant="ghost"
                 size="sm"
                 onClick={handleGoBack}
-                className="text-white/60 hover:text-white hover:bg-white/5"
+                className="text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 <span className="hidden sm:inline">Back</span>
@@ -86,7 +86,7 @@ export default function CaregiverDashboard() {
                 variant="ghost"
                 size="sm"
                 onClick={handleGoHome}
-                className="text-white/60 hover:text-white hover:bg-white/5"
+                className="text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5"
               >
                 <Home className="w-4 h-4 mr-2" />
                 <span className="hidden sm:inline">Home</span>
@@ -98,13 +98,13 @@ export default function CaregiverDashboard() {
 
       {/* Patient Name Banner */}
       {patientName && (
-        <div className="bg-teal-500/10 border-b border-teal-500/20">
+        <div className="bg-teal-50/80 dark:bg-teal-500/10 border-b border-teal-200/60 dark:border-teal-500/20">
           <div className="max-w-4xl mx-auto px-4 py-3">
             <div className="flex items-center gap-2">
-              <Heart className="w-5 h-5 text-teal-400" />
-              <span className="text-white/80">
+              <Heart className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+              <span className="text-slate-700 dark:text-white/80">
                 Monitoring:{' '}
-                <span className="font-semibold text-white">{patientName}</span>
+                <span className="font-semibold text-slate-900 dark:text-white">{patientName}</span>
               </span>
             </div>
           </div>
@@ -117,12 +117,12 @@ export default function CaregiverDashboard() {
       </main>
 
       {/* Simple Footer */}
-      <footer className="border-t border-white/10 py-6 mt-auto">
+      <footer className="border-t border-slate-200/80 dark:border-white/10 py-6 mt-auto bg-white/40 dark:bg-transparent">
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <p className="text-white/40 text-sm">
+          <p className="text-slate-500 dark:text-white/40 text-sm">
             HealthScan Caregiver Dashboard
           </p>
-          <p className="text-white/30 text-xs mt-2">
+          <p className="text-slate-400 dark:text-white/30 text-xs mt-2">
             Read-only view • Data refreshes every 5 minutes
           </p>
         </div>

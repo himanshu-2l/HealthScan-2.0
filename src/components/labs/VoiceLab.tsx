@@ -894,56 +894,57 @@ export const VoiceLab: React.FC = () => {
 
 
   return (
-    <div className="space-y-8 pt-24 min-h-screen pb-12">
+    <div className="space-y-6 pb-8">
       {/* Header */}
-      <div className="text-center space-y-4 glass-panel p-8 max-w-4xl mx-auto rounded-3xl relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-1 h-full bg-purple-500/50"></div>
-        <div className="flex items-center justify-center gap-3 mb-2">
-          <Mic className="w-8 h-8 text-purple-400" />
-          <h1 className="text-4xl font-bold text-foreground">Voice & Speech Lab</h1>
+      <div className="text-center space-y-3 bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 p-6 shadow-sm max-w-4xl mx-auto">
+        <div className="flex items-center justify-center gap-3 mb-1">
+          <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400">
+            <Mic className="w-6 h-6" />
+          </div>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Voice & Speech Lab</h1>
         </div>
-        <p className="text-lg text-muted-foreground">
-          Analyze vocal patterns, pitch stability, and speech characteristics for early detection insights
+        <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 max-w-xl mx-auto">
+          Analyze vocal acoustic stability, fundamental frequency, and speech biomarkers
         </p>
-        <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/20 mt-2 flex items-center gap-1 w-fit mx-auto">
-          <Activity className="w-3 h-3" />
-          Real-time Processing
+        <Badge className="bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/40 mt-1 flex items-center gap-1.5 w-fit mx-auto text-xs px-3 py-1 rounded-full">
+          <Activity className="w-3.5 h-3.5" />
+          Real-time Audio Processing
         </Badge>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="max-w-4xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Recording Section */}
-          <Card className="glass-panel border-0">
-            <CardHeader className="bg-white/5 border-b border-white/5">
-              <CardTitle className="text-foreground flex items-center gap-2">
-                <Mic className="w-5 h-5 text-primary" />
-                Voice Capture
+          <Card className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm overflow-hidden">
+            <CardHeader className="bg-slate-50/60 dark:bg-white/[0.02] border-b border-slate-200/80 dark:border-white/5 py-4">
+              <CardTitle className="text-slate-900 dark:text-white text-base font-semibold flex items-center gap-2">
+                <Mic className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                Acoustic Capture
               </CardTitle>
-              <CardDescription className="text-muted-foreground">
-                Record a sustained 'aaaa' sound for 5 seconds for optimal analysis
+              <CardDescription className="text-xs text-slate-500 dark:text-slate-400">
+                Hold button and vocalize a steady 'AAAA' sound for 5 seconds
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6 pt-6">
+            <CardContent className="space-y-5 p-5">
               {/* Status */}
               <div className="text-center">
-                <p className="text-sm text-muted-foreground mb-4">{status}</p>
+                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mb-3">{status}</p>
                 {permission === "granted" && (
-                  <div className="mb-4">
-                    <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs ${audioDetected
-                      ? 'bg-green-500/20 text-green-300'
-                      : 'bg-white/10 text-muted-foreground'
+                  <div className="mb-3">
+                    <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${audioDetected
+                      ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/30'
+                      : 'bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-400 border border-slate-200/80 dark:border-white/10'
                       }`}>
-                      <div className={`w-2 h-2 rounded-full ${audioDetected ? 'bg-green-500 animate-pulse' : 'bg-gray-400'
+                      <div className={`w-2 h-2 rounded-full ${audioDetected ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'
                         }`}></div>
-                      {audioDetected ? 'Audio Detected' : 'No Audio Input'}
+                      {audioDetected ? 'Audio Detected' : 'Awaiting Sound'}
                     </div>
                   </div>
                 )}
                 {recordingDuration > 0 && (
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <Progress value={(recordingDuration / 5) * 100} className="w-full h-2" />
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
                       {recordingDuration.toFixed(1)}s / 5.0s
                     </p>
                   </div>
@@ -960,27 +961,27 @@ export const VoiceLab: React.FC = () => {
                   onMouseUp={stopRecording}
                   onTouchStart={startRecording}
                   onTouchEnd={stopRecording}
-                  className={`relative min-w-[200px] h-16 rounded-full text-lg shadow-lg transition-all transform active:scale-95 ${isRecording ? 'animate-pulse ring-4 ring-red-500/30' : ''
+                  className={`relative min-w-[200px] h-14 rounded-2xl text-base font-semibold shadow-sm transition-all transform active:scale-95 ${isRecording ? 'animate-pulse ring-4 ring-red-500/30 bg-red-600' : 'bg-teal-600 hover:bg-teal-700 text-white'
                     }`}
                 >
                   {isAnalyzing ? (
                     <>
-                      <Brain className="w-6 h-6 mr-2 animate-pulse" />
-                      Analyzing...
+                      <Brain className="w-5 h-5 mr-2 animate-pulse" />
+                      Analyzing Voice...
                     </>
                   ) : isRecording ? (
                     <>
-                      <Square className="w-6 h-6 mr-2" />
-                      Release to Stop
+                      <Square className="w-5 h-5 mr-2" />
+                      Release to Finish
                     </>
                   ) : permission === "granted" ? (
                     <>
-                      <Mic className="w-6 h-6 mr-2" />
+                      <Mic className="w-5 h-5 mr-2" />
                       Hold to Record
                     </>
                   ) : (
                     <>
-                      <MicOff className="w-6 h-6 mr-2" />
+                      <MicOff className="w-5 h-5 mr-2" />
                       Enable Microphone
                     </>
                   )}
@@ -989,40 +990,29 @@ export const VoiceLab: React.FC = () => {
 
               {/* Visualizations */}
               {permission === "granted" && (
-                <div className="space-y-4">
+                <div className="space-y-3.5 pt-2">
                   {/* Debug Panel */}
-                  <div className="p-3 bg-black/20 rounded-lg text-xs border border-white/10">
-                    <div className="font-medium mb-2 text-foreground">Debug Info:</div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className={rms > 0.001 ? 'text-green-400 font-semibold' : 'text-muted-foreground'}>
+                  <div className="p-3.5 bg-slate-50 dark:bg-black/30 rounded-xl text-xs border border-slate-200/80 dark:border-white/10">
+                    <div className="font-semibold mb-2 text-slate-800 dark:text-slate-200">Acoustic Telemetry:</div>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className={rms > 0.001 ? 'text-emerald-700 dark:text-emerald-300 font-semibold' : 'text-slate-500'}>
                         RMS: {rms.toFixed(4)}
                       </div>
-                      <div className={f0 ? 'text-blue-400 font-semibold' : 'text-muted-foreground'}>
+                      <div className={f0 ? 'text-blue-700 dark:text-blue-300 font-semibold' : 'text-slate-500'}>
                         F0: {f0 ? `${f0.toFixed(1)} Hz` : 'None'}
                       </div>
-                      <div className={jitter ? 'text-purple-400 font-semibold' : 'text-muted-foreground'}>
+                      <div className={jitter ? 'text-purple-700 dark:text-purple-300 font-semibold' : 'text-slate-500'}>
                         Jitter: {jitter ? jitter.toFixed(4) : 'None'}
                       </div>
-                      <div className={audioDetected ? 'text-green-400 font-semibold' : 'text-red-400'}>
-                        Audio: {audioDetected ? 'Yes' : 'No'}
+                      <div className={audioDetected ? 'text-emerald-700 dark:text-emerald-300 font-semibold' : 'text-red-600 dark:text-red-400'}>
+                        Signal: {audioDetected ? 'Active' : 'Silent'}
                       </div>
                     </div>
-                    <div className="mt-2 text-xs text-muted-foreground/80">
-                      Tip: Speak "AAAA" loudly and clearly for best results
-                    </div>
-                    {peakRms.current > 0 && (
-                      <div className="mt-2 p-2 bg-blue-500/10 rounded text-xs border border-blue-500/20">
-                        <div className="font-medium text-blue-300">Peak Values:</div>
-                        <div className="text-muted-foreground">Peak RMS: {peakRms.current.toFixed(4)}</div>
-                        <div className="text-muted-foreground">Peak F0: {peakF0.current ? `${peakF0.current.toFixed(1)} Hz` : 'None'}</div>
-                        <div className="text-muted-foreground">Peak Jitter: {peakJitter.current ? peakJitter.current.toFixed(4) : 'None'}</div>
-                      </div>
-                    )}
                   </div>
 
-                  <div className="space-y-2">
-                    <div className="text-sm text-foreground font-medium mb-2">Frequency Spectrum</div>
-                    <div className="w-full h-24 bg-black/40 rounded-lg border border-white/10 overflow-hidden">
+                  <div className="space-y-1.5">
+                    <div className="text-xs text-slate-700 dark:text-slate-300 font-medium">Frequency Spectrum</div>
+                    <div className="w-full h-24 bg-slate-950 rounded-xl border border-slate-200/80 dark:border-white/10 overflow-hidden shadow-inner">
                       <CanvasSpectrum data={spectrum} height={96} />
                     </div>
                   </div>
@@ -1032,69 +1022,68 @@ export const VoiceLab: React.FC = () => {
           </Card>
 
           {/* Analysis Section */}
-          <Card className="glass-panel border-0">
-            <CardHeader className="bg-white/5 border-b border-white/5">
-              <CardTitle className="text-foreground flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-green-400" />
+          <Card className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm overflow-hidden">
+            <CardHeader className="bg-slate-50/60 dark:bg-white/[0.02] border-b border-slate-200/80 dark:border-white/5 py-4">
+              <CardTitle className="text-slate-900 dark:text-white text-base font-semibold flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 Real-time Analysis
               </CardTitle>
-              <CardDescription className="text-muted-foreground">
-                Voice characteristics and health indicators
+              <CardDescription className="text-xs text-slate-500 dark:text-slate-400">
+                Voice characteristics and stability indicators
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6 pt-6">
+            <CardContent className="space-y-5 p-5">
               {/* Metrics Grid */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                  <div className="text-sm text-blue-200 font-medium mb-1">Pitch (F0)</div>
-                  <div className="text-xl font-bold text-blue-400">
+              <div className="grid grid-cols-2 gap-3.5">
+                <div className="text-center p-3.5 rounded-xl bg-blue-50 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-800/30">
+                  <div className="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wider mb-1">Pitch (F0)</div>
+                  <div className="text-xl font-bold text-blue-700 dark:text-blue-300">
                     {f0 ? `${f0.toFixed(1)} Hz` : "—"}
                   </div>
-                  <div className="text-xs text-blue-200/70 mt-1">
+                  <div className="text-[11px] text-blue-600/70 dark:text-blue-400/70 mt-0.5">
                     {f0 ? hzToNote(f0) : "No signal"}
                   </div>
                 </div>
 
-                <div className="text-center p-4 rounded-lg bg-green-500/10 border border-green-500/20">
-                  <div className="text-sm text-green-200 font-medium mb-1">Loudness</div>
-                  <div className="text-xl font-bold text-green-400">{rms.toFixed(3)}</div>
-                  <div className="text-xs text-green-200/70 mt-1">
+                <div className="text-center p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-800/30">
+                  <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider mb-1">Loudness</div>
+                  <div className="text-xl font-bold text-emerald-700 dark:text-emerald-300">{rms.toFixed(3)}</div>
+                  <div className="text-[11px] text-emerald-600/70 dark:text-emerald-400/70 mt-0.5">
                     {rms < 0.03 ? "Low" : rms > 0.12 ? "High" : "Normal"}
                   </div>
                 </div>
 
-                <div className="text-center p-4 rounded-lg bg-purple-500/10 border border-purple-500/20">
-                  <div className="text-sm text-purple-200 font-medium mb-1">Jitter</div>
-                  <div className="text-xl font-bold text-purple-400">
+                <div className="text-center p-3.5 rounded-xl bg-purple-50 dark:bg-purple-950/20 border border-purple-200/60 dark:border-purple-800/30">
+                  <div className="text-xs font-semibold text-purple-700 dark:text-purple-300 uppercase tracking-wider mb-1">Jitter (Instability)</div>
+                  <div className="text-xl font-bold text-purple-700 dark:text-purple-300">
                     {jitter ? jitter.toFixed(3) : "—"}
                   </div>
-                  <div className="text-xs text-purple-200/70 mt-1">
-                    {jitter && jitter > 0.06 ? "High variability" : "Stable"}
+                  <div className="text-[11px] text-purple-600/70 dark:text-purple-400/70 mt-0.5">
+                    {jitter && jitter > 0.06 ? "Fluctuating" : "Stable"}
                   </div>
                 </div>
 
-                <div className="text-center p-4 rounded-lg bg-orange-500/10 border border-orange-500/20">
-                  <div className="text-sm text-orange-200 font-medium mb-1">Quality Score</div>
-                  <div className="text-xl font-bold text-orange-400">{((1 - riskScore) * 100).toFixed(0)}%</div>
-                  <div className="text-xs text-orange-200/70 mt-1">
-                    {riskScore < 0.3 ? "Good" : riskScore < 0.6 ? "Fair" : "Poor"}
+                <div className="text-center p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/30">
+                  <div className="text-xs font-semibold text-amber-700 dark:text-amber-300 uppercase tracking-wider mb-1">Quality Score</div>
+                  <div className="text-xl font-bold text-amber-700 dark:text-amber-300">{((1 - riskScore) * 100).toFixed(0)}%</div>
+                  <div className="text-[11px] text-amber-600/70 dark:text-amber-400/70 mt-0.5">
+                    {riskScore < 0.3 ? "Optimal" : riskScore < 0.6 ? "Moderate" : "Checkup Recommended"}
                   </div>
                 </div>
               </div>
 
               {/* Risk Assessment */}
-              <div className="space-y-3">
-                <div className="text-sm text-foreground font-medium">Screening Assessment</div>
+              <div className="space-y-2">
+                <div className="text-xs text-slate-700 dark:text-slate-300 font-semibold">Screening Assessment Gauge</div>
                 <div className="relative">
                   <Progress
                     value={riskScore * 100}
-                    className="h-3 bg-white/10"
+                    className="h-2.5 bg-slate-100 dark:bg-white/10"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-r from-green-500 via-yellow-500 to-red-500 rounded-full opacity-20"></div>
                 </div>
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Low Risk</span>
-                  <span>High Risk</span>
+                <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400">
+                  <span>Normal Variation</span>
+                  <span>Acoustic Deviance</span>
                 </div>
               </div>
 
@@ -1103,7 +1092,7 @@ export const VoiceLab: React.FC = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex-1 glass-hover text-foreground border-white/10"
+                  className="flex-1 rounded-xl border-slate-200/80 dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-slate-200"
                   onClick={saveSession}
                   disabled={!analysisResults}
                 >
@@ -1112,9 +1101,8 @@ export const VoiceLab: React.FC = () => {
                 </Button>
               </div>
 
-              <div className="text-xs text-yellow-200/80 p-3 bg-yellow-500/10 rounded-lg border-l-4 border-yellow-500">
-                <strong className="text-yellow-200">Note:</strong> This is a screening tool for research purposes only.
-                Results are not diagnostic and should not replace professional medical evaluation.
+              <div className="text-xs text-amber-800 dark:text-amber-300 p-3 bg-amber-50/80 dark:bg-amber-950/20 rounded-xl border border-amber-200/80 dark:border-amber-800/30 leading-relaxed">
+                <strong className="text-amber-900 dark:text-amber-200">Note:</strong> Voice analysis measures acoustic features and is designed for early-risk detection.
               </div>
             </CardContent>
           </Card>
@@ -1123,79 +1111,78 @@ export const VoiceLab: React.FC = () => {
 
       {/* Inline Advanced Analysis Report - Only shown when analysis is complete */}
       {analysisResults && (
-        <div className="max-w-4xl mx-auto px-4">
-          <Card ref={reportRef} className="glass-panel border-0 relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-1 h-full bg-purple-500/50"></div>
-            <CardHeader className="bg-white/5 border-b border-white/5">
-              <CardTitle className="text-foreground flex items-center gap-2">
-                <FileText className="w-5 h-5 text-purple-400" />
-                Advanced Voice Analysis Report
+        <div className="max-w-4xl mx-auto">
+          <Card ref={reportRef} className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm overflow-hidden">
+            <CardHeader className="bg-slate-50/60 dark:bg-white/[0.02] border-b border-slate-200/80 dark:border-white/5 py-4">
+              <CardTitle className="text-slate-900 dark:text-white font-semibold text-lg flex items-center gap-2">
+                <FileText className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                Advanced Voice Biomarker Report
               </CardTitle>
-              <CardDescription className="text-muted-foreground">
-                Comprehensive clinical analysis and recommendations
+              <CardDescription className="text-xs text-slate-500 dark:text-slate-400">
+                Acoustic analysis findings and risk screening
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6 pt-6 bg-transparent">
-              <div className="text-sm text-muted-foreground">
+            <CardContent className="space-y-6 p-5 sm:p-6">
+              <div className="text-xs text-slate-500 dark:text-slate-400">
                 Generated: {new Date(analysisResults.timestamp).toLocaleString()}
               </div>
 
               {/* Key Metrics Summary */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                  <div className="text-sm text-blue-200">Pitch (F0)</div>
-                  <div className="text-xl font-bold text-blue-400">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
+                <div className="text-center p-3.5 rounded-xl bg-blue-50 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-800/30">
+                  <div className="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wider mb-1">Pitch (F0)</div>
+                  <div className="text-xl font-bold text-blue-700 dark:text-blue-300">
                     {analysisResults.pitch ? `${analysisResults.pitch.toFixed(1)} Hz` : '—'}
                   </div>
-                  <div className="text-xs text-blue-200/70">
+                  <div className="text-[11px] text-blue-600/70 dark:text-blue-400/70">
                     {analysisResults.pitch && analysisResults.note ? analysisResults.note : 'No signal'}
                   </div>
                 </div>
-                <div className="text-center p-4 rounded-lg bg-purple-500/10 border border-purple-500/20">
-                  <div className="text-sm text-purple-200">Jitter</div>
-                  <div className="text-xl font-bold text-purple-400">
+                <div className="text-center p-3.5 rounded-xl bg-purple-50 dark:bg-purple-950/20 border border-purple-200/60 dark:border-purple-800/30">
+                  <div className="text-xs font-semibold text-purple-700 dark:text-purple-300 uppercase tracking-wider mb-1">Jitter</div>
+                  <div className="text-xl font-bold text-purple-700 dark:text-purple-300">
                     {analysisResults.jitter ? `${(analysisResults.jitter * 100).toFixed(1)}%` : '—'}
                   </div>
-                  <div className="text-xs text-purple-200/70">
-                    {analysisResults.jitter && analysisResults.jitter > 0.06 ? 'High variability' : 'Stable'}
+                  <div className="text-[11px] text-purple-600/70 dark:text-purple-400/70">
+                    {analysisResults.jitter && analysisResults.jitter > 0.06 ? 'Elevated variability' : 'Stable'}
                   </div>
                 </div>
-                <div className="text-center p-4 rounded-lg bg-green-500/10 border border-green-500/20">
-                  <div className="text-sm text-green-200">Quality Score</div>
-                  <div className="text-xl font-bold text-green-400">{analysisResults.qualityScore.toFixed(0)}%</div>
-                  <div className="text-xs text-green-200/70">
-                    {analysisResults.qualityScore >= 70 ? 'Good' : analysisResults.qualityScore >= 40 ? 'Fair' : 'Poor'}
+                <div className="text-center p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-800/30">
+                  <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider mb-1">Quality Score</div>
+                  <div className="text-xl font-bold text-emerald-700 dark:text-emerald-300">{analysisResults.qualityScore.toFixed(0)}%</div>
+                  <div className="text-[11px] text-emerald-600/70 dark:text-emerald-400/70">
+                    {analysisResults.qualityScore >= 70 ? 'Optimal' : analysisResults.qualityScore >= 40 ? 'Moderate' : 'Irregular'}
                   </div>
                 </div>
-                <div className="text-center p-4 rounded-lg bg-orange-500/10 border border-orange-500/20">
-                  <div className="text-sm text-orange-200">Overall Risk</div>
-                  <div className="text-xl font-bold text-orange-400">{analysisResults.riskLevel}</div>
-                  <div className="text-xs text-orange-200/70">Screening Level</div>
+                <div className="text-center p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/30">
+                  <div className="text-xs font-semibold text-amber-700 dark:text-amber-300 uppercase tracking-wider mb-1">Risk Profile</div>
+                  <div className="text-xl font-bold text-amber-700 dark:text-amber-300">{analysisResults.riskLevel}</div>
+                  <div className="text-[11px] text-amber-600/70 dark:text-amber-400/70">Screening Level</div>
                 </div>
               </div>
 
               {/* Clinical Findings */}
               {analysisResults.clinicalFindings && analysisResults.clinicalFindings.length > 0 && (
                 <div className="space-y-3">
-                  <h3 className="font-semibold text-lg text-foreground">Clinical Findings</h3>
+                  <h3 className="font-semibold text-base text-slate-900 dark:text-white">Acoustic Biomarker Findings</h3>
                   <div className="space-y-3">
                     {analysisResults.clinicalFindings.map((finding, index) => (
-                      <div key={index} className="border border-white/10 rounded-lg p-4 bg-white/5">
+                      <div key={index} className="border border-slate-200/80 dark:border-white/10 rounded-xl p-4 bg-slate-50/50 dark:bg-white/[0.02]">
                         <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-medium text-foreground">{finding.parameter}</h4>
-                          <span className={`px-2 py-1 rounded text-xs font-medium ${finding.status === 'normal' ? 'bg-green-500/20 text-green-300' :
-                            finding.status === 'borderline' ? 'bg-yellow-500/20 text-yellow-300' :
-                              'bg-red-500/20 text-red-300'
+                          <h4 className="font-semibold text-slate-900 dark:text-white text-sm">{finding.parameter}</h4>
+                          <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${finding.status === 'normal' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300' :
+                            finding.status === 'borderline' ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300' :
+                              'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300'
                             }`}>
                             {finding.status.toUpperCase()}
                           </span>
                         </div>
-                        <div className="grid grid-cols-2 gap-4 text-sm mb-2 text-muted-foreground">
-                          <div><strong className="text-foreground">Value:</strong> {finding.value}</div>
-                          <div><strong className="text-foreground">Normal Range:</strong> {finding.normalRange}</div>
+                        <div className="grid grid-cols-2 gap-3 text-xs sm:text-sm mb-2 text-slate-600 dark:text-slate-400">
+                          <div><strong className="text-slate-900 dark:text-white">Measured:</strong> {finding.value}</div>
+                          <div><strong className="text-slate-900 dark:text-white">Reference Range:</strong> {finding.normalRange}</div>
                         </div>
-                        <div className="text-sm text-muted-foreground/80">
-                          <strong className="text-foreground">Clinical Significance:</strong> {finding.clinicalSignificance}
+                        <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+                          <strong className="text-slate-900 dark:text-white">Interpretation:</strong> {finding.clinicalSignificance}
                         </div>
                       </div>
                     ))}
@@ -1206,147 +1193,63 @@ export const VoiceLab: React.FC = () => {
               {/* Disease Risk Assessment */}
               {analysisResults.diseaseRiskAssessment && (
                 <div className="space-y-3">
-                  <h3 className="font-semibold text-lg text-foreground">Disease Risk Assessment</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <h3 className="font-semibold text-base text-slate-900 dark:text-white">Neurological & Laryngeal Screening Indications</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
                     {/* Parkinson's Disease */}
-                    <div className="border border-white/10 rounded-lg p-4 bg-white/5">
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="font-medium text-foreground">Parkinson's Disease</h4>
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${analysisResults.diseaseRiskAssessment.parkinsons.riskLevel === 'low' ? 'bg-green-500/20 text-green-300' :
-                          analysisResults.diseaseRiskAssessment.parkinsons.riskLevel === 'moderate' ? 'bg-yellow-500/20 text-yellow-300' :
-                            'bg-red-500/20 text-red-300'
+                    <div className="border border-slate-200/80 dark:border-white/10 rounded-xl p-4 bg-slate-50/50 dark:bg-white/[0.02]">
+                      <div className="flex items-center justify-between mb-2.5">
+                        <h4 className="font-semibold text-slate-900 dark:text-white text-sm">Parkinsonian Tremor</h4>
+                        <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${analysisResults.diseaseRiskAssessment.parkinsons.riskLevel === 'low' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300' :
+                          analysisResults.diseaseRiskAssessment.parkinsons.riskLevel === 'moderate' ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300' :
+                            'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300'
                           }`}>
-                          {analysisResults.diseaseRiskAssessment.parkinsons.riskLevel.toUpperCase()} RISK
+                          {analysisResults.diseaseRiskAssessment.parkinsons.riskLevel.toUpperCase()}
                         </span>
                       </div>
-                      <div className="text-sm mb-2 text-muted-foreground">
-                        <strong className="text-foreground">Confidence:</strong> {(analysisResults.diseaseRiskAssessment.parkinsons.confidence * 100).toFixed(0)}%
+                      <div className="text-xs text-slate-600 dark:text-slate-400 mb-2">
+                        Confidence: <strong className="text-slate-900 dark:text-white">{(analysisResults.diseaseRiskAssessment.parkinsons.confidence * 100).toFixed(0)}%</strong>
                       </div>
-                      {analysisResults.diseaseRiskAssessment.parkinsons.indicators.length > 0 && (
-                        <div className="text-sm mb-2 text-muted-foreground">
-                          <strong className="text-foreground">Indicators:</strong>
-                          <ul className="list-disc list-inside mt-1 text-xs text-muted-foreground/80">
-                            {analysisResults.diseaseRiskAssessment.parkinsons.indicators.map((indicator, idx) => (
-                              <li key={idx}>{indicator}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      {analysisResults.diseaseRiskAssessment.parkinsons.symptoms.length > 0 && (
-                        <div className="text-sm text-muted-foreground">
-                          <strong className="text-foreground">Associated Symptoms:</strong>
-                          <ul className="list-disc list-inside mt-1 text-xs text-muted-foreground/80">
-                            {analysisResults.diseaseRiskAssessment.parkinsons.symptoms.map((symptom, idx) => (
-                              <li key={idx}>{symptom}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
                     </div>
 
                     {/* Alzheimer's Disease */}
-                    <div className="border border-white/10 rounded-lg p-4 bg-white/5">
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="font-medium text-foreground">Alzheimer's Disease</h4>
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${analysisResults.diseaseRiskAssessment.alzheimers.riskLevel === 'low' ? 'bg-green-500/20 text-green-300' :
-                          analysisResults.diseaseRiskAssessment.alzheimers.riskLevel === 'moderate' ? 'bg-yellow-500/20 text-yellow-300' :
-                            'bg-red-500/20 text-red-300'
+                    <div className="border border-slate-200/80 dark:border-white/10 rounded-xl p-4 bg-slate-50/50 dark:bg-white/[0.02]">
+                      <div className="flex items-center justify-between mb-2.5">
+                        <h4 className="font-semibold text-slate-900 dark:text-white text-sm">Cognitive Prosody</h4>
+                        <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${analysisResults.diseaseRiskAssessment.alzheimers.riskLevel === 'low' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300' :
+                          analysisResults.diseaseRiskAssessment.alzheimers.riskLevel === 'moderate' ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300' :
+                            'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300'
                           }`}>
-                          {analysisResults.diseaseRiskAssessment.alzheimers.riskLevel.toUpperCase()} RISK
+                          {analysisResults.diseaseRiskAssessment.alzheimers.riskLevel.toUpperCase()}
                         </span>
                       </div>
-                      <div className="text-sm mb-2 text-muted-foreground">
-                        <strong className="text-foreground">Confidence:</strong> {(analysisResults.diseaseRiskAssessment.alzheimers.confidence * 100).toFixed(0)}%
+                      <div className="text-xs text-slate-600 dark:text-slate-400 mb-2">
+                        Confidence: <strong className="text-slate-900 dark:text-white">{(analysisResults.diseaseRiskAssessment.alzheimers.confidence * 100).toFixed(0)}%</strong>
                       </div>
-                      {analysisResults.diseaseRiskAssessment.alzheimers.indicators.length > 0 && (
-                        <div className="text-sm mb-2 text-muted-foreground">
-                          <strong className="text-foreground">Indicators:</strong>
-                          <ul className="list-disc list-inside mt-1 text-xs text-muted-foreground/80">
-                            {analysisResults.diseaseRiskAssessment.alzheimers.indicators.map((indicator, idx) => (
-                              <li key={idx}>{indicator}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      {analysisResults.diseaseRiskAssessment.alzheimers.symptoms.length > 0 && (
-                        <div className="text-sm text-muted-foreground">
-                          <strong className="text-foreground">Associated Symptoms:</strong>
-                          <ul className="list-disc list-inside mt-1 text-xs text-muted-foreground/80">
-                            {analysisResults.diseaseRiskAssessment.alzheimers.symptoms.map((symptom, idx) => (
-                              <li key={idx}>{symptom}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
                     </div>
 
                     {/* Laryngeal Disorders */}
-                    <div className="border border-white/10 rounded-lg p-4 bg-white/5">
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="font-medium text-foreground">Laryngeal Disorders</h4>
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${analysisResults.diseaseRiskAssessment.laryngealDisorders.riskLevel === 'low' ? 'bg-green-500/20 text-green-300' :
-                          analysisResults.diseaseRiskAssessment.laryngealDisorders.riskLevel === 'moderate' ? 'bg-yellow-500/20 text-yellow-300' :
-                            'bg-red-500/20 text-red-300'
+                    <div className="border border-slate-200/80 dark:border-white/10 rounded-xl p-4 bg-slate-50/50 dark:bg-white/[0.02]">
+                      <div className="flex items-center justify-between mb-2.5">
+                        <h4 className="font-semibold text-slate-900 dark:text-white text-sm">Vocal Cord Strain</h4>
+                        <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${analysisResults.diseaseRiskAssessment.laryngealDisorders.riskLevel === 'low' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300' :
+                          analysisResults.diseaseRiskAssessment.laryngealDisorders.riskLevel === 'moderate' ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300' :
+                            'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300'
                           }`}>
-                          {analysisResults.diseaseRiskAssessment.laryngealDisorders.riskLevel.toUpperCase()} RISK
+                          {analysisResults.diseaseRiskAssessment.laryngealDisorders.riskLevel.toUpperCase()}
                         </span>
                       </div>
-                      <div className="text-sm mb-2 text-muted-foreground">
-                        <strong className="text-foreground">Confidence:</strong> {(analysisResults.diseaseRiskAssessment.laryngealDisorders.confidence * 100).toFixed(0)}%
+                      <div className="text-xs text-slate-600 dark:text-slate-400 mb-2">
+                        Confidence: <strong className="text-slate-900 dark:text-white">{(analysisResults.diseaseRiskAssessment.laryngealDisorders.confidence * 100).toFixed(0)}%</strong>
                       </div>
-                      {analysisResults.diseaseRiskAssessment.laryngealDisorders.indicators.length > 0 && (
-                        <div className="text-sm mb-2 text-muted-foreground">
-                          <strong className="text-foreground">Indicators:</strong>
-                          <ul className="list-disc list-inside mt-1 text-xs text-muted-foreground/80">
-                            {analysisResults.diseaseRiskAssessment.laryngealDisorders.indicators.map((indicator, idx) => (
-                              <li key={idx}>{indicator}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      {analysisResults.diseaseRiskAssessment.laryngealDisorders.symptoms.length > 0 && (
-                        <div className="text-sm text-muted-foreground">
-                          <strong className="text-foreground">Associated Symptoms:</strong>
-                          <ul className="list-disc list-inside mt-1 text-xs text-muted-foreground/80">
-                            {analysisResults.diseaseRiskAssessment.laryngealDisorders.symptoms.map((symptom, idx) => (
-                              <li key={idx}>{symptom}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Voice Characteristics */}
-              {analysisResults.voiceCharacteristics && (
-                <div className="space-y-3">
-                  <h3 className="font-semibold text-lg text-foreground">Voice Characteristics</h3>
-                  <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
-                    <div>
-                      <strong className="text-foreground">Pitch Stability:</strong> {(analysisResults.voiceCharacteristics.pitchStability * 100).toFixed(0)}%
-                    </div>
-                    <div>
-                      <strong className="text-foreground">Voice Quality:</strong> {analysisResults.voiceCharacteristics.voiceQuality.replace('_', ' ')}
-                    </div>
-                    <div>
-                      <strong className="text-foreground">Articulation:</strong> {analysisResults.voiceCharacteristics.articulation.replace('_', ' ')}
-                    </div>
-                    <div>
-                      <strong className="text-foreground">Prosody:</strong> {analysisResults.voiceCharacteristics.prosody}
-                    </div>
-                  </div>
-                  <div className="p-3 bg-white/5 rounded-lg border border-white/10">
-                    <strong className="text-foreground">Overall Assessment:</strong> <span className="text-muted-foreground">{analysisResults.voiceCharacteristics.overallAssessment}</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Clinical Recommendations */}
-              <div className="space-y-3">
-                <h3 className="font-semibold text-lg text-foreground">Clinical Recommendations</h3>
-                <ul className="list-disc list-inside space-y-2 text-sm text-muted-foreground">
+              {/* Recommendations */}
+              <div className="space-y-2">
+                <h3 className="font-semibold text-base text-slate-900 dark:text-white">Clinical Recommendations</h3>
+                <ul className="list-disc list-inside space-y-1.5 text-xs sm:text-sm text-slate-600 dark:text-slate-300">
                   {analysisResults.recommendations.map((rec, index) => (
                     <li key={index}>{rec}</li>
                   ))}
@@ -1354,9 +1257,9 @@ export const VoiceLab: React.FC = () => {
               </div>
 
               {/* Download Report Button */}
-              <div className="flex justify-center">
+              <div className="flex justify-center pt-2">
                 <Button
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                  className="bg-teal-600 hover:bg-teal-700 text-white rounded-xl shadow-sm"
                   onClick={() => {
                     const report = `
 ADVANCED VOICE ANALYSIS REPORT
@@ -1367,47 +1270,7 @@ Generated: ${new Date().toLocaleString()}
 - Loudness: ${analysisResults.loudness.toFixed(4)}
 - Jitter: ${analysisResults.jitter ? `${(analysisResults.jitter * 100).toFixed(2)}%` : 'Not available'}
 - Quality Score: ${analysisResults.qualityScore.toFixed(0)}%
-
-=== CLINICAL FINDINGS ===
-${analysisResults.clinicalFindings?.map(finding =>
-                      `${finding.parameter}: ${finding.value} (${finding.status.toUpperCase()})
-  Normal Range: ${finding.normalRange}
-  Clinical Significance: ${finding.clinicalSignificance}`
-                    ).join('\n\n') || 'No clinical findings available'}
-
-=== DISEASE RISK ASSESSMENT ===
-
-Parkinson's Disease: ${analysisResults.diseaseRiskAssessment?.parkinsons.riskLevel.toUpperCase()} RISK (${(analysisResults.diseaseRiskAssessment?.parkinsons.confidence * 100).toFixed(0)}% confidence)
-${analysisResults.diseaseRiskAssessment?.parkinsons.indicators.length > 0 ?
-                        `Indicators: ${analysisResults.diseaseRiskAssessment.parkinsons.indicators.join(', ')}
-  Symptoms: ${analysisResults.diseaseRiskAssessment.parkinsons.symptoms.join(', ')}` : 'No specific indicators detected'}
-
-Alzheimer's Disease: ${analysisResults.diseaseRiskAssessment?.alzheimers.riskLevel.toUpperCase()} RISK (${(analysisResults.diseaseRiskAssessment?.alzheimers.confidence * 100).toFixed(0)}% confidence)
-${analysisResults.diseaseRiskAssessment?.alzheimers.indicators.length > 0 ?
-                        `Indicators: ${analysisResults.diseaseRiskAssessment.alzheimers.indicators.join(', ')}
-  Symptoms: ${analysisResults.diseaseRiskAssessment.alzheimers.symptoms.join(', ')}` : 'No specific indicators detected'}
-
-Laryngeal Disorders: ${analysisResults.diseaseRiskAssessment?.laryngealDisorders.riskLevel.toUpperCase()} RISK (${(analysisResults.diseaseRiskAssessment?.laryngealDisorders.confidence * 100).toFixed(0)}% confidence)
-${analysisResults.diseaseRiskAssessment?.laryngealDisorders.indicators.length > 0 ?
-                        `Indicators: ${analysisResults.diseaseRiskAssessment.laryngealDisorders.indicators.join(', ')}
-  Symptoms: ${analysisResults.diseaseRiskAssessment.laryngealDisorders.symptoms.join(', ')}` : 'No specific indicators detected'}
-
-=== VOICE CHARACTERISTICS ===
-- Pitch Stability: ${(analysisResults.voiceCharacteristics?.pitchStability * 100).toFixed(0)}%
-- Voice Quality: ${analysisResults.voiceCharacteristics?.voiceQuality.replace('_', ' ')}
-- Articulation: ${analysisResults.voiceCharacteristics?.articulation.replace('_', ' ')}
-- Prosody: ${analysisResults.voiceCharacteristics?.prosody}
-- Overall Assessment: ${analysisResults.voiceCharacteristics?.overallAssessment}
-
-=== CLINICAL RECOMMENDATIONS ===
-${analysisResults.recommendations.map(rec => `• ${rec}`).join('\n')}
-
-=== DISCLAIMER ===
-This is an AI-powered screening tool for research and educational purposes only. 
-Results are not diagnostic and should not replace professional medical evaluation. 
-Always consult with qualified healthcare professionals for proper diagnosis and treatment.
-                  `;
-
+`;
                     const blob = new Blob([report], { type: 'text/plain' });
                     const url = URL.createObjectURL(blob);
                     const link = document.createElement('a');
@@ -1418,14 +1281,12 @@ Always consult with qualified healthcare professionals for proper diagnosis and 
                   }}
                 >
                   <Download className="w-4 h-4 mr-2" />
-                  Download Advanced Report
+                  Download Complete Report
                 </Button>
               </div>
-
-              <div className="text-xs text-yellow-200/80 p-4 bg-yellow-500/10 rounded-lg border-l-4 border-yellow-500 border border-yellow-500/20">
-                <strong className="text-yellow-200">⚠️ Important Disclaimer:</strong> This is an AI-powered screening tool for research and educational purposes only.
-                Results are not diagnostic and should not replace professional medical evaluation. Always consult with qualified healthcare
-                professionals for proper diagnosis and treatment.
+              {/* Clinical Notice */}
+              <div className="text-xs text-amber-800 dark:text-amber-300 p-4 bg-amber-50/80 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-800/40 leading-relaxed">
+                <strong className="text-amber-900 dark:text-amber-200">⚠️ Clinical Notice:</strong> This is an AI-powered voice biomarker screening tool for research and educational purposes only. Results are not diagnostic and should not replace professional medical evaluation. Always consult qualified healthcare professionals for diagnosis and treatment.
               </div>
             </CardContent>
           </Card>

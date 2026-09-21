@@ -44,7 +44,7 @@ export default function PeriodTrackerPage() {
   const [activeTab, setActiveTab] = useState('cycle-intelligence');
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#0a0a0f]">
+    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 transition-colors duration-200">
       <GlassNavbar />
 
       <main className="flex-1 pt-28 pb-16">
@@ -55,20 +55,20 @@ export default function PeriodTrackerPage() {
               <div className="flex items-center gap-5">
                 <div className="relative">
                   <div className="p-5 bg-gradient-to-br from-rose-500/20 to-pink-600/20 rounded-2xl border border-rose-500/20 shadow-lg shadow-rose-500/10">
-                    <HeartPulse className="w-10 h-10 text-rose-400" />
+                    <HeartPulse className="w-10 h-10 text-rose-600 dark:text-rose-400" />
                   </div>
                   <div className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 rounded-full animate-pulse" />
                 </div>
                 <div>
-                  <h1 className="text-4xl font-bold text-white tracking-tight">
+                  <h1 className="text-4xl font-bold text-slate-900 dark:text-white tracking-tight">
                     Hormonal Health Intelligence
                   </h1>
-                  <p className="text-white/50 mt-2 text-lg">
+                  <p className="text-slate-600 dark:text-slate-400 mt-2 text-lg">
                     Your cycle is your fifth vital sign. Understand your body's hormonal rhythm.
                   </p>
                 </div>
               </div>
-              <Badge className="bg-rose-500/15 text-rose-400 border border-rose-500/25 px-4 py-2 text-sm font-medium rounded-full">
+              <Badge className="bg-rose-50 dark:bg-rose-950/20 text-rose-700 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/30 px-4 py-2 text-sm font-medium rounded-full shadow-sm">
                 <Sparkles className="w-4 h-4 mr-2" />
                 AI-Powered
               </Badge>
@@ -81,10 +81,10 @@ export default function PeriodTrackerPage() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap min-w-fit ${
+                    className={`flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap min-w-fit shadow-sm ${
                       activeTab === tab.id
-                        ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30 shadow-lg shadow-rose-500/[0.02]'
-                        : 'bg-white/[0.04] text-white/60 border border-white/[0.06] hover:bg-white/[0.08] hover:text-white/80'
+                        ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/40'
+                        : 'bg-white dark:bg-white/[0.04] text-slate-600 dark:text-white/60 border border-slate-200/80 dark:border-white/[0.06] hover:bg-slate-100 dark:hover:bg-white/[0.08] hover:text-slate-900 dark:hover:text-white/80'
                     }`}
                   >
                     <tab.icon className="w-4 h-4" />

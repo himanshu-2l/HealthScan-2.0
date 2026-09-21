@@ -237,57 +237,56 @@ export const CardiovascularLab: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8 pt-24 min-h-screen pb-12">
+    <div className="space-y-6 pb-8">
       {/* Header */}
-      <div className="text-center space-y-4 glass-panel p-6 relative overflow-hidden max-w-4xl mx-auto">
-        <div className="absolute top-0 left-0 w-1 h-full bg-red-500/50"></div>
-        <div className="flex items-center justify-center gap-3 mb-2">
-          <Heart className="w-8 h-8 text-red-500" />
-          <h1 className="text-4xl font-bold text-foreground">Cardiovascular Lab</h1>
+      <div className="text-center space-y-3 bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 p-6 shadow-sm max-w-4xl mx-auto">
+        <div className="flex items-center justify-center gap-3 mb-1">
+          <div className="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500">
+            <Heart className="w-6 h-6" />
+          </div>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Cardiovascular Lab</h1>
         </div>
-        <p className="text-lg text-muted-foreground">{status}</p>
-        <Badge className="bg-red-500/20 text-red-300 border-red-500/20 mt-2">Camera-Based PPG</Badge>
+        <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 max-w-xl mx-auto">{status}</p>
+        <Badge className="bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800/40 text-xs px-3 py-1 rounded-full">
+          Camera-Based PPG Analysis
+        </Badge>
       </div>
 
-      {/* Age Input */}
-      <div className="max-w-4xl mx-auto px-4">
-        {/* Age Input */}
-        <div className="max-w-4xl mx-auto px-4">
-          <Card className="glass-panel border-0 relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-1 h-full bg-blue-500/50"></div>
-            <CardHeader className="bg-white/5 border-b border-white/5">
-              <CardTitle className="text-foreground">Patient Information</CardTitle>
-              <CardDescription className="text-muted-foreground">Age helps improve risk assessment accuracy</CardDescription>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <label className="text-foreground font-medium">Age:</label>
-                <input
-                  type="number"
-                  min="18"
-                  max="100"
-                  value={age}
-                  onChange={(e) => setAge(parseInt(e.target.value) || 35)}
-                  className="bg-black/20 border border-white/10 rounded px-3 py-2 w-24 text-foreground focus:outline-none focus:border-blue-500/50 transition-colors"
-                  disabled={isRecording}
-                />
-                <span className="text-muted-foreground text-sm">years</span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+      {/* Patient Information */}
+      <div className="max-w-4xl mx-auto">
+        <Card className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm overflow-hidden">
+          <CardHeader className="bg-slate-50/60 dark:bg-white/[0.02] border-b border-slate-200/80 dark:border-white/5 py-4">
+            <CardTitle className="text-base font-semibold text-slate-900 dark:text-white">Patient Calibration</CardTitle>
+            <CardDescription className="text-xs text-slate-500 dark:text-slate-400">Age calibration optimizes HRV and cardiovascular risk estimates</CardDescription>
+          </CardHeader>
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex items-center gap-4">
+              <label className="text-slate-800 dark:text-slate-200 font-medium text-sm">Age:</label>
+              <input
+                type="number"
+                min="18"
+                max="100"
+                value={age}
+                onChange={(e) => setAge(parseInt(e.target.value) || 35)}
+                className="bg-slate-100 dark:bg-white/[0.06] border border-slate-200/80 dark:border-white/10 rounded-xl px-3 py-1.5 w-24 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-teal-500 transition-colors"
+                disabled={isRecording}
+              />
+              <span className="text-slate-500 dark:text-slate-400 text-sm">years old</span>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Controls */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 max-w-4xl mx-auto px-4">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 max-w-4xl mx-auto">
         <div className="flex-1 text-center sm:text-left">
-          <p className="text-sm text-muted-foreground">{status}</p>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">{status}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2.5">
           <Button
             onClick={initCamera}
             variant="outline"
-            className="border-white/10 bg-white/5 hover:bg-white/10 text-foreground hover:text-white"
+            className="border-slate-200/80 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-800 dark:text-slate-200 rounded-xl"
             disabled={isRecording}
           >
             <Camera className="w-4 h-4 mr-2" /> Enable Camera
@@ -295,7 +294,7 @@ export const CardiovascularLab: React.FC = () => {
           <Button
             onClick={isRecording ? stopTest : startTest}
             disabled={permission !== 'granted' || (!isRecording && !heartRate && testDuration > 0)}
-            className="bg-red-600 hover:bg-red-700 text-white"
+            className="bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-sm"
           >
             {isRecording ? (
               <>
@@ -303,7 +302,7 @@ export const CardiovascularLab: React.FC = () => {
               </>
             ) : (
               <>
-                <Play className="w-4 h-4 mr-2" /> Start Test
+                <Play className="w-4 h-4 mr-2" /> Start Assessment
               </>
             )}
           </Button>
@@ -311,16 +310,15 @@ export const CardiovascularLab: React.FC = () => {
       </div>
 
       {/* Video + Metrics */}
-      <div className="grid lg:grid-cols-2 gap-6 max-w-6xl mx-auto px-4">
+      <div className="grid lg:grid-cols-2 gap-6 max-w-4xl mx-auto">
         {/* Camera Feed */}
-        <Card className="glass-panel border-0 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-1 h-full bg-red-500/50"></div>
-          <CardHeader className="bg-white/5 border-b border-white/5">
-            <CardTitle className="text-foreground">Camera Feed</CardTitle>
-            <CardDescription className="text-muted-foreground">Position face in frame for pulse detection</CardDescription>
+        <Card className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm overflow-hidden">
+          <CardHeader className="bg-slate-50/60 dark:bg-white/[0.02] border-b border-slate-200/80 dark:border-white/5 py-4">
+            <CardTitle className="text-base font-semibold text-slate-900 dark:text-white">Camera Feed</CardTitle>
+            <CardDescription className="text-xs text-slate-500 dark:text-slate-400">Position face in frame for optical PPG pulse detection</CardDescription>
           </CardHeader>
-          <CardContent className="bg-transparent pt-6">
-            <div className="relative bg-black/50 rounded-lg overflow-hidden aspect-video border border-white/10">
+          <CardContent className="p-4 sm:p-5">
+            <div className="relative bg-slate-950 rounded-xl overflow-hidden aspect-video border border-slate-200/80 dark:border-white/10 shadow-inner">
               <video
                 ref={videoRef}
                 className="w-full h-full object-cover opacity-90"
@@ -331,25 +329,24 @@ export const CardiovascularLab: React.FC = () => {
               />
               <canvas ref={canvasRef} className="hidden" />
               {isRecording && (
-                <div className="absolute top-2 left-2 bg-red-600 text-white px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-2 shadow-lg shadow-red-900/50">
+                <div className="absolute top-3 left-3 bg-red-600/90 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-2 shadow-sm">
                   <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
-                  Recording
+                  Recording PPG
                 </div>
               )}
             </div>
             {heartRate && (
-              <div className="mt-4 grid grid-cols-2 gap-4 text-sm text-muted-foreground">
-                <div>
-                  <strong className="text-foreground">Heart Rate:</strong>{' '}
-                  <span className="text-red-400 font-bold text-lg">{heartRate} BPM</span>
+              <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-slate-600 dark:text-slate-400">
+                <div className="bg-slate-50 dark:bg-white/[0.03] p-2.5 rounded-xl border border-slate-200/60 dark:border-white/5">
+                  <div className="text-xs text-slate-500 dark:text-slate-400">Instant HR</div>
+                  <span className="text-red-600 dark:text-red-400 font-bold text-lg">{heartRate} BPM</span>
                 </div>
-                <div>
-                  <strong className="text-foreground">Confidence:</strong>{' '}
-                  <span className="text-blue-400 font-semibold">{Math.round(confidence * 100)}%</span>
+                <div className="bg-slate-50 dark:bg-white/[0.03] p-2.5 rounded-xl border border-slate-200/60 dark:border-white/5">
+                  <div className="text-xs text-slate-500 dark:text-slate-400">Confidence</div>
+                  <span className="text-teal-600 dark:text-teal-400 font-bold text-lg">{Math.round(confidence * 100)}%</span>
                 </div>
-                <div className="col-span-2">
-                  <strong className="text-foreground">Test Duration:</strong>{' '}
-                  <span className="text-green-400 font-semibold">{testDuration.toFixed(1)}s</span>
+                <div className="col-span-2 text-xs text-slate-500 dark:text-slate-400">
+                  Elapsed: <span className="font-semibold text-slate-700 dark:text-slate-300">{testDuration.toFixed(1)}s</span>
                 </div>
               </div>
             )}
@@ -357,43 +354,42 @@ export const CardiovascularLab: React.FC = () => {
         </Card>
 
         {/* Live Metrics */}
-        <Card className="glass-panel border-0 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-1 h-full bg-green-500/50"></div>
-          <CardHeader className="bg-white/5 border-b border-white/5">
-            <CardTitle className="text-foreground">Live Metrics</CardTitle>
-            <CardDescription className="text-muted-foreground">Real-time cardiovascular data</CardDescription>
+        <Card className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm overflow-hidden">
+          <CardHeader className="bg-slate-50/60 dark:bg-white/[0.02] border-b border-slate-200/80 dark:border-white/5 py-4">
+            <CardTitle className="text-base font-semibold text-slate-900 dark:text-white">Live Metrics</CardTitle>
+            <CardDescription className="text-xs text-slate-500 dark:text-slate-400">Real-time cardiovascular telemetry</CardDescription>
           </CardHeader>
-          <CardContent className="bg-transparent pt-6">
+          <CardContent className="p-4 sm:p-5">
             <div className="space-y-4">
               {heartRate ? (
                 <>
-                  <div className="text-center p-4 bg-red-500/10 rounded-lg border border-red-500/20">
-                    <div className="text-sm text-red-200">Current Heart Rate</div>
-                    <div className="text-4xl font-bold text-red-400">{heartRate}</div>
-                    <div className="text-sm text-red-200/80">BPM</div>
+                  <div className="text-center p-5 bg-red-50 dark:bg-red-950/20 rounded-xl border border-red-200/60 dark:border-red-800/30">
+                    <div className="text-xs font-semibold text-red-700 dark:text-red-300 uppercase tracking-wider mb-1">Current Heart Rate</div>
+                    <div className="text-4xl font-extrabold text-red-600 dark:text-red-400">{heartRate}</div>
+                    <div className="text-xs text-red-600/70 dark:text-red-300/70 mt-0.5">Beats Per Minute</div>
                   </div>
-                  <div className="text-sm text-muted-foreground space-y-2">
-                    <div>
-                      <strong>Signal Quality:</strong>{' '}
-                      <span className={confidence > 0.7 ? 'text-green-400' : confidence > 0.4 ? 'text-yellow-400' : 'text-red-400'}>
-                        {confidence > 0.7 ? 'Excellent' : confidence > 0.4 ? 'Good' : 'Poor'}
+                  <div className="text-sm space-y-2.5 text-slate-600 dark:text-slate-400">
+                    <div className="flex items-center justify-between">
+                      <span>Signal Quality:</span>
+                      <span className={`font-semibold ${confidence > 0.7 ? 'text-emerald-600 dark:text-emerald-400' : confidence > 0.4 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'}`}>
+                        {confidence > 0.7 ? 'Optimal' : confidence > 0.4 ? 'Moderate' : 'Noisy'}
                       </span>
                     </div>
-                    <div>
-                      <strong>RR Intervals Collected:</strong>{' '}
-                      <span className="text-blue-400 font-semibold">{rrIntervalsRef.current.length}</span>
+                    <div className="flex items-center justify-between">
+                      <span>RR Intervals Collected:</span>
+                      <span className="text-blue-600 dark:text-blue-400 font-semibold">{rrIntervalsRef.current.length}</span>
                     </div>
                     {testDuration > 10 && (
-                      <div className="text-xs text-blue-200 mt-2 p-2 bg-blue-500/10 rounded border border-blue-500/20">
-                        💡 Tip: Keep recording for at least 30 seconds for accurate HRV analysis
+                      <div className="text-xs text-blue-700 dark:text-blue-300 mt-2 p-2.5 bg-blue-50 dark:bg-blue-950/30 rounded-xl border border-blue-200/60 dark:border-blue-800/30 leading-relaxed">
+                        💡 Keep recording for at least 30 seconds for diagnostic HRV accuracy
                       </div>
                     )}
                   </div>
                 </>
               ) : (
-                <div className="text-center text-muted-foreground py-8">
-                  <Activity className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p>Start test to see live metrics</p>
+                <div className="text-center text-slate-400 dark:text-slate-500 py-12">
+                  <Activity className="w-10 h-10 mx-auto mb-2.5 opacity-40 text-slate-400" />
+                  <p className="text-sm">Start test to see live metrics</p>
                 </div>
               )}
             </div>
@@ -403,39 +399,38 @@ export const CardiovascularLab: React.FC = () => {
 
       {/* Results */}
       {results && (
-        <Card className="glass-panel border-0 relative overflow-hidden max-w-6xl mx-auto px-4">
-          <div className="absolute top-0 left-0 w-1 h-full bg-blue-500/50"></div>
-          <CardHeader className="bg-white/5 border-b border-white/5">
-            <CardTitle className="flex items-center gap-2 text-foreground">
-              <TrendingUp className="w-5 h-5 text-blue-400" />
+        <Card className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm overflow-hidden max-w-4xl mx-auto">
+          <CardHeader className="bg-slate-50/60 dark:bg-white/[0.02] border-b border-slate-200/80 dark:border-white/5 py-4">
+            <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white text-lg">
+              <TrendingUp className="w-5 h-5 text-teal-600 dark:text-teal-400" />
               Cardiovascular Assessment Report
             </CardTitle>
-            <CardDescription className="text-muted-foreground">
+            <CardDescription className="text-xs text-slate-500 dark:text-slate-400">
               Generated: {new Date(results.timestamp).toLocaleString()}
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6 pt-6 bg-transparent">
+          <CardContent className="space-y-6 p-5 sm:p-6">
             {/* Key Metrics */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center p-4 rounded-lg bg-red-500/10 border border-red-500/20">
-                <div className="text-sm text-red-200">Heart Rate</div>
-                <div className="text-2xl font-bold text-red-400">{results.heartRate} BPM</div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
+              <div className="text-center p-4 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200/60 dark:border-red-800/30">
+                <div className="text-xs font-semibold text-red-700 dark:text-red-300 uppercase tracking-wider mb-1">Heart Rate</div>
+                <div className="text-2xl font-bold text-red-700 dark:text-red-300">{results.heartRate} BPM</div>
               </div>
-              <div className="text-center p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                <div className="text-sm text-blue-200">HRV Score</div>
-                <div className="text-2xl font-bold text-blue-400">{results.hrvMetrics.hrvScore}/100</div>
+              <div className="text-center p-4 rounded-xl bg-blue-50 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-800/30">
+                <div className="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wider mb-1">HRV Score</div>
+                <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">{results.hrvMetrics.hrvScore}/100</div>
               </div>
-              <div className="text-center p-4 rounded-lg bg-purple-500/10 border border-purple-500/20">
-                <div className="text-sm text-purple-200">Est. BP</div>
-                <div className="text-lg font-bold text-purple-400">
+              <div className="text-center p-4 rounded-xl bg-purple-50 dark:bg-purple-950/20 border border-purple-200/60 dark:border-purple-800/30">
+                <div className="text-xs font-semibold text-purple-700 dark:text-purple-300 uppercase tracking-wider mb-1">Est. BP</div>
+                <div className="text-xl font-bold text-purple-700 dark:text-purple-300">
                   {results.estimatedBP.systolic}/{results.estimatedBP.diastolic}
                 </div>
-                <div className="text-xs text-purple-200/50">mmHg</div>
+                <div className="text-[11px] text-purple-600/70 dark:text-purple-400/70">mmHg</div>
               </div>
-              <div className="text-center p-4 rounded-lg bg-orange-500/10 border border-orange-500/20">
-                <div className="text-sm text-orange-200">Risk Score</div>
-                <div className="text-2xl font-bold text-orange-400">{results.riskAssessment.riskScore}</div>
-                <Badge className={`mt-2 ${getRiskBadgeVariant(results.riskAssessment.riskLevel)} border-0`}>
+              <div className="text-center p-4 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/30">
+                <div className="text-xs font-semibold text-amber-700 dark:text-amber-300 uppercase tracking-wider mb-1">Risk Score</div>
+                <div className="text-2xl font-bold text-amber-700 dark:text-amber-300">{results.riskAssessment.riskScore}</div>
+                <Badge className={`mt-1.5 ${getRiskBadgeVariant(results.riskAssessment.riskLevel)} border-0 text-xs`}>
                   {results.riskAssessment.riskLevel.toUpperCase()}
                 </Badge>
               </div>
@@ -443,39 +438,39 @@ export const CardiovascularLab: React.FC = () => {
 
             {/* HRV Metrics */}
             <div className="space-y-3">
-              <h3 className="font-semibold text-lg text-foreground">Heart Rate Variability (HRV) Metrics</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div className="bg-white/5 p-3 rounded border border-white/10">
-                  <div className="text-muted-foreground">RMSSD</div>
-                  <div className="text-lg font-bold text-foreground">{results.hrvMetrics.rmssd} ms</div>
+              <h3 className="font-semibold text-base text-slate-900 dark:text-white">Heart Rate Variability (HRV) Breakdown</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                <div className="bg-slate-50 dark:bg-white/[0.03] p-3 rounded-xl border border-slate-200/80 dark:border-white/10">
+                  <div className="text-xs text-slate-500 dark:text-slate-400">RMSSD</div>
+                  <div className="text-base font-bold text-slate-900 dark:text-white">{results.hrvMetrics.rmssd} ms</div>
                 </div>
-                <div className="bg-white/5 p-3 rounded border border-white/10">
-                  <div className="text-muted-foreground">SDNN</div>
-                  <div className="text-lg font-bold text-foreground">{results.hrvMetrics.sdnn} ms</div>
+                <div className="bg-slate-50 dark:bg-white/[0.03] p-3 rounded-xl border border-slate-200/80 dark:border-white/10">
+                  <div className="text-xs text-slate-500 dark:text-slate-400">SDNN</div>
+                  <div className="text-base font-bold text-slate-900 dark:text-white">{results.hrvMetrics.sdnn} ms</div>
                 </div>
-                <div className="bg-white/5 p-3 rounded border border-white/10">
-                  <div className="text-muted-foreground">pNN50</div>
-                  <div className="text-lg font-bold text-foreground">{results.hrvMetrics.pnn50.toFixed(1)}%</div>
+                <div className="bg-slate-50 dark:bg-white/[0.03] p-3 rounded-xl border border-slate-200/80 dark:border-white/10">
+                  <div className="text-xs text-slate-500 dark:text-slate-400">pNN50</div>
+                  <div className="text-base font-bold text-slate-900 dark:text-white">{results.hrvMetrics.pnn50.toFixed(1)}%</div>
                 </div>
-                <div className="bg-white/5 p-3 rounded border border-white/10">
-                  <div className="text-muted-foreground">Stress Level</div>
-                  <Badge className={`mt-1 ${getRiskBadgeVariant(results.hrvMetrics.stressLevel)} border-0`}>
+                <div className="bg-slate-50 dark:bg-white/[0.03] p-3 rounded-xl border border-slate-200/80 dark:border-white/10">
+                  <div className="text-xs text-slate-500 dark:text-slate-400">Stress State</div>
+                  <Badge className={`mt-1 ${getRiskBadgeVariant(results.hrvMetrics.stressLevel)} border-0 text-xs`}>
                     {results.hrvMetrics.stressLevel.toUpperCase()}
                   </Badge>
                 </div>
               </div>
-              <div className="bg-blue-500/10 p-4 rounded-lg border border-blue-500/20">
-                <p className="text-muted-foreground">{results.hrvMetrics.interpretation}</p>
+              <div className="bg-teal-50 dark:bg-teal-950/20 p-3.5 rounded-xl border border-teal-200/60 dark:border-teal-800/30 text-sm text-teal-900 dark:text-teal-200">
+                {results.hrvMetrics.interpretation}
               </div>
             </div>
 
             {/* Risk Assessment */}
             <div className="space-y-3">
-              <h3 className="font-semibold text-lg text-foreground">Cardiovascular Risk Assessment</h3>
+              <h3 className="font-semibold text-base text-slate-900 dark:text-white">Cardiovascular Risk Assessment</h3>
               {results.riskAssessment.factors.length > 0 && (
-                <div className="bg-yellow-500/10 p-4 rounded-lg border border-yellow-500/20">
-                  <strong className="text-yellow-200">Risk Factors Identified:</strong>
-                  <ul className="list-disc list-inside mt-2 text-yellow-100/80">
+                <div className="bg-amber-50 dark:bg-amber-950/20 p-4 rounded-xl border border-amber-200/60 dark:border-amber-800/30 text-sm">
+                  <strong className="text-amber-800 dark:text-amber-300">Risk Factors Identified:</strong>
+                  <ul className="list-disc list-inside mt-1.5 space-y-1 text-amber-900 dark:text-amber-200 text-xs sm:text-sm">
                     {results.riskAssessment.factors.map((factor, idx) => (
                       <li key={idx}>{factor}</li>
                     ))}
@@ -486,8 +481,8 @@ export const CardiovascularLab: React.FC = () => {
 
             {/* Recommendations */}
             <div className="space-y-3">
-              <h3 className="font-semibold text-lg text-foreground">Recommendations</h3>
-              <ul className="list-disc list-inside space-y-2 text-sm text-muted-foreground/90">
+              <h3 className="font-semibold text-base text-slate-900 dark:text-white">Clinical Recommendations</h3>
+              <ul className="list-disc list-inside space-y-1.5 text-xs sm:text-sm text-slate-600 dark:text-slate-300">
                 {results.hrvMetrics.recommendations.map((rec, idx) => (
                   <li key={idx}>{rec}</li>
                 ))}
@@ -498,10 +493,10 @@ export const CardiovascularLab: React.FC = () => {
             </div>
 
             {/* Disclaimer */}
-            <div className="text-xs text-yellow-100/80 p-4 bg-yellow-500/10 rounded-lg border-l-4 border-yellow-500 border border-yellow-500/20">
-              <strong className="text-yellow-400">⚠️ Important Disclaimer:</strong> This assessment uses camera-based photoplethysmography (PPG).
+            <div className="text-xs text-amber-800 dark:text-amber-300 p-4 bg-amber-50/80 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-800/40 leading-relaxed">
+              <strong className="text-amber-900 dark:text-amber-200">⚠️ Clinical Notice:</strong> This assessment uses camera-based photoplethysmography (PPG).
               Blood pressure estimation is approximate and not a replacement for medical-grade measurement.
-              Always consult healthcare professionals for accurate cardiovascular assessment and diagnosis.
+              Always consult healthcare professionals for accurate cardiovascular diagnosis and treatment.
             </div>
           </CardContent>
         </Card>

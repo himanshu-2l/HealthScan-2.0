@@ -1174,185 +1174,182 @@ export const MotorLab: React.FC = () => {
   const clinicalInsights = getClinicalInsights();
 
   return (
-    <div className="space-y-8 pt-24 min-h-screen pb-12">
+    <div className="space-y-6 pb-8">
       {/* Header */}
-      <div className="text-center space-y-4 glass-panel p-8 max-w-4xl mx-auto rounded-3xl relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-1 h-full bg-primary/50"></div>
-        <div className="flex items-center justify-center gap-3 mb-2">
-          <Activity className="w-8 h-8 text-primary" />
-          <h1 className="text-4xl font-bold text-foreground">Motor & Tremor Lab</h1>
+      <div className="text-center space-y-3 bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 p-6 shadow-sm max-w-4xl mx-auto">
+        <div className="flex items-center justify-center gap-3 mb-1">
+          <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400">
+            <Activity className="w-6 h-6" />
+          </div>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Motor & Tremor Lab</h1>
         </div>
-        <p className="text-lg text-muted-foreground">{status}</p>
-        <Badge className="bg-green-500/20 text-green-400 border-green-500/20 mt-2">Real-time Analysis</Badge>
+        <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 max-w-xl mx-auto">{status}</p>
+        <Badge className="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40 text-xs px-3 py-1 rounded-full">
+          Computer Vision Hand Tracking
+        </Badge>
       </div>
 
       {/* Controls */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 max-w-4xl mx-auto px-4">
-        <div className="flex-1 text-center sm:text-left"><p className="text-sm text-muted-foreground">{status}</p></div>
-        <div className="flex gap-2">
-          <Button onClick={initCamera} variant="outline" className="glass-hover border-white/10 text-foreground hover:bg-primary/10 hover:border-primary/30">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 max-w-4xl mx-auto">
+        <div className="flex-1 text-center sm:text-left"><p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">{status}</p></div>
+        <div className="flex items-center gap-2.5">
+          <Button onClick={initCamera} variant="outline" className="border-slate-200/80 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-800 dark:text-slate-200 rounded-xl">
             <CameraIcon className="w-4 h-4 mr-2" /> Enable Camera
           </Button>
-          <Button onClick={startTest} disabled={permission !== "granted" || isRecording} className="bg-primary hover:bg-primary/90 text-primary-foreground">
-            {isRecording ? `Testing... ${testDuration.toFixed(1)}s` : <><Play className="w-4 h-4 mr-2" /> Start 5s Test</>}
+          <Button onClick={startTest} disabled={permission !== "granted" || isRecording} className="bg-teal-600 hover:bg-teal-700 text-white rounded-xl shadow-sm">
+            {isRecording ? `Testing... ${testDuration.toFixed(1)}s` : <><Play className="w-4 h-4 mr-2" /> Start 5s Tap Test</>}
           </Button>
         </div>
       </div>
 
       {/* Video + Metrics */}
-      <div className="grid lg:grid-cols-2 gap-6 max-w-6xl mx-auto px-4">
+      <div className="grid lg:grid-cols-2 gap-6 max-w-4xl mx-auto">
         {/* Camera Feed */}
-        <Card className="glass-panel border-0">
-          <CardHeader className="bg-white/5 border-b border-white/5">
-            <CardTitle className="text-foreground">Movement Capture</CardTitle>
-            <CardDescription className="text-muted-foreground">Visual + calibration</CardDescription>
+        <Card className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm overflow-hidden">
+          <CardHeader className="bg-slate-50/60 dark:bg-white/[0.02] border-b border-slate-200/80 dark:border-white/5 py-4">
+            <CardTitle className="text-slate-900 dark:text-white text-base font-semibold">Movement Capture</CardTitle>
+            <CardDescription className="text-xs text-slate-500 dark:text-slate-400">MediaPipe landmark tracking & finger tapping telemetry</CardDescription>
           </CardHeader>
-          <CardContent className="pt-6">
-            <div className="relative bg-black/40 rounded-lg overflow-hidden aspect-video border border-white/10">
+          <CardContent className="p-4 sm:p-5">
+            <div className="relative bg-slate-950 rounded-xl overflow-hidden aspect-video border border-slate-200/80 dark:border-white/10 shadow-inner">
               <video ref={videoRef} className="w-full h-full object-cover" muted playsInline autoPlay style={{ transform: "scaleX(-1)" }} />
               <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" style={{ transform: "scaleX(-1)" }} />
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-3 text-sm text-muted-foreground">
-              <div>Hands detected: <strong className="text-primary">{handsDetected}</strong></div>
-              <div>Tap count: <strong className="text-primary">{fingerTaps}</strong></div>
-              <div>Last distance (px): <strong className="text-foreground">{lastDistancePx ?? "-"}</strong></div>
-              <div>Tap rate: <strong className="text-green-400">{tapRate.toFixed(2)} taps/sec</strong></div>
-              <div className="col-span-2">Tap this frame: <strong className={tapDetectedFrame ? "text-green-400" : "text-muted-foreground"}>{tapDetectedFrame ? "YES" : "no"}</strong></div>
+            <div className="mt-3.5 grid grid-cols-2 gap-2.5 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+              <div className="bg-slate-50 dark:bg-white/[0.03] p-2.5 rounded-xl border border-slate-200/60 dark:border-white/5">Hands detected: <strong className="text-teal-600 dark:text-teal-400">{handsDetected}</strong></div>
+              <div className="bg-slate-50 dark:bg-white/[0.03] p-2.5 rounded-xl border border-slate-200/60 dark:border-white/5">Tap count: <strong className="text-teal-600 dark:text-teal-400">{fingerTaps}</strong></div>
+              <div className="bg-slate-50 dark:bg-white/[0.03] p-2.5 rounded-xl border border-slate-200/60 dark:border-white/5">Distance (px): <strong className="text-slate-900 dark:text-white">{lastDistancePx ?? "-"}</strong></div>
+              <div className="bg-slate-50 dark:bg-white/[0.03] p-2.5 rounded-xl border border-slate-200/60 dark:border-white/5">Tap rate: <strong className="text-emerald-600 dark:text-emerald-400">{tapRate.toFixed(2)} taps/s</strong></div>
             </div>
           </CardContent>
         </Card>
 
         {/* Data Collection Status */}
-        <Card className="glass-panel border-0">
-          <CardHeader className="bg-white/5 border-b border-white/5">
-            <CardTitle className="text-foreground">Data Collection Status</CardTitle>
-            <CardDescription className="text-muted-foreground">Real-time collection metrics</CardDescription>
+        <Card className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm overflow-hidden">
+          <CardHeader className="bg-slate-50/60 dark:bg-white/[0.02] border-b border-slate-200/80 dark:border-white/5 py-4">
+            <CardTitle className="text-slate-900 dark:text-white text-base font-semibold">Data Collection Status</CardTitle>
+            <CardDescription className="text-xs text-slate-500 dark:text-slate-400">Real-time sampling and tremor stability</CardDescription>
           </CardHeader>
-          <CardContent className="pt-6">
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
-                <div><strong>Tremor Samples:</strong> <span className="text-primary font-semibold">{tremorSamplesRef.current.length}</span></div>
-                <div><strong>Tap Intervals:</strong> <span className="text-primary font-semibold">{tapIntervals.length}</span></div>
-                <div><strong>Test Duration:</strong> <span className="text-green-400 font-semibold">{testDuration.toFixed(1)}s</span></div>
-                <div><strong>Recording:</strong> <span className={isRecording ? "text-green-400 font-semibold" : "text-muted-foreground"}>{isRecording ? "Yes" : "No"}</span></div>
+          <CardContent className="p-4 sm:p-5">
+            <div className="space-y-3.5">
+              <div className="grid grid-cols-2 gap-3 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+                <div className="bg-slate-50 dark:bg-white/[0.03] p-2.5 rounded-xl border border-slate-200/60 dark:border-white/5">
+                  <span className="block text-xs text-slate-500">Tremor Samples</span>
+                  <span className="text-teal-600 dark:text-teal-400 font-bold text-base">{tremorSamplesRef.current.length}</span>
+                </div>
+                <div className="bg-slate-50 dark:bg-white/[0.03] p-2.5 rounded-xl border border-slate-200/60 dark:border-white/5">
+                  <span className="block text-xs text-slate-500">Tap Intervals</span>
+                  <span className="text-teal-600 dark:text-teal-400 font-bold text-base">{tapIntervals.length}</span>
+                </div>
+                <div className="bg-slate-50 dark:bg-white/[0.03] p-2.5 rounded-xl border border-slate-200/60 dark:border-white/5">
+                  <span className="block text-xs text-slate-500">Test Duration</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-bold text-base">{testDuration.toFixed(1)}s</span>
+                </div>
+                <div className="bg-slate-50 dark:bg-white/[0.03] p-2.5 rounded-xl border border-slate-200/60 dark:border-white/5">
+                  <span className="block text-xs text-slate-500">Recording</span>
+                  <span className={`font-bold text-base ${isRecording ? "text-emerald-600 dark:text-emerald-400" : "text-slate-500"}`}>{isRecording ? "Active" : "Ready"}</span>
+                </div>
               </div>
 
-              {/* Recent tremor data preview */}
-              {tremorSamplesRef.current.length > 0 && (
-                <div className="text-xs text-muted-foreground">
-                  <strong>Recent Tremor Data:</strong>
-                  <div className="font-mono bg-black/20 p-2 rounded mt-1 border border-white/10 text-foreground">
-                    Last Y: {tremorSamplesRef.current[tremorSamplesRef.current.length - 1]?.y.toFixed(2)}
-                  </div>
-                </div>
-              )}
-
-              {/* Recent tap intervals preview */}
-              {tapIntervals.length > 0 && (
-                <div className="text-xs text-muted-foreground">
-                  <strong>Recent Tap Intervals:</strong>
-                  <div className="font-mono bg-black/20 p-2 rounded mt-1 border border-white/10 text-foreground">
-                    Last: {tapIntervals[tapIntervals.length - 1]?.toFixed(0)}ms
-                  </div>
-                </div>
-              )}
-
               {/* Computed metrics preview */}
-              <div className="text-xs border-t border-white/10 pt-2 text-muted-foreground">
-                <strong className="text-foreground">Live Computed Metrics:</strong>
-                <div className="grid grid-cols-2 gap-2 mt-1">
-                  <div>Tremor Freq: <span className="text-primary font-semibold">{computeTremorMetrics(tremorSamplesRef.current).freqHz.toFixed(2)} Hz</span></div>
-                  <div>Coordination: <span className="text-green-400 font-semibold">{computeCoordinationScore(tapIntervals)}%</span></div>
+              <div className="border-t border-slate-200/80 dark:border-white/10 pt-3 text-xs text-slate-600 dark:text-slate-400">
+                <strong className="text-slate-900 dark:text-white block mb-1.5 font-semibold">Live Computed Metrics:</strong>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="p-2 rounded-lg bg-slate-50 dark:bg-white/[0.02] border border-slate-200/60 dark:border-white/5">
+                    Tremor Freq: <span className="text-teal-600 dark:text-teal-400 font-semibold">{computeTremorMetrics(tremorSamplesRef.current).freqHz.toFixed(2)} Hz</span>
+                  </div>
+                  <div className="p-2 rounded-lg bg-slate-50 dark:bg-white/[0.02] border border-slate-200/60 dark:border-white/5">
+                    Coordination: <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{computeCoordinationScore(tapIntervals)}%</span>
+                  </div>
                 </div>
               </div>
             </div>
           </CardContent>
         </Card>
-
       </div>
 
       {/* Enhanced Inline Analysis Report - Only shown when analysis is complete */}
       {analysisResults && (
-        <Card ref={reportRef} className="glass-panel border-0 max-w-6xl mx-auto px-4 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-1 h-full bg-primary/50"></div>
-          <CardHeader className="bg-white/5 border-b border-white/5">
-            <CardTitle className="flex items-center gap-2 text-foreground">
-              <FileText className="w-5 h-5 text-primary" />
-              Advanced Motor Analysis Report
-            </CardTitle>
-            <CardDescription className="text-muted-foreground">
-              Comprehensive clinical analysis and recommendations
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6 pt-6">
-            <div className="text-sm text-muted-foreground">
-              Generated: {new Date(analysisResults.timestamp).toLocaleString()}
-            </div>
+        <div className="max-w-4xl mx-auto">
+          <Card ref={reportRef} className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm overflow-hidden">
+            <CardHeader className="bg-slate-50/60 dark:bg-white/[0.02] border-b border-slate-200/80 dark:border-white/5 py-4">
+              <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white font-semibold text-lg">
+                <FileText className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+                Advanced Motor Function Report
+              </CardTitle>
+              <CardDescription className="text-xs text-slate-500 dark:text-slate-400">
+                Quantitative motor control, frequency spectrum, and tremor evaluation
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6 p-5 sm:p-6">
+              <div className="text-xs text-slate-500 dark:text-slate-400">
+                Generated: {new Date(analysisResults.timestamp).toLocaleString()}
+              </div>
 
-            {/* Key Metrics Summary */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                <div className="text-sm text-blue-200">Tap Rate</div>
-                <div className="text-xl font-bold text-blue-400">{analysisResults.tapRate.toFixed(2)} /sec</div>
-                <div className="text-xs text-blue-200/70">
-                  {analysisResults.tapRate >= 5 ? 'Normal' : analysisResults.tapRate >= 3 ? 'Reduced' : 'Severely Reduced'}
+              {/* Key Metrics Summary */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
+                <div className="text-center p-3.5 rounded-xl bg-blue-50 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-800/30">
+                  <div className="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wider mb-1">Tap Rate</div>
+                  <div className="text-xl font-bold text-blue-700 dark:text-blue-300">{analysisResults.tapRate.toFixed(2)} /s</div>
+                  <div className="text-[11px] text-blue-600/70 dark:text-blue-400/70 mt-0.5">
+                    {analysisResults.tapRate >= 5 ? 'Optimal' : analysisResults.tapRate >= 3 ? 'Mild Reduction' : 'Severely Reduced'}
+                  </div>
+                </div>
+                <div className="text-center p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-800/30">
+                  <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider mb-1">Coordination</div>
+                  <div className="text-xl font-bold text-emerald-700 dark:text-emerald-300">{analysisResults.coordinationScore}%</div>
+                  <div className="text-[11px] text-emerald-600/70 dark:text-emerald-400/70 mt-0.5">
+                    {analysisResults.coordinationScore >= 80 ? 'High Precision' : analysisResults.coordinationScore >= 60 ? 'Moderate' : 'Variable'}
+                  </div>
+                </div>
+                <div className="text-center p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/30">
+                  <div className="text-xs font-semibold text-amber-700 dark:text-amber-300 uppercase tracking-wider mb-1">Tremor Freq</div>
+                  <div className="text-xl font-bold text-amber-700 dark:text-amber-300">
+                    {analysisResults.tremorFrequency > 0 ? `${analysisResults.tremorFrequency.toFixed(1)} Hz` : '0 Hz'}
+                  </div>
+                  <div className="text-[11px] text-amber-600/70 dark:text-amber-400/70 mt-0.5">
+                    {analysisResults.tremorFrequency === 0 ? 'Undetected' :
+                      analysisResults.tremorFrequency <= 3 ? 'Physiological' :
+                        analysisResults.tremorFrequency <= 12 ? 'Pathological Indication' : 'High Frequency'}
+                  </div>
+                </div>
+                <div className="text-center p-3.5 rounded-xl bg-purple-50 dark:bg-purple-950/20 border border-purple-200/60 dark:border-purple-800/30">
+                  <div className="text-xs font-semibold text-purple-700 dark:text-purple-300 uppercase tracking-wider mb-1">Quality Index</div>
+                  <div className="text-xl font-bold text-purple-700 dark:text-purple-300">{analysisResults.qualityScore}%</div>
+                  <div className="text-[11px] text-purple-600/70 dark:text-purple-400/70 mt-0.5">
+                    {analysisResults.qualityScore >= 80 ? 'Reliable' : analysisResults.qualityScore >= 60 ? 'Moderate' : 'Checkup Suggested'}
+                  </div>
                 </div>
               </div>
-              <div className="text-center p-4 rounded-lg bg-green-500/10 border border-green-500/20">
-                <div className="text-sm text-green-200">Coordination</div>
-                <div className="text-xl font-bold text-green-400">{analysisResults.coordinationScore}%</div>
-                <div className="text-xs text-green-200/70">
-                  {analysisResults.coordinationScore >= 80 ? 'Excellent' : analysisResults.coordinationScore >= 60 ? 'Good' : 'Poor'}
-                </div>
-              </div>
-              <div className="text-center p-4 rounded-lg bg-orange-500/10 border border-orange-500/20">
-                <div className="text-sm text-orange-200">Tremor</div>
-                <div className="text-xl font-bold text-orange-400">
-                  {analysisResults.tremorFrequency > 0 ? `${analysisResults.tremorFrequency.toFixed(1)} Hz` : '—'}
-                </div>
-                <div className="text-xs text-orange-200/70">
-                  {analysisResults.tremorFrequency === 0 ? 'None' :
-                    analysisResults.tremorFrequency <= 3 ? 'Physiological' :
-                      analysisResults.tremorFrequency <= 12 ? 'Pathological' : 'High Frequency'}
-                </div>
-              </div>
-              <div className="text-center p-4 rounded-lg bg-purple-500/10 border border-purple-500/20">
-                <div className="text-sm text-purple-200">Quality Score</div>
-                <div className="text-xl font-bold text-purple-400">{analysisResults.qualityScore}%</div>
-                <div className="text-xs text-purple-200/70">
-                  {analysisResults.qualityScore >= 80 ? 'Excellent' : analysisResults.qualityScore >= 60 ? 'Good' : 'Needs Attention'}
-                </div>
-              </div>
-            </div>
 
-            {/* Clinical Findings */}
-            {analysisResults.clinicalFindings && analysisResults.clinicalFindings.length > 0 && (
-              <div className="space-y-3">
-                <h3 className="font-semibold text-lg text-foreground">Clinical Findings</h3>
+              {/* Clinical Findings */}
+              {analysisResults.clinicalFindings && analysisResults.clinicalFindings.length > 0 && (
                 <div className="space-y-3">
-                  {analysisResults.clinicalFindings.map((finding, index) => (
-                    <div key={index} className="border border-white/10 rounded-lg p-4 bg-white/5">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium text-foreground">{finding.parameter}</h4>
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${finding.status === 'normal' ? 'bg-green-500/20 text-green-300' :
-                            finding.status === 'borderline' ? 'bg-yellow-500/20 text-yellow-300' :
-                              'bg-red-500/20 text-red-300'
-                          }`}>
-                          {finding.status.toUpperCase()}
-                        </span>
+                  <h3 className="font-semibold text-base text-slate-900 dark:text-white">Motor Control Findings</h3>
+                  <div className="space-y-3">
+                    {analysisResults.clinicalFindings.map((finding, index) => (
+                      <div key={index} className="border border-slate-200/80 dark:border-white/10 rounded-xl p-4 bg-slate-50/50 dark:bg-white/[0.02]">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-semibold text-slate-900 dark:text-white text-sm">{finding.parameter}</h4>
+                          <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${finding.status === 'normal' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300' :
+                              finding.status === 'borderline' ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300' :
+                                'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300'
+                            }`}>
+                            {finding.status.toUpperCase()}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 text-xs sm:text-sm mb-2 text-slate-600 dark:text-slate-400">
+                          <div><strong className="text-slate-900 dark:text-white">Measured:</strong> {finding.value}</div>
+                          <div><strong className="text-slate-900 dark:text-white">Reference Range:</strong> {finding.normalRange}</div>
+                        </div>
+                        <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+                          <strong className="text-slate-900 dark:text-white">Significance:</strong> {finding.clinicalSignificance}
+                        </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-4 text-sm mb-2 text-muted-foreground">
-                        <div><strong>Value:</strong> {finding.value}</div>
-                        <div><strong>Normal Range:</strong> {finding.normalRange}</div>
-                      </div>
-                      <div className="text-sm text-muted-foreground/80">
-                        <strong>Clinical Significance:</strong> {finding.clinicalSignificance}
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
             {/* Disease Risk Assessment */}
             {analysisResults.diseaseRiskAssessment && (
@@ -1575,13 +1572,14 @@ Always consult with qualified healthcare professionals for proper diagnosis and 
               </Button>
             </div>
 
-            <div className="text-xs text-yellow-200/80 p-4 bg-yellow-500/10 rounded-lg border-l-4 border-yellow-500 border border-yellow-500/20">
-              <strong className="text-yellow-200">⚠️ Important Disclaimer:</strong> This is an AI-powered screening tool for research and educational purposes only.
+            <div className="text-xs text-amber-800 dark:text-amber-300 p-4 bg-amber-50/80 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-800/40 leading-relaxed">
+              <strong className="text-amber-900 dark:text-amber-200">⚠️ Clinical Notice:</strong> This is an AI-powered screening tool for research and educational purposes only.
               Results are not diagnostic and should not replace professional medical evaluation. Always consult with qualified healthcare
               professionals for proper diagnosis and treatment.
             </div>
           </CardContent>
         </Card>
+        </div>
       )}
     </div>
   );
