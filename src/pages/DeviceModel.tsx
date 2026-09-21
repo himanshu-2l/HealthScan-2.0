@@ -193,9 +193,75 @@ const DeviceModel: React.FC = () => {
             </div>
           </section>
 
+          {/* Flagship Device Showcase */}
+          <section className="space-y-8">
+            <div className="text-center space-y-2">
+              <span className="px-3.5 py-1 rounded-full bg-teal-500/10 text-teal-400 text-xs font-semibold uppercase tracking-wider border border-teal-500/20">
+                Flagship Reference Hardware
+              </span>
+              <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">HealthScan Neuro Hub v1.0</h2>
+              <p className="text-sm sm:text-base text-white/60 max-w-2xl mx-auto">
+                Next-generation bedside and clinic diagnostic station featuring circular OLED vitals telemetry, magnetic biometric leads, and sub-millisecond edge signal processing.
+              </p>
+            </div>
+
+            <div className="relative rounded-3xl overflow-hidden border border-white/[0.1] bg-white/[0.02] shadow-2xl group">
+              <div className="grid grid-cols-1 lg:grid-cols-12 items-center">
+                <div className="lg:col-span-7 relative overflow-hidden bg-slate-950">
+                  <img 
+                    src="/images/hardware-hub.jpg" 
+                    alt="HealthScan Neuro Diagnostic Hardware Hub" 
+                    className="w-full h-80 sm:h-96 lg:h-[460px] object-cover object-center transition-transform duration-700 group-hover:scale-[1.03]"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-r from-transparent via-transparent to-[#0a0f1d] pointer-events-none opacity-80 lg:opacity-100" />
+                </div>
+                
+                <div className="lg:col-span-5 p-6 sm:p-8 lg:p-10 space-y-6">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2.5 h-2.5 rounded-full bg-teal-400 animate-pulse" />
+                      <span className="text-xs font-mono text-teal-400 font-semibold uppercase tracking-wider">Active Sensor Telemetry</span>
+                    </div>
+                    <h3 className="text-2xl font-bold text-white tracking-tight">Titanium Neuro Diagnostic Hub</h3>
+                    <p className="text-sm text-white/70 leading-relaxed">
+                      Engineered in brushed aerospace titanium with a high-contrast circular OLED display rendering real-time PPG pulse waves, SpO2 plethysmography, and multi-channel EMG muscle signals.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                      <span className="text-white/40 block text-[11px]">Display Interface</span>
+                      <span className="font-semibold text-white">Circular High-PPI OLED</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                      <span className="text-white/40 block text-[11px]">Leads & Probes</span>
+                      <span className="font-semibold text-teal-400">Magnetic Quick-Lock</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                      <span className="text-white/40 block text-[11px]">Telemetry</span>
+                      <span className="font-semibold text-white">BLE 5.3 & Wi-Fi 6</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                      <span className="text-white/40 block text-[11px]">EHR Protocol</span>
+                      <span className="font-semibold text-emerald-400">ABDM FHIR R4 Ready</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 pt-2">
+                    <span className="inline-flex items-center gap-1.5 text-xs text-teal-400 font-semibold">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Patent-Pending Optical Sensor Array</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
           {/* Device Showcase */}
           <section className="space-y-10">
-            <h2 className="text-3xl font-semibold text-white text-center">Device Concepts</h2>
+            <h2 className="text-2xl sm:text-3xl font-semibold text-white text-center">Form Factor Iterations</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {[1, 2, 3].map((num) => (
