@@ -17,8 +17,9 @@ export default {
 		},
 		extend: {
 			fontFamily: {
-				'sans': ['Poppins', 'sans-serif'],
+				'sans': ['"Plus Jakarta Sans"', 'Poppins', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
 				'poppins': ['Poppins', 'sans-serif'],
+				'mono': ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
 			},
 			colors: {
 				border: 'hsl(var(--border))',
@@ -91,6 +92,9 @@ export default {
 				'glass-lg': '0 16px 48px rgba(0, 0, 0, 0.2), inset 0 0 0 1px rgba(255, 255, 255, 0.08)',
 				'glow': '0 0 40px hsl(var(--primary) / 0.25)',
 				'glow-lg': '0 0 60px hsl(var(--primary) / 0.35)',
+				'clinical-card': '0 4px 20px -2px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.06)',
+				'clinical-hover': '0 8px 30px -4px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(20, 184, 166, 0.30)',
+				'glow-teal': '0 0 24px rgba(20, 184, 166, 0.25)',
 			},
 			keyframes: {
 				'accordion-down': {

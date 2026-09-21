@@ -29,7 +29,9 @@ import {
   Syringe,
   Phone,
   Watch,
-  HeartPulse
+  HeartPulse,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { ChatBot } from './ChatBot';
 import { FAQModal } from './FAQModal';
@@ -94,7 +96,7 @@ export const GlassNavbar: React.FC<GlassNavbarProps> = ({ showBack, onBackClick 
   const [isThemeSelectorOpen, setIsThemeSelectorOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
-  const { colors } = useTheme();
+  const { colors, mode, toggleMode } = useTheme();
 
   const publicItems = [
     { label: 'Home', href: '/', icon: Home },
@@ -209,7 +211,7 @@ export const GlassNavbar: React.FC<GlassNavbarProps> = ({ showBack, onBackClick 
   return (
     <>
       <nav 
-        className="fixed top-0 left-0 right-0 z-50 bg-white/5 backdrop-blur-xl border-b border-white/10 shadow-lg"
+        className="fixed top-0 left-0 right-0 z-50 bg-white/95 dark:bg-[#070A11]/95 backdrop-blur-xl border-b border-slate-200 dark:border-white/10 shadow-sm dark:shadow-lg transition-colors duration-200"
         role="navigation"
         aria-label="Main navigation"
       >
@@ -248,15 +250,15 @@ export const GlassNavbar: React.FC<GlassNavbarProps> = ({ showBack, onBackClick 
                       relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
                       focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-transparent
                       ${active
-                        ? 'text-white bg-white/10 border-b-2 border-purple-400'
-                        : 'text-white/70 hover:text-white hover:bg-white/5'
+                        ? 'text-slate-900 dark:text-white bg-slate-100 dark:bg-white/10 border-b-2 border-teal-500 dark:border-purple-400'
+                        : 'text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-white/5'
                       }
                     `}
                   >
-                    <item.icon className={`w-4 h-4 transition-colors duration-200 ${active ? 'text-purple-400' : ''}`} />
+                    <item.icon className={`w-4 h-4 transition-colors duration-200 ${active ? 'text-teal-600 dark:text-purple-400' : ''}`} />
                     <span>{item.label}</span>
                     {active && (
-                      <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-8 h-0.5 bg-purple-400 rounded-full"></span>
+                      <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-8 h-0.5 bg-teal-500 dark:bg-purple-400 rounded-full"></span>
                     )}
                   </Link>
                 );
@@ -390,13 +392,29 @@ export const GlassNavbar: React.FC<GlassNavbarProps> = ({ showBack, onBackClick 
                   </DropdownMenu>
                 </div>
               )}
+              {/* Theme Toggle (Light / Dark) */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleMode}
+                className="hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-muted-foreground hover:text-slate-900 dark:hover:text-primary rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                aria-label={`Switch to ${mode === 'dark' ? 'light' : 'dark'} mode`}
+                title={`Switch to ${mode === 'dark' ? 'light' : 'dark'} mode`}
+              >
+                {mode === 'dark' ? (
+                  <Sun className="w-5 h-5 text-amber-400 animate-fade-in" />
+                ) : (
+                  <Moon className="w-5 h-5 text-slate-700 animate-fade-in" />
+                )}
+              </Button>
+
               {/* Quick Actions Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="hover:bg-white/10 text-muted-foreground hover:text-primary rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    className="hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-muted-foreground hover:text-slate-900 dark:hover:text-primary rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
                     aria-label="Quick settings menu"
                     aria-haspopup="true"
                   >
@@ -510,24 +528,24 @@ export const GlassNavbar: React.FC<GlassNavbarProps> = ({ showBack, onBackClick 
         role="menu"
         aria-label="Mobile navigation"
       >
-        <div className="border-t border-white/10 bg-black/90 backdrop-blur-xl shadow-2xl max-h-[calc(100vh-4rem)] overflow-y-auto">
+        <div className="border-t border-slate-200 dark:border-white/10 bg-white/95 dark:bg-black/90 backdrop-blur-xl shadow-2xl max-h-[calc(100vh-4rem)] overflow-y-auto">
           <div className="py-3 space-y-1 px-4">
             {/* User info section for mobile */}
             {currentUser && (
               <>
-                <div className="flex items-center gap-3 px-4 py-3 mb-2 rounded-lg bg-white/5">
-                  <Avatar className="h-10 w-10 border-2 border-purple-400/50">
+                <div className="flex items-center gap-3 px-4 py-3 mb-2 rounded-lg bg-slate-100 dark:bg-white/5">
+                  <Avatar className="h-10 w-10 border-2 border-teal-500/50 dark:border-purple-400/50">
                     <AvatarImage src={currentUser.photoURL || ''} alt={currentUser.displayName || ''} />
-                    <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-500 text-white font-semibold">
+                    <AvatarFallback className="bg-gradient-to-br from-teal-500 to-emerald-500 text-white font-semibold">
                       {getUserInitials() || <User className="w-4 h-4" />}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col overflow-hidden">
-                    <span className="text-sm font-medium text-white truncate">{currentUser.displayName}</span>
-                    <span className="text-xs text-white/60 truncate">{currentUser.email}</span>
+                    <span className="text-sm font-medium text-slate-900 dark:text-white truncate">{currentUser.displayName}</span>
+                    <span className="text-xs text-slate-500 dark:text-white/60 truncate">{currentUser.email}</span>
                   </div>
                 </div>
-                <div className="border-t border-white/10 my-2"></div>
+                <div className="border-t border-slate-200 dark:border-white/10 my-2"></div>
               </>
             )}
 
@@ -544,13 +562,13 @@ export const GlassNavbar: React.FC<GlassNavbarProps> = ({ showBack, onBackClick 
                     flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200
                     focus:outline-none focus:ring-2 focus:ring-primary/50
                     ${active
-                      ? 'text-white bg-white/10 border-l-2 border-purple-400'
-                      : 'text-white/70 hover:text-white hover:bg-white/5'
+                      ? 'text-slate-900 dark:text-white bg-slate-100 dark:bg-white/10 border-l-2 border-teal-500 dark:border-purple-400'
+                      : 'text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
                     }
                   `}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  <item.icon className={`w-5 h-5 transition-colors duration-200 ${active ? 'text-purple-400' : ''}`} />
+                  <item.icon className={`w-5 h-5 transition-colors duration-200 ${active ? 'text-teal-600 dark:text-purple-400' : ''}`} />
                   <span>{item.label}</span>
                 </Link>
               );
@@ -558,8 +576,8 @@ export const GlassNavbar: React.FC<GlassNavbarProps> = ({ showBack, onBackClick 
             {/* Categorized navigation items for mobile */}
             {visibleNavCategories.map((category, categoryIndex) => (
               <div key={category.label}>
-                <div className="border-t border-white/[0.06] my-2"></div>
-                <div className="px-4 py-1.5 text-[10px] uppercase tracking-wider text-white/30 font-medium">
+                <div className="border-t border-slate-200 dark:border-white/[0.06] my-2"></div>
+                <div className="px-4 py-1.5 text-[10px] uppercase tracking-wider text-slate-500 dark:text-white/30 font-medium">
                   {category.label}
                 </div>
                 {category.items.map((item) => {
@@ -575,20 +593,34 @@ export const GlassNavbar: React.FC<GlassNavbarProps> = ({ showBack, onBackClick 
                         flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
                         focus:outline-none focus:ring-2 focus:ring-primary/50
                         ${active
-                          ? 'text-white bg-white/10 border-l-2 border-purple-400'
-                          : 'text-white/60 hover:text-white hover:bg-white/5'
+                          ? 'text-slate-900 dark:text-white bg-slate-100 dark:bg-white/10 border-l-2 border-teal-500 dark:border-purple-400'
+                          : 'text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
                         }
                       `}
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
-                      <item.icon className={`w-5 h-5 transition-colors duration-200 ${active ? 'text-purple-400' : ''}`} />
+                      <item.icon className={`w-5 h-5 transition-colors duration-200 ${active ? 'text-teal-600 dark:text-purple-400' : ''}`} />
                       <span>{item.label}</span>
                     </Link>
                   );
                 })}
               </div>
             ))}
-            <div className="border-t border-white/10 my-2"></div>
+            <div className="border-t border-slate-200 dark:border-white/10 my-2"></div>
+            
+            {/* Light / Dark Mode Toggle Button for Mobile */}
+            <button
+              onClick={() => {
+                toggleMode();
+              }}
+              role="menuitem"
+              aria-label="Toggle light or dark theme"
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+            >
+              {mode === 'dark' ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-slate-700" />}
+              <span>{mode === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}</span>
+            </button>
+
             <button
               onClick={() => {
                 setIsChatOpen(true);
@@ -596,7 +628,7 @@ export const GlassNavbar: React.FC<GlassNavbarProps> = ({ showBack, onBackClick 
               }}
               role="menuitem"
               aria-label="Open chat assistant"
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-white/70 hover:text-white hover:bg-white/5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
             >
               <MessageCircle className="w-5 h-5" />
               <span>Chat Assistant</span>
@@ -608,7 +640,7 @@ export const GlassNavbar: React.FC<GlassNavbarProps> = ({ showBack, onBackClick 
               }}
               role="menuitem"
               aria-label="Open FAQ"
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-white/70 hover:text-white hover:bg-white/5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
             >
               <HelpCircle className="w-5 h-5" />
               <span>FAQ</span>
@@ -620,10 +652,10 @@ export const GlassNavbar: React.FC<GlassNavbarProps> = ({ showBack, onBackClick 
               }}
               role="menuitem"
               aria-label="Open theme selector"
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-white/70 hover:text-white hover:bg-white/5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
             >
               <Palette className="w-5 h-5" />
-              <span>Theme</span>
+              <span>Theme Colors</span>
             </button>
             <button
               onClick={() => {
@@ -632,7 +664,7 @@ export const GlassNavbar: React.FC<GlassNavbarProps> = ({ showBack, onBackClick 
               }}
               role="menuitem"
               aria-label="Open settings"
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-white/70 hover:text-white hover:bg-white/5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
             >
               <Settings className="w-5 h-5" />
               <span>Settings</span>
