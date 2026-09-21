@@ -164,9 +164,10 @@ export const QuickScanModal: React.FC<QuickScanModalProps> = ({
   const [savedResult, setSavedResult] = useState<HealthTestResult | null>(null);
   const [isExportingPDF, setIsExportingPDF] = useState<boolean>(false);
 
-  // Reset when modal opens
+  // Reset when modal opens & manage body scroll
   useEffect(() => {
     if (isOpen) {
+      document.body.style.overflow = 'hidden';
       setStep('intro');
       setHeartTimer(15);
       setVoiceTimer(8);
@@ -182,7 +183,12 @@ export const QuickScanModal: React.FC<QuickScanModalProps> = ({
       pitchHistoryRef.current = [];
       rrIntervalsRef.current = [];
       lastBeatTimeRef.current = null;
+    } else {
+      document.body.style.overflow = '';
     }
+    return () => {
+      document.body.style.overflow = '';
+    };
   }, [isOpen]);
 
   // Clean up media hardware on unmount or close
@@ -680,7 +686,7 @@ export const QuickScanModal: React.FC<QuickScanModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md animate-fade-in"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md animate-fade-in overscroll-contain"
       onClick={() => { cleanupHardware(); onClose(); }}
     >
       {/* Hidden processing elements */}

@@ -5,10 +5,22 @@
 /* ============================================
    PWA STANDALONE & SAFE AREA SUPPORT
    ============================================ */
-html, body {
-  overflow-x: hidden;
-  overscroll-behavior-y: contain; /* Prevent pull-to-refresh during screening */
+html {
+  scroll-behavior: smooth;
   -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: clip;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@supports not (overflow: clip) {
+  body {
+    overflow-x: hidden;
+  }
 }
 
 /* PWA standalone mode: respect device safe areas */
