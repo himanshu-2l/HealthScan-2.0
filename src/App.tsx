@@ -1,3 +1,4 @@
+import React, { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -5,59 +6,81 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { SettingsProvider } from "./contexts/SettingsContext";
 import { EHRProvider } from "./contexts/EHRContext";
-import Index from "./pages/Index";
-import LabsPage from "./pages/Labs";
-import MotorLab from "./components/labs/MotorLab";
-import { VoiceLab } from "./components/labs/VoiceLab";
-import { EyeLab } from "./components/labs/EyeLab";
-import CardiovascularLab from "./components/labs/CardiovascularLab";
-import MentalHealthLab from "./components/labs/MentalHealthLab";
-import VisionHearingLab from "./components/labs/VisionHearingLab";
-import GaitLab from "./components/labs/GaitLab";
-import Purpose from "./pages/Purpose";
-import About from "./pages/About";
-import HardwareIntegration from "./pages/HardwareIntegration";
-import DeviceModel from "./pages/DeviceModel";
-import { EHRPage } from "./pages/EHRPage";
-import Dashboard from "./pages/Dashboard";
-import ReportsPage from "./pages/ReportsPage";
-import BPTrackerPage from "./pages/BPTrackerPage";
-import PatientProfilePage from "./pages/PatientProfilePage";
-import DiabetesManagementPage from "./pages/DiabetesManagementPage";
-import NotFound from "./pages/NotFound";
 import { AuthProvider } from "./contexts/AuthContext";
-import Login from "./pages/Login";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import ErrorBoundary from "./components/ErrorBoundary";
 import ComingSoon from "./components/ComingSoon";
+import { MobileAppView } from "./pages/MobileAppView";
+import Login from "./pages/Login";
+import NotFound from "./pages/NotFound";
 
-// New feature pages
-import SymptomCheckerPage from "./pages/SymptomCheckerPage";
-import PeriodTrackerPage from "./pages/PeriodTrackerPage";
-import VaccinationPage from "./pages/VaccinationPage";
-import EmergencyContactsPage from "./pages/EmergencyContactsPage";
-import HealthPredictionsPage from "./pages/HealthPredictionsPage";
-import RecommendationsPage from "./pages/RecommendationsPage";
-import VoiceEntryPage from "./pages/VoiceEntryPage";
-import DoctorReportPage from "./pages/DoctorReportPage";
-import SmartwatchPage from "./pages/SmartwatchPage";
-import CaregiverDashboard from "./pages/CaregiverDashboard";
+// Lazy-loaded pages and heavy lab modules for fast PWA initial paint
+const Index = lazy(() => import("./pages/Index"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const LabsPage = lazy(() => import("./pages/Labs"));
+const MotorLab = lazy(() => import("./components/labs/MotorLab"));
+const VoiceLab = lazy(() => import("./components/labs/VoiceLab").then(m => ({ default: m.VoiceLab })));
+const EyeLab = lazy(() => import("./components/labs/EyeLab").then(m => ({ default: m.EyeLab })));
+const CardiovascularLab = lazy(() => import("./components/labs/CardiovascularLab"));
+const MentalHealthLab = lazy(() => import("./components/labs/MentalHealthLab"));
+const VisionHearingLab = lazy(() => import("./components/labs/VisionHearingLab"));
+const GaitLab = lazy(() => import("./components/labs/GaitLab"));
+const BPTrackerPage = lazy(() => import("./pages/BPTrackerPage"));
+const DiabetesManagementPage = lazy(() => import("./pages/DiabetesManagementPage"));
+const PatientProfilePage = lazy(() => import("./pages/PatientProfilePage"));
+const EHRPage = lazy(() => import("./pages/EHRPage").then(m => ({ default: m.EHRPage })));
+const ReportsPage = lazy(() => import("./pages/ReportsPage"));
+const Purpose = lazy(() => import("./pages/Purpose"));
+const About = lazy(() => import("./pages/About"));
+const HardwareIntegration = lazy(() => import("./pages/HardwareIntegration"));
+const DeviceModel = lazy(() => import("./pages/DeviceModel"));
 
-const queryClient = new QueryClient();
+// New feature pages (lazy loaded)
+const SymptomCheckerPage = lazy(() => import("./pages/SymptomCheckerPage"));
+const PeriodTrackerPage = lazy(() => import("./pages/PeriodTrackerPage"));
+const VaccinationPage = lazy(() => import("./pages/VaccinationPage"));
+const EmergencyContactsPage = lazy(() => import("./pages/EmergencyContactsPage"));
+const HealthPredictionsPage = lazy(() => import("./pages/HealthPredictionsPage"));
+const RecommendationsPage = lazy(() => import("./pages/RecommendationsPage"));
+const VoiceEntryPage = lazy(() => import("./pages/VoiceEntryPage"));
+const DoctorReportPage = lazy(() => import("./pages/DoctorReportPage"));
+const SmartwatchPage = lazy(() => import("./pages/SmartwatchPage"));
+const CaregiverDashboard = lazy(() => import("./pages/CaregiverDashboard"));
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+      staleTime: 60000,
+    },
+  },
+});
+
+const PageLoadingFallback = () => (
+  <div className="min-h-screen bg-slate-50 dark:bg-[#070A11] flex items-center justify-center transition-colors duration-200">
+    <div className="flex flex-col items-center gap-3">
+      <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center text-slate-950 font-black text-xs animate-pulse">
+        HS
+      </div>
+      <span className="text-xs text-slate-500 dark:text-slate-400 font-medium tracking-wide">Loading module...</span>
+    </div>
+  </div>
+);
 
 const AppContent = () => {
   return (
-    <>
+    <Suspense fallback={<PageLoadingFallback />}>
       <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="/login" element={<Login />} />
-
-        {/* Protected Routes */}
-        <Route path="/dashboard" element={
+        <Route path="/" element={<MobileAppView />} />
+        <Route path="/app" element={<MobileAppView />} />
+        <Route path="/dashboard" element={<MobileAppView />} />
+        <Route path="/web-overview" element={<Index />} />
+        <Route path="/legacy-dashboard" element={
           <ProtectedRoute>
             <Dashboard />
           </ProtectedRoute>
         } />
+        <Route path="/login" element={<Login />} />
         <Route path="/bp-tracker" element={
           <ProtectedRoute>
             <BPTrackerPage />
@@ -156,31 +179,31 @@ const AppContent = () => {
         
         <Route path="*" element={<NotFound />} />
       </Routes>
-    </>
+    </Suspense>
   );
 };
 
 
 const App = () => {
   return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <SettingsProvider>
-          <EHRProvider>
-            <ThemeProvider>
-              <AuthProvider>
-                <TooltipProvider>
-                  <Toaster />
-                  <Router>
+    <Router>
+      <ErrorBoundary>
+        <QueryClientProvider client={queryClient}>
+          <SettingsProvider>
+            <EHRProvider>
+              <ThemeProvider>
+                <AuthProvider>
+                  <TooltipProvider>
+                    <Toaster />
                     <AppContent />
-                  </Router>
-                </TooltipProvider>
-              </AuthProvider>
-            </ThemeProvider>
-          </EHRProvider>
-        </SettingsProvider>
-      </QueryClientProvider>
-    </ErrorBoundary>
+                  </TooltipProvider>
+                </AuthProvider>
+              </ThemeProvider>
+            </EHRProvider>
+          </SettingsProvider>
+        </QueryClientProvider>
+      </ErrorBoundary>
+    </Router>
   );
 };
 
