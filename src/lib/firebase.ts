@@ -1,5 +1,5 @@
-import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import { initializeApp, getApps, type FirebaseApp } from 'firebase/app';
+import { getAuth, GoogleAuthProvider, type Auth } from 'firebase/auth';
 
 const firebaseConfig = {
     apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -19,6 +19,17 @@ export const isFirebaseConfigured = Boolean(
     import.meta.env.VITE_FIREBASE_PROJECT_ID !== 'your_project_id'
 );
 
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
+let app: FirebaseApp | undefined;
+let auth: Auth | any = undefined;
+
+if (isFirebaseConfigured) {
+    try {
+        app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+        auth = getAuth(app);
+    } catch (error) {
+        console.warn('Firebase initialization skipped or failed:', error);
+    }
+}
+
+export { app, auth };
 export const googleProvider = new GoogleAuthProvider();

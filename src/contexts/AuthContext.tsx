@@ -52,27 +52,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
         }
 
-        if (isFirebaseConfigured) {
-            const unsubscribe = onAuthStateChanged(auth, (user) => {
-                // If not in demo mode, use Firebase user
-                if (!localStorage.getItem('healthscan_demo_user')) {
-                    setCurrentUser(user);
-                }
-                setLoading(false);
-            });
-            return unsubscribe;
-        } else {
-            // Auto-provision demo session so hackathon judges & local testers never hit an auth wall
-            const defaultUser: AppUser = {
-                uid: 'demo-user-healthscan',
-                displayName: 'Alex Rivera',
-                email: 'alex.rivera@abdm',
-                photoURL: null
-            };
-            localStorage.setItem('healthscan_demo_user', JSON.stringify(defaultUser));
-            setCurrentUser(defaultUser);
-            setLoading(false);
+        if (isFirebaseConfigured && auth) {
+            try {
+                const unsubscribe = onAuthStateChanged(auth, (user) => {
+                    // If not in demo mode, use Firebase user
+                    if (!localStorage.getItem('healthscan_demo_user')) {
+                        setCurrentUser(user);
+                    }
+                    setLoading(false);
+                });
+                return unsubscribe;
+            } catch (err) {
+                console.warn('Firebase auth listener skipped:', err);
+            }
         }
+        
+        // Auto-provision demo session so hackathon judges & local testers never hit an auth wall
+        const defaultUser: AppUser = {
+            uid: 'demo-user-healthscan',
+            displayName: 'Alex Rivera',
+            email: 'alex.rivera@abdm',
+            photoURL: null
+        };
+        localStorage.setItem('healthscan_demo_user', JSON.stringify(defaultUser));
+        setCurrentUser(defaultUser);
+        setLoading(false);
     }, []);
 
     const loginAsDemo = () => {
@@ -91,11 +95,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const loginWithGoogle = async () => {
-        if (!isFirebaseConfigured) {
+        if (!isFirebaseConfigured || !auth) {
             toast({
                 variant: "destructive",
                 title: "Firebase Google Auth Not Configured",
-                description: "VITE_FIREBASE_API_KEY in .env contains placeholder values. Use Demo Mode to explore the app immediately, or provide real Firebase credentials in .env.",
+                description: "Firebase credentials not configured for this environment. Click 'Continue in Demo Mode' to explore all features immediately!",
             });
             return;
         }
@@ -123,7 +127,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const logout = async () => {
         localStorage.removeItem('healthscan_demo_user');
         try {
-            if (isFirebaseConfigured) {
+            if (isFirebaseConfigured && auth) {
                 await signOut(auth);
             }
         } catch (error: any) {
