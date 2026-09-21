@@ -16,7 +16,9 @@ import {
   Download,
   FileText,
   Camera,
-  Volume2
+  Volume2,
+  VolumeX,
+  Languages
 } from 'lucide-react';
 import { pulseDetector } from '../../utils/pulseDetection';
 import { saveTestResult } from '../../services/healthDataService';
@@ -85,12 +87,41 @@ function extractFundamentalPitch(buffer: Float32Array, sampleRate: number): { f0
   return { f0: null, rms };
 }
 
+// Bilingual Clinical Prompts for Frontline Health Workers & Rural Clinic Patients
+const CLINICAL_PROMPTS: Record<Step, { en: string; hi: string }> = {
+  intro: {
+    en: "Welcome to HealthScan multi-modal screening. Tap Start Screening when ready.",
+    hi: "हेल्थस्कैन स्क्रीनिंग में आपका स्वागत है। शुरू करने के लिए स्टार्ट पर टैप करें।"
+  },
+  heart: {
+    en: "Place your index finger gently over the rear camera lens and flash.",
+    hi: "कृपया पल्स जांच के लिए अपनी तर्जनी उंगली को रियर कैमरे पर स्थिर रखें।"
+  },
+  voice: {
+    en: "Take a deep breath and sustain a steady 'Ahhh' sound into the microphone.",
+    hi: "गहरी सांस लें और माइक्रोफ़ोन के सामने 'आ...' की स्थिर ध्वनि निकालें।"
+  },
+  motor: {
+    en: "MDS-UPDRS motor test. Tap the alternating buttons as rapidly as possible.",
+    hi: "स्क्रीन पर दोनों बटनों पर जितनी तेज़ी से हो सके बारी-बारी उंगलियों से टैप करें।"
+  },
+  results: {
+    en: "Clinical screening complete. Your vital biomarkers are ready.",
+    hi: "स्क्रीनिंग पूरी हो गई है। आपके स्वास्थ्य बायोमार्कर तैयार हैं।"
+  }
+};
+
 export const QuickScanModal: React.FC<QuickScanModalProps> = ({
   isOpen,
   onClose,
   onScanComplete,
 }) => {
   const [step, setStep] = useState<Step>('intro');
+
+  // Frontline Bilingual Voice Guidance State
+  const [voicePromptLang, setVoicePromptLang] = useState<'en' | 'hi'>('en');
+  const [isVoiceMuted, setIsVoiceMuted] = useState<boolean>(false);
+  const [isPromptSpeaking, setIsPromptSpeaking] = useState<boolean>(false);
   
   // Heart PPG state
   const [heartTimer, setHeartTimer] = useState<number>(15);
@@ -180,11 +211,77 @@ export const QuickScanModal: React.FC<QuickScanModalProps> = ({
       audioContextRef.current.close().catch(() => {});
       audioContextRef.current = null;
     }
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    setIsPromptSpeaking(false);
   }, []);
+
+  const speakPrompt = useCallback((promptStep: Step, langOverride?: 'en' | 'hi') => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    if (isVoiceMuted) return;
+
+    try {
+      window.speechSynthesis.cancel();
+      const lang = langOverride || voicePromptLang;
+      const text = CLINICAL_PROMPTS[promptStep]?.[lang];
+      if (!text) return;
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.92;
+      utterance.pitch = 1.0;
+
+      const voices = window.speechSynthesis.getVoices();
+      if (lang === 'hi') {
+        utterance.lang = 'hi-IN';
+        const hiVoice = voices.find(v => v.lang.includes('hi') || v.lang.includes('HI'));
+        if (hiVoice) utterance.voice = hiVoice;
+      } else {
+        utterance.lang = 'en-US';
+        const enVoice = voices.find(v => v.lang.includes('en-IN') || v.lang.includes('en-US') || v.lang.includes('en'));
+        if (enVoice) utterance.voice = enVoice;
+      }
+
+      utterance.onstart = () => setIsPromptSpeaking(true);
+      utterance.onend = () => setIsPromptSpeaking(false);
+      utterance.onerror = () => setIsPromptSpeaking(false);
+
+      window.speechSynthesis.speak(utterance);
+    } catch (err) {
+      console.warn('Speech synthesis unavailable:', err);
+      setIsPromptSpeaking(false);
+    }
+  }, [isVoiceMuted, voicePromptLang]);
+
+  const toggleLanguage = () => {
+    const nextLang = voicePromptLang === 'en' ? 'hi' : 'en';
+    setVoicePromptLang(nextLang);
+    speakPrompt(step, nextLang);
+  };
+
+  const toggleVoiceMute = () => {
+    if (!isVoiceMuted) {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+      setIsPromptSpeaking(false);
+    }
+    setIsVoiceMuted(!isVoiceMuted);
+  };
+
+  // Trigger spoken instructions automatically upon step transition
+  useEffect(() => {
+    if (isOpen) {
+      speakPrompt(step);
+    }
+  }, [step, isOpen, speakPrompt]);
 
   useEffect(() => {
     return () => {
       cleanupHardware();
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
     };
   }, [cleanupHardware]);
 
@@ -595,25 +692,62 @@ export const QuickScanModal: React.FC<QuickScanModalProps> = ({
         onClick={e => e.stopPropagation()}
       >
         {/* Top Header Bar */}
-        <div className="px-5 py-4 flex items-center justify-between border-b border-slate-200 dark:border-white/[0.08] bg-slate-50/95 dark:bg-[#101726]/90 transition-colors">
+        <div className="px-5 py-3.5 flex items-center justify-between border-b border-slate-200 dark:border-white/[0.08] bg-slate-50/95 dark:bg-[#101726]/90 transition-colors">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-teal-500/15 border border-teal-500/30 flex items-center justify-center text-teal-600 dark:text-teal-400">
+            <div className="w-8 h-8 rounded-xl bg-teal-500/15 border border-teal-500/30 flex items-center justify-center text-teal-600 dark:text-teal-400 shrink-0">
               <Zap className="w-4 h-4 fill-teal-600 dark:fill-teal-400 stroke-teal-600 dark:stroke-teal-400" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white tracking-tight">60-Second Health Triage</h2>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400">Real-Time Computer Vision & Audio Biometrics</p>
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-bold text-slate-900 dark:text-white tracking-tight">60-Second Health Triage</h2>
+                {isPromptSpeaking && (
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-teal-500/10 text-teal-600 dark:text-teal-300 border border-teal-500/20 animate-pulse">
+                    <span className="w-1.5 h-1.5 rounded-full bg-teal-500"></span>
+                    Speaking
+                  </span>
+                )}
+              </div>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400">Frontline Multi-Modal Biometrics</p>
             </div>
           </div>
-          <button
-            onClick={() => {
-              cleanupHardware();
-              onClose();
-            }}
-            className="w-8 h-8 rounded-full bg-slate-200/70 hover:bg-slate-300 dark:bg-white/[0.06] dark:hover:bg-white/[0.12] flex items-center justify-center text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition"
-          >
-            <X className="w-4 h-4" />
-          </button>
+
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Bilingual Frontline Worker Audio Toggle */}
+            <button
+              onClick={toggleLanguage}
+              title={voicePromptLang === 'en' ? 'Switch to Hindi Voice Guidance' : 'Switch to English Voice Guidance'}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.12] border border-slate-200 dark:border-white/[0.1] text-[11px] font-semibold text-slate-700 dark:text-slate-300 transition-all active:scale-95"
+            >
+              <Languages className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+              <span>{voicePromptLang === 'en' ? '🇬🇧 EN' : '🇮🇳 हिंदी'}</span>
+            </button>
+
+            {/* Mute/Unmute Audio Guidance */}
+            <button
+              onClick={toggleVoiceMute}
+              title={isVoiceMuted ? 'Unmute Audio Guidance' : 'Mute Audio Guidance'}
+              aria-label={isVoiceMuted ? 'Unmute audio guidance' : 'Mute audio guidance'}
+              className={`p-1.5 rounded-lg border transition-all active:scale-95 ${
+                isVoiceMuted 
+                  ? 'bg-slate-100 dark:bg-white/[0.04] text-slate-400 border-slate-200 dark:border-white/[0.06]' 
+                  : 'bg-teal-50 dark:bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20 shadow-sm'
+              }`}
+            >
+              {isVoiceMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+            </button>
+
+            {/* Close Modal */}
+            <button
+              onClick={() => {
+                cleanupHardware();
+                onClose();
+              }}
+              className="w-8 h-8 rounded-full bg-slate-200/70 hover:bg-slate-300 dark:bg-white/[0.06] dark:hover:bg-white/[0.12] flex items-center justify-center text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition"
+              aria-label="Close modal"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* Step Indicators */}
@@ -628,6 +762,23 @@ export const QuickScanModal: React.FC<QuickScanModalProps> = ({
               {i < 4 && <div className={`w-4 h-px ${i < currentStepIndex ? 'bg-teal-500/50' : 'bg-slate-200 dark:bg-white/[0.08]'}`} />}
             </div>
           ))}
+        </div>
+
+        {/* Active Frontline Spoken Audio Guidance Caption Bar */}
+        <div className="mx-4 sm:mx-6 mt-3 px-3.5 py-2 rounded-xl bg-teal-500/10 dark:bg-teal-500/15 border border-teal-500/20 text-xs text-teal-900 dark:text-teal-200 flex items-center justify-between transition-all">
+          <div className="flex items-center gap-2 overflow-hidden pr-2">
+            <Volume2 className={`w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0 ${isPromptSpeaking ? 'animate-bounce' : ''}`} />
+            <span className="font-medium truncate text-[11px] sm:text-xs">
+              {CLINICAL_PROMPTS[step]?.[voicePromptLang]}
+            </span>
+          </div>
+          <button
+            onClick={() => speakPrompt(step)}
+            title="Replay Voice Guidance"
+            className="text-[10px] font-bold text-teal-700 dark:text-teal-300 hover:underline shrink-0 px-2 py-0.5 rounded bg-teal-500/15 dark:bg-teal-500/25 transition active:scale-95"
+          >
+            Replay
+          </button>
         </div>
 
         {/* Modal Body Content */}

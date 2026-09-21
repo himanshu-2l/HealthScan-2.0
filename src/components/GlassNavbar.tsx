@@ -31,12 +31,14 @@ import {
   Watch,
   HeartPulse,
   Sun,
-  Moon
+  Moon,
+  QrCode
 } from 'lucide-react';
 import { ChatBot } from './ChatBot';
 import { FAQModal } from './FAQModal';
 import { SettingsModal } from './SettingsModal';
 import { ThemeSelector } from './ThemeSelector';
+import { QRCodeModal } from './pwa/QRCodeModal';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Link, useLocation } from 'react-router-dom';
 import {
@@ -95,6 +97,7 @@ export const GlassNavbar: React.FC<GlassNavbarProps> = ({ showBack, onBackClick 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isThemeSelectorOpen, setIsThemeSelectorOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const location = useLocation();
   const { colors, mode, toggleMode } = useTheme();
 
@@ -408,6 +411,18 @@ export const GlassNavbar: React.FC<GlassNavbarProps> = ({ showBack, onBackClick 
                 )}
               </Button>
 
+              {/* Test on Phone (Judge Live QR Code) */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsQRModalOpen(true)}
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.12] border border-slate-200 dark:border-white/[0.1] text-xs font-semibold text-slate-800 dark:text-slate-200 transition-all active:scale-95"
+                title="Scan QR Code to open HealthScan live on your phone"
+              >
+                <QrCode className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+                <span>Test on Phone</span>
+              </Button>
+
               {/* Quick Actions Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -718,6 +733,7 @@ export const GlassNavbar: React.FC<GlassNavbarProps> = ({ showBack, onBackClick 
       <FAQModal isOpen={isFAQOpen} onClose={() => setIsFAQOpen(false)} />
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
       <ThemeSelector isOpen={isThemeSelectorOpen} onClose={() => setIsThemeSelectorOpen(false)} />
+      <QRCodeModal isOpen={isQRModalOpen} onClose={() => setIsQRModalOpen(false)} />
     </>
   );
 };
