@@ -55,7 +55,12 @@ const themes: ThemeConfig = {
   }
 };
 
+export type ThemeMode = 'dark' | 'light';
+
 interface ThemeContextType {
+  mode: ThemeMode;
+  setMode: (mode: ThemeMode) => void;
+  toggleMode: () => void;
   currentTheme: ThemeType;
   setTheme: (theme: ThemeType) => void;
   colors: ThemeColors;
@@ -78,6 +83,18 @@ interface ThemeProviderProps {
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const [currentTheme, setCurrentTheme] = useState<ThemeType>('violet');
+  const [mode, setModeState] = useState<ThemeMode>(() => {
+    try {
+      const saved = localStorage.getItem('healthscan-mode') as ThemeMode;
+      if (saved === 'light' || saved === 'dark') return saved;
+      if (typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: light)').matches) {
+        return 'light';
+      }
+    } catch {
+      // ignore
+    }
+    return 'dark'; // Clinical default
+  });
 
   const themeNames = {
     violet: 'Violet Dream',
@@ -95,6 +112,31 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   }, []);
 
   useEffect(() => {
+    // Synchronize dark/light mode class on root and body
+    const root = document.documentElement;
+    if (mode === 'dark') {
+      root.classList.add('dark');
+      root.classList.remove('light');
+      document.body.classList.add('dark');
+      document.body.classList.remove('light');
+    } else {
+      root.classList.add('light');
+      root.classList.remove('dark');
+      document.body.classList.add('light');
+      document.body.classList.remove('dark');
+    }
+    try {
+      localStorage.setItem('healthscan-mode', mode);
+      const metaTheme = document.querySelector('meta[name="theme-color"]');
+      if (metaTheme) {
+        metaTheme.setAttribute('content', mode === 'dark' ? '#070A11' : '#F8FAFC');
+      }
+    } catch {
+      // ignore
+    }
+  }, [mode]);
+
+  useEffect(() => {
     // Remove old theme classes
     Object.keys(themes).forEach(theme => {
       document.body.classList.remove(`theme-${theme}`);
@@ -108,10 +150,18 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     localStorage.setItem('healthscan-theme', theme);
   };
 
+  const toggleMode = () => {
+    setModeState(prev => (prev === 'dark' ? 'light' : 'dark'));
+  };
+
+  const setMode = (newMode: ThemeMode) => {
+    setModeState(newMode);
+  };
+
   const colors = themes[currentTheme];
 
   return (
-    <ThemeContext.Provider value={{ currentTheme, setTheme, colors, themeNames }}>
+    <ThemeContext.Provider value={{ mode, setMode, toggleMode, currentTheme, setTheme, colors, themeNames }}>
       {children}
     </ThemeContext.Provider>
   );
