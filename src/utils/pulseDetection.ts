@@ -316,70 +316,99 @@ class PulseDetector {
     }
 
     try {
-      // Draw video frame to canvas
-      this.canvas.width = this.videoElement.videoWidth || 640;
-      this.canvas.height = this.videoElement.videoHeight || 480;
+      const vw = this.videoElement.videoWidth || 640;
+      const vh = this.videoElement.videoHeight || 480;
+
+      // Dynamically sync canvas size without allocating unnecessarily
+      if (this.canvas.width !== vw || this.canvas.height !== vh) {
+        this.canvas.width = vw;
+        this.canvas.height = vh;
+      }
+
       this.ctx.drawImage(this.videoElement, 0, 0, this.canvas.width, this.canvas.height);
 
-      if (this.detectionRegion) {
-        // Extract pixel data from detection region
-        const imageData = this.ctx.getImageData(
-          this.detectionRegion.x,
-          this.detectionRegion.y,
-          this.detectionRegion.width,
-          this.detectionRegion.height
-        );
-
-        // Calculate average RGB values
-        let rSum = 0, gSum = 0, bSum = 0;
-        const pixelCount = imageData.data.length / 4;
-
-        for (let i = 0; i < imageData.data.length; i += 4) {
-          rSum += imageData.data[i];     // Red
-          gSum += imageData.data[i + 1]; // Green
-          bSum += imageData.data[i + 2];  // Blue
-        }
-
-        const avgRed = rSum / pixelCount;
-        const avgGreen = gSum / pixelCount;
-        const avgBlue = bSum / pixelCount;
-
-        // Check finger coverage in fingertip mode
+      // Dynamically ensure detection region matches active video dimensions
+      if (!this.detectionRegion || this.detectionRegion.width <= 10 || this.detectionRegion.height <= 10) {
         if (this.mode === 'fingertip') {
-          // Human tissue transillumination shows marked red channel dominance
-          this.fingerDetected = avgRed > 85 && (avgRed > avgGreen * 1.12) && (avgRed > avgBlue * 1.2);
+          this.detectionRegion = {
+            x: Math.round(vw * 0.15),
+            y: Math.round(vh * 0.15),
+            width: Math.max(20, Math.round(vw * 0.7)),
+            height: Math.max(20, Math.round(vh * 0.7))
+          };
         } else {
-          this.fingerDetected = true;
+          this.detectionRegion = {
+            x: Math.round(vw * 0.3),
+            y: Math.round(vh * 0.1),
+            width: Math.max(20, Math.round(vw * 0.4)),
+            height: Math.max(20, Math.round(vh * 0.15))
+          };
         }
+      }
 
-        // Store values
-        const timestamp = Date.now();
-        this.redValues.push(avgRed);
-        this.greenValues.push(avgGreen);
-        this.blueValues.push(avgBlue);
-        this.timestamps.push(timestamp);
+      // Safely clamp region inside canvas bounds to guarantee no IndexSizeError
+      const regX = Math.max(0, Math.min(this.canvas.width - 2, Math.round(this.detectionRegion.x)));
+      const regY = Math.max(0, Math.min(this.canvas.height - 2, Math.round(this.detectionRegion.y)));
+      const regW = Math.max(1, Math.min(this.canvas.width - regX, Math.round(this.detectionRegion.width)));
+      const regH = Math.max(1, Math.min(this.canvas.height - regY, Math.round(this.detectionRegion.height)));
 
-        // Keep only recent samples
-        if (this.redValues.length > this.maxSamples) {
-          this.redValues.shift();
-          this.greenValues.shift();
-          this.blueValues.shift();
-          this.timestamps.shift();
-        }
+      // Extract pixel data from detection region
+      const imageData = this.ctx.getImageData(regX, regY, regW, regH);
 
-        // Estimate SpO2 from dual-channel AC/DC ratio
-        if (this.redValues.length >= 60) {
-          this.latestSpo2 = this.calculateSpO2(this.redValues, this.greenValues);
-        }
+      // Calculate average RGB values
+      let rSum = 0, gSum = 0, bSum = 0;
+      const pixelCount = imageData.data.length / 4;
 
-        // Calculate pulse when we have enough samples (at least 3 seconds)
-        if (this.redValues.length >= 90) { // ~3 seconds at 30fps
-          const { bpm, isBeat } = this.calculateBPM(this.greenValues, this.timestamps);
-          const confidence = this.calculateConfidence(this.greenValues);
-          
-          if (this.onPulseUpdate && bpm > 0) {
-            this.onPulseUpdate(bpm, confidence, this.lastRRIntervals, this.latestSpo2, this.fingerDetected, isBeat);
-          }
+      for (let i = 0; i < imageData.data.length; i += 4) {
+        rSum += imageData.data[i];     // Red
+        gSum += imageData.data[i + 1]; // Green
+        bSum += imageData.data[i + 2];  // Blue
+      }
+
+      const avgRed = rSum / pixelCount;
+      const avgGreen = gSum / pixelCount;
+      const avgBlue = bSum / pixelCount;
+
+      // Robust finger coverage detection in fingertip mode
+      if (this.mode === 'fingertip') {
+        const totalBrightness = avgRed + avgGreen + avgBlue;
+        const redRatio = totalBrightness > 0 ? avgRed / totalBrightness : 0;
+        const isRedDominant = (redRatio >= 0.40 && avgRed > avgGreen && avgRed > avgBlue) ||
+                              (avgRed > 55 && avgRed > avgGreen * 1.05 && avgRed > avgBlue * 1.08) ||
+                              (avgRed > 175 && avgRed > avgGreen && avgRed > avgBlue);
+        this.fingerDetected = totalBrightness > 25 && isRedDominant;
+      } else {
+        this.fingerDetected = true;
+      }
+
+      // Store values
+      const timestamp = Date.now();
+      this.redValues.push(avgRed);
+      this.greenValues.push(avgGreen);
+      this.blueValues.push(avgBlue);
+      this.timestamps.push(timestamp);
+
+      // Keep only recent samples
+      if (this.redValues.length > this.maxSamples) {
+        this.redValues.shift();
+        this.greenValues.shift();
+        this.blueValues.shift();
+        this.timestamps.shift();
+      }
+
+      // Estimate SpO2 from dual-channel AC/DC ratio
+      if (this.redValues.length >= 60) {
+        this.latestSpo2 = this.calculateSpO2(this.redValues, this.greenValues);
+      }
+
+      // Calculate pulse when we have enough samples (at least 2 seconds)
+      if (this.redValues.length >= 60) {
+        const signal = this.selectSignal();
+        const { bpm, isBeat } = this.calculateBPM(signal, this.timestamps);
+        const confidence = this.calculateConfidence(signal);
+        
+        if (this.onPulseUpdate && bpm > 0) {
+          this.onPulseUpdate(bpm, confidence, this.lastRRIntervals, this.latestSpo2, this.fingerDetected, isBeat);
         }
       }
     } catch (error) {
@@ -466,8 +495,8 @@ class PulseDetector {
     // Threshold is between mean and max, scaled by signal quality
     const threshold = signalMean + (signalMax - signalMean) * 0.3;
     
-    // Minimum distance between peaks (200ms at 30fps = 6 samples, ~300 BPM max)
-    const minPeakDistance = Math.max(6, Math.floor(signal.length / 50));
+    // Minimum distance between peaks (~300ms at 30fps = 9 samples, ~200 BPM max) to reject dicrotic notches
+    const minPeakDistance = 9;
 
     let lastPeakIndex = -minPeakDistance;
 
@@ -486,6 +515,27 @@ class PulseDetector {
     }
 
     return peaks;
+  }
+
+  /**
+   * Calculate variance of signal to assess AC pulsatile amplitude
+   */
+  private getSignalVariance(signal: number[]): number {
+    if (signal.length < 10) return 0;
+    const mean = signal.reduce((a, b) => a + b, 0) / signal.length;
+    return signal.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / signal.length;
+  }
+
+  /**
+   * Select optimal PPG signal channel based on test mode and sensor exposure
+   */
+  private selectSignal(): number[] {
+    if (this.mode === 'face') {
+      return this.greenValues;
+    }
+    const greenVar = this.getSignalVariance(this.greenValues);
+    const redVar = this.getSignalVariance(this.redValues);
+    return greenVar > 0.35 ? this.greenValues : (redVar > 0.15 ? this.redValues : this.greenValues);
   }
 
   /**
@@ -577,8 +627,9 @@ class PulseDetector {
    * Get current waveform data
    */
   getWaveform(): PulseWaveform {
+    const signal = this.selectSignal();
     return {
-      samples: [...this.greenValues],
+      samples: [...signal],
       timestamps: [...this.timestamps],
       sampleRate: 30 // Assuming 30fps
     };

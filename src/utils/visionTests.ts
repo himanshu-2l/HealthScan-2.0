@@ -379,7 +379,7 @@ export function calculateOverallVisionScore(
     recommendations.push('Consider updating prescription if you wear glasses or contacts');
   }
 
-  if (colorBlindness.type !== 'normal') {
+  if (colorBlindness.type !== 'NORMAL') {
     recommendations.push('Consult with an eye care professional for color vision assessment');
     recommendations.push('Be aware of color-dependent tasks in daily life');
   }

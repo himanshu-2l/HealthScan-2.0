@@ -84,7 +84,7 @@ const generateId = (): string => {
   return `vac_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 };
 
-const calculateStatus = (record: Omit<VaccinationRecord, 'status'>): VaccinationRecord['status'] => {
+const calculateStatus = (record: Pick<VaccinationRecord, 'doseNumber' | 'totalDoses'> & { nextDoseDate?: string }): VaccinationRecord['status'] => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 

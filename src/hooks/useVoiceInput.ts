@@ -54,7 +54,7 @@ declare global {
 export interface VoicePattern {
   name: string;
   pattern: RegExp;
-  extract: (match: RegExpMatchArray) => { value: string | number; unit?: string };
+  extract: (match: RegExpMatchArray) => { value: string | number | Record<string, any>; unit?: string };
 }
 
 export interface UseVoiceInputOptions {
@@ -68,7 +68,7 @@ export interface UseVoiceInputOptions {
 
 export interface ParsedResult {
   patternName: string;
-  value: string | number;
+  value: string | number | Record<string, any>;
   unit?: string;
   rawTranscript: string;
 }

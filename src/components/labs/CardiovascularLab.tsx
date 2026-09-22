@@ -74,6 +74,7 @@ export const CardiovascularLab: React.FC = () => {
   const startTimeRef = useRef<number>(0);
   const rrIntervalsRef = useRef<number[]>([]);
   const lastBeatTimeRef = useRef<number | null>(null);
+  const lastBeatTickRef = useRef<number>(0);
   const isBeatActiveRef = useRef<boolean>(false);
   const beatTimeoutRef = useRef<number | null>(null);
   const [age, setAge] = useState<number | string>(35);
@@ -202,6 +203,18 @@ export const CardiovascularLab: React.FC = () => {
         videoRef.current.srcObject = stream;
         await videoRef.current.play().catch(() => {});
         setPermission('granted');
+
+        // Wait for video metadata to resolve width and height
+        await new Promise<void>((resolve) => {
+          if (videoRef.current && videoRef.current.readyState >= 1 && videoRef.current.videoWidth > 0) {
+            resolve();
+          } else if (videoRef.current) {
+            videoRef.current.onloadedmetadata = () => resolve();
+            setTimeout(resolve, 500);
+          } else {
+            resolve();
+          }
+        });
 
         // Check if camera hardware has flashlight (torch)
         const torchAvailable = await checkTorchSupport(stream);
@@ -366,9 +379,13 @@ export const CardiovascularLab: React.FC = () => {
     waveAnimRef.current = requestAnimationFrame(renderWave);
   };
 
-  const startTest = () => {
-    if (permission !== 'granted' || !videoRef.current || !canvasRef.current) {
-      setStatus('Please enable camera first');
+  const startTest = async () => {
+    if (permission !== 'granted' || !streamRef.current) {
+      await initCamera();
+    }
+
+    if (!videoRef.current || !canvasRef.current) {
+      setStatus('Please grant camera access to begin cardiovascular assessment.');
       return;
     }
 
@@ -435,9 +452,9 @@ export const CardiovascularLab: React.FC = () => {
       const elapsed = (Date.now() - startTimeRef.current) / 1000;
       setTestDuration(elapsed);
 
-      // Rhythm watchdog: if we have a locked BPM, ensure visual & audio pulse fire steadily
-      const currentBpm = pulseDetector.getWaveform().samples.length > 30 ? (heartRate || 72) : null;
-      if (currentBpm && currentBpm >= 40 && currentBpm <= 190) {
+      // Rhythm watchdog: if we have a locked physiological BPM, ensure visual & audio pulse fire steadily
+      const currentBpm = (heartRate && heartRate >= 40 && heartRate <= 190 && confidence >= 0.35) ? heartRate : null;
+      if (currentBpm) {
         const beatIntervalMs = 60000 / currentBpm;
         if (Date.now() - lastBeatTickRef.current >= beatIntervalMs) {
           triggerPulseBeat(spo2 || 98);
@@ -818,7 +835,7 @@ export const CardiovascularLab: React.FC = () => {
 
           <Button
             onClick={isRecording ? stopTest : startTest}
-            disabled={permission !== 'granted' || (!isRecording && !heartRate && testDuration > 0)}
+            disabled={permission === 'denied'}
             className="bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-sm"
           >
             {isRecording ? (
@@ -871,7 +888,7 @@ export const CardiovascularLab: React.FC = () => {
                 muted
                 style={{ transform: ppgMode === 'face' ? 'scaleX(-1)' : 'none' }}
               />
-              <canvas ref={canvasRef} className="hidden" />
+              <canvas ref={canvasRef} width={640} height={480} className="hidden" />
 
               {/* In-Frame Recording Indicator */}
               {isRecording && (

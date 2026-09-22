@@ -75,6 +75,7 @@ export const MealPlanner: React.FC = () => {
       'rajasthan': 'Rajasthan',
       'mp-chhattisgarh': 'MP & Chhattisgarh',
       'punjab-haryana': 'Punjab & Haryana',
+      'all': 'Pan-India (All Regions)',
     };
     return labels[reg];
   };

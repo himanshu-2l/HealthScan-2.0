@@ -7,7 +7,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { VoiceInputButton } from '../ui/VoiceInputButton';
-import { VoicePattern } from '../../hooks/useVoiceInput';
+import { VoicePattern, ParsedResult } from '../../hooks/useVoiceInput';
 import {
   PieChart,
   Pie,
@@ -177,7 +177,7 @@ export const PatternAnalysis: React.FC = () => {
     ];
   }, [summary]);
 
-  const handleVoiceResult = (result: { patternName: string; value: number | string }) => {
+  const handleVoiceResult = (result: ParsedResult) => {
     if (result.patternName === 'glucose') {
       // Could trigger a refresh or show a toast
       loadData();

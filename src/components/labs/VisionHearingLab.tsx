@@ -202,9 +202,9 @@ export const VisionHearingLab: React.FC = () => {
     }
 
     let visionOverall = { overallScore: 0, recommendations: [] as string[] };
-    let visualAcuity = { snellenEquivalent: 'N/A' };
-    let colorBlindness = { type: 'N/A' };
-    let peripheralVision = { score: 0 };
+    let visualAcuity: any = { snellenEquivalent: 'N/A' };
+    let colorBlindness: any = { type: 'N/A' };
+    let peripheralVision: any = { score: 0 };
 
     // Vision results
     if (visionTestAnswers.length > 0) {
@@ -228,6 +228,7 @@ export const VisionHearingLab: React.FC = () => {
         : {
           score: 100, // Default to normal if test not taken
           blindSpots: 0,
+          fieldOfVision: 180,
           interpretation: 'Peripheral vision test not completed.'
         };
 

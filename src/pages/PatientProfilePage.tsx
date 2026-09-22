@@ -49,6 +49,7 @@ import {
   updateMedicalHistory,
   deleteMedicalHistory,
   createPatientProfile,
+  savePatientProfile,
   PatientProfile,
   Medication,
   Allergy,

@@ -12,7 +12,8 @@ export type IndianRegion =
   | 'northeast'
   | 'rajasthan'
   | 'mp-chhattisgarh'
-  | 'punjab-haryana';
+  | 'punjab-haryana'
+  | 'all';
 
 export interface MealItem {
   id: string;
@@ -257,6 +258,7 @@ export const MEAL_DATABASE: MealItem[] = [
     calories: 350,
     cost: 45,
     diabeticFriendly: false,
+    servingSize: '1 plate',
     alternatives: ['sambar-brown-rice'],
     notes: 'Use brown rice',
   },
@@ -289,6 +291,7 @@ export const MEAL_DATABASE: MealItem[] = [
     calories: 300,
     cost: 35,
     diabeticFriendly: false,
+    servingSize: '1 bowl',
     alternatives: ['moong-dal-khichdi'],
     notes: 'Easy to digest',
   },
@@ -338,6 +341,7 @@ export const MEAL_DATABASE: MealItem[] = [
     calories: 320,
     cost: 40,
     diabeticFriendly: false,
+    servingSize: '1 plate',
     alternatives: ['vegetable-curry-brown-rice'],
     notes: 'Limit rice portion',
   },

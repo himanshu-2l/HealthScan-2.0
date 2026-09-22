@@ -153,6 +153,7 @@ export default function ReportsPage() {
       'vision-test': 'Acuity & Vision Test',
       'hearing-test': 'Auditory Response Test',
       'lifestyle-survey': 'Health Habits Survey',
+      'gait-kinematics': 'Gait Kinematics & Stability',
     };
     return labels[testType] || testType;
   };

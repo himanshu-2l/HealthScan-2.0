@@ -261,7 +261,7 @@ export const EHRIntegration: React.FC = () => {
           <CardContent className="pt-4">
             <div className="text-center py-8">
               <Button
-                onClick={fetchMedicalHistory}
+                onClick={() => abhaProfile?.abhaId && fetchMedicalHistory(abhaProfile.abhaId)}
                 disabled={isLoading}
                 className="bg-blue-600 hover:bg-blue-700 text-white"
               >
@@ -296,7 +296,7 @@ export const EHRIntegration: React.FC = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={fetchMedicalHistory}
+              onClick={() => abhaProfile?.abhaId && fetchMedicalHistory(abhaProfile.abhaId)}
               disabled={isLoading}
               className="border-white/10 text-muted-foreground hover:bg-white/5 hover:text-foreground"
             >
@@ -363,7 +363,7 @@ export const EHRIntegration: React.FC = () => {
                         {condition.severity && (
                           <Badge
                             className={
-                              condition.severity === 'severe' || condition.severity === 'life-threatening'
+                              (condition.severity as string) === 'severe' || (condition.severity as string) === 'life-threatening'
                                 ? 'bg-red-600 text-white font-semibold text-xs'
                                 : condition.severity === 'moderate'
                                   ? 'bg-orange-500 text-white font-semibold text-xs'

@@ -35,7 +35,8 @@ export type TestType =
   | 'mental-health-assessment'
   | 'vision-test'
   | 'hearing-test'
-  | 'lifestyle-survey';
+  | 'lifestyle-survey'
+  | 'gait-kinematics';
 
 // Risk levels
 export type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
