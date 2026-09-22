@@ -27,11 +27,17 @@ export default defineConfig({
     },
   },
   build: {
+    chunkSizeWarningLimit: 3000,
     rollupOptions: {
       output: {
         manualChunks: {
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-ui': ['lucide-react', 'clsx', 'tailwind-merge'],
+          'vendor-ui': ['lucide-react', 'clsx', 'tailwind-merge', 'class-variance-authority'],
+          'vendor-motion': ['framer-motion'],
+          'vendor-charts': ['recharts'],
+          'vendor-pdf': ['jspdf', 'jspdf-autotable'],
+          'vendor-query': ['@tanstack/react-query'],
+          'vendor-ai': ['@google/generative-ai'],
           'vendor-ml': ['@tensorflow/tfjs', '@tensorflow/tfjs-backend-webgl', '@tensorflow-models/pose-detection'],
           'vendor-mediapipe': ['@mediapipe/tasks-vision', '@mediapipe/face_mesh', '@mediapipe/hands'],
         },
