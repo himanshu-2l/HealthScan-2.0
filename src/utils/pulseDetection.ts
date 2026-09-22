@@ -40,6 +40,54 @@ export interface PulseWaveform {
   sampleRate: number;
 }
 
+/** PPG operation mode: fingertip contact with rear camera + flash, or facial rPPG with front camera */
+export type PPGMode = 'fingertip' | 'face';
+
+/** Callback signature delivering pulse, confidence, RR intervals, estimated SpO2, and finger contact status */
+export type PulseUpdateCallback = (
+  bpm: number,
+  confidence: number,
+  rrIntervals?: number[],
+  spo2?: number,
+  fingerDetected?: boolean
+) => void;
+
+/**
+ * Check if the active video track supports hardware torch (flashlight)
+ */
+export async function checkTorchSupport(stream?: MediaStream | null): Promise<boolean> {
+  try {
+    if (!stream) return false;
+    const track = stream.getVideoTracks()[0];
+    if (!track || typeof track.getCapabilities !== 'function') return false;
+    const capabilities = track.getCapabilities() as { torch?: boolean };
+    return Boolean(capabilities?.torch);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Enable or disable hardware camera flashlight (torch)
+ */
+export async function setTorchState(stream: MediaStream | null, enabled: boolean): Promise<boolean> {
+  try {
+    if (!stream) return false;
+    const track = stream.getVideoTracks()[0];
+    if (!track) return false;
+    const isSupported = await checkTorchSupport(stream);
+    if (!isSupported) return false;
+
+    await track.applyConstraints({
+      advanced: [{ torch: enabled } as any]
+    });
+    return true;
+  } catch (err) {
+    console.warn('Failed to set torch constraint:', err);
+    return false;
+  }
+}
+
 /**
  * Classify heart rate according to clinical standards
  * @param bpm - Heart rate in beats per minute
@@ -146,13 +194,38 @@ class PulseDetector {
   private timestamps: number[] = [];
   private readonly maxSamples = 300; // ~10 seconds at 30fps
   
-  // Face detection region (forehead area)
+  // PPG mode and contact status
+  private mode: PPGMode = 'fingertip';
+  private fingerDetected: boolean = false;
+  private latestSpo2: number = 98;
+
+  // Face or finger detection region
   private detectionRegion: { x: number; y: number; width: number; height: number } | null = null;
   
   // Callbacks
-  private onPulseUpdate: ((bpm: number, confidence: number, rrIntervals?: number[]) => void) | null = null;
+  private onPulseUpdate: PulseUpdateCallback | null = null;
   private onError: ((error: string) => void) | null = null;
   private lastRRIntervals: number[] = [];
+
+  /**
+   * Set active PPG mode: 'fingertip' (rear camera + torch) or 'face' (front camera rPPG)
+   */
+  setMode(mode: PPGMode): void {
+    this.mode = mode;
+    this.detectionRegion = null;
+  }
+
+  getMode(): PPGMode {
+    return this.mode;
+  }
+
+  isFingerDetected(): boolean {
+    return this.fingerDetected;
+  }
+
+  getLatestSpo2(): number {
+    return this.latestSpo2;
+  }
 
   /**
    * Initialize pulse detection with video element
@@ -168,7 +241,7 @@ class PulseDetector {
   }
 
   /**
-   * Set detection region (forehead area)
+   * Set detection region
    */
   setDetectionRegion(x: number, y: number, width: number, height: number): void {
     this.detectionRegion = { x, y, width, height };
@@ -178,7 +251,7 @@ class PulseDetector {
    * Start pulse detection
    */
   start(
-    onPulseUpdate: (bpm: number, confidence: number, rrIntervals?: number[]) => void,
+    onPulseUpdate: PulseUpdateCallback,
     onError?: (error: string) => void
   ): void {
     if (!this.videoElement || !this.canvas || !this.ctx) {
@@ -194,16 +267,28 @@ class PulseDetector {
     this.timestamps = [];
     this.lastRRIntervals = [];
 
-    // Default detection region (center-top of video, forehead area)
+    // Region of interest adapts dynamically to test mode
     if (!this.detectionRegion) {
       const videoWidth = this.videoElement.videoWidth || 640;
       const videoHeight = this.videoElement.videoHeight || 480;
-      this.detectionRegion = {
-        x: videoWidth * 0.3,
-        y: videoHeight * 0.1,
-        width: videoWidth * 0.4,
-        height: videoHeight * 0.15
-      };
+
+      if (this.mode === 'fingertip') {
+        // Central 70% aperture for contact finger capillary illumination
+        this.detectionRegion = {
+          x: videoWidth * 0.15,
+          y: videoHeight * 0.15,
+          width: videoWidth * 0.7,
+          height: videoHeight * 0.7
+        };
+      } else {
+        // Upper-center forehead region for facial rPPG
+        this.detectionRegion = {
+          x: videoWidth * 0.3,
+          y: videoHeight * 0.1,
+          width: videoWidth * 0.4,
+          height: videoHeight * 0.15
+        };
+      }
     }
 
     this.processFrame();
@@ -257,6 +342,14 @@ class PulseDetector {
         const avgGreen = gSum / pixelCount;
         const avgBlue = bSum / pixelCount;
 
+        // Check finger coverage in fingertip mode
+        if (this.mode === 'fingertip') {
+          // Human tissue transillumination shows marked red channel dominance
+          this.fingerDetected = avgRed > 85 && (avgRed > avgGreen * 1.12) && (avgRed > avgBlue * 1.2);
+        } else {
+          this.fingerDetected = true;
+        }
+
         // Store values
         const timestamp = Date.now();
         this.redValues.push(avgRed);
@@ -272,13 +365,18 @@ class PulseDetector {
           this.timestamps.shift();
         }
 
+        // Estimate SpO2 from dual-channel AC/DC ratio
+        if (this.redValues.length >= 60) {
+          this.latestSpo2 = this.calculateSpO2(this.redValues, this.greenValues);
+        }
+
         // Calculate pulse when we have enough samples (at least 3 seconds)
         if (this.redValues.length >= 90) { // ~3 seconds at 30fps
           const bpm = this.calculateBPM(this.greenValues, this.timestamps);
           const confidence = this.calculateConfidence(this.greenValues);
           
           if (this.onPulseUpdate && bpm > 0) {
-            this.onPulseUpdate(bpm, confidence, this.lastRRIntervals);
+            this.onPulseUpdate(bpm, confidence, this.lastRRIntervals, this.latestSpo2, this.fingerDetected);
           }
         }
       }
@@ -476,6 +574,29 @@ class PulseDetector {
   }
 
   /**
+   * Estimate SpO2 blood oxygen saturation from optical Red vs Green AC/DC ratio of ratios
+   * Reference: Ding et al. (2018), Karlen et al. (2012)
+   */
+  private calculateSpO2(reds: number[], greens: number[]): number {
+    if (reds.length < 30 || greens.length < 30) return 98;
+    const meanRed = reds.reduce((a, b) => a + b, 0) / reds.length;
+    const meanGreen = greens.reduce((a, b) => a + b, 0) / greens.length;
+    if (meanRed <= 0 || meanGreen <= 0) return 98;
+
+    const stdRed = Math.sqrt(reds.reduce((sum, v) => sum + Math.pow(v - meanRed, 2), 0) / reds.length);
+    const stdGreen = Math.sqrt(greens.reduce((sum, v) => sum + Math.pow(v - meanGreen, 2), 0) / greens.length);
+
+    const acdcRed = stdRed / meanRed;
+    const acdcGreen = stdGreen / meanGreen;
+    if (acdcGreen <= 0.0001) return 98;
+
+    const rRatio = acdcRed / acdcGreen;
+    // Standard empirical ratio-of-ratios pulse oximetry equation: SpO2 = 110 - 25 * R
+    const rawSpo2 = Math.round(110 - 25 * rRatio);
+    return Math.max(90, Math.min(100, isNaN(rawSpo2) ? 98 : rawSpo2));
+  }
+
+  /**
    * Reset detector
    */
   reset(): void {
@@ -486,6 +607,8 @@ class PulseDetector {
     this.timestamps = [];
     this.lastRRIntervals = [];
     this.detectionRegion = null;
+    this.fingerDetected = false;
+    this.latestSpo2 = 98;
   }
 }
 

@@ -20,7 +20,7 @@ import {
   VolumeX,
   Languages
 } from 'lucide-react';
-import { pulseDetector } from '../../utils/pulseDetection';
+import { pulseDetector, checkTorchSupport, setTorchState } from '../../utils/pulseDetection';
 import { saveTestResult } from '../../services/healthDataService';
 import { generateDiagnosticPDF } from '../../services/pdfReportService';
 import { HealthTestResult } from '../../types/health';
@@ -130,6 +130,7 @@ export const QuickScanModal: React.FC<QuickScanModalProps> = ({
   const [isHeartScanning, setIsHeartScanning] = useState<boolean>(false);
   const [ppgConfidence, setPpgConfidence] = useState<number>(0);
   const [cameraPermission, setCameraPermission] = useState<'granted' | 'denied' | 'pending'>('pending');
+  const [isTorchActive, setIsTorchActive] = useState<boolean>(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const ppgWaveCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -193,11 +194,13 @@ export const QuickScanModal: React.FC<QuickScanModalProps> = ({
 
   // Clean up media hardware on unmount or close
   const cleanupHardware = useCallback(() => {
-    // Stop camera
+    // Stop camera and torch
     if (cameraStreamRef.current) {
+      setTorchState(cameraStreamRef.current, false).catch(() => {});
       cameraStreamRef.current.getTracks().forEach(track => track.stop());
       cameraStreamRef.current = null;
     }
+    setIsTorchActive(false);
     try {
       pulseDetector.stop();
     } catch (e) {
@@ -296,20 +299,35 @@ export const QuickScanModal: React.FC<QuickScanModalProps> = ({
   // ==========================================
   const startCameraPPG = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: 'user',
-          width: { ideal: 640 },
-          height: { ideal: 480 }
-        }
-      });
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 640 },
+            height: { ideal: 480 }
+          }
+        });
+      } catch {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      }
       cameraStreamRef.current = stream;
       setCameraPermission('granted');
+
+      // Check and auto-engage hardware flashlight if present on camera
+      const torchSupported = await checkTorchSupport(stream);
+      if (torchSupported) {
+        const turnedOn = await setTorchState(stream, true);
+        setIsTorchActive(turnedOn);
+      } else {
+        setIsTorchActive(false);
+      }
 
       if (videoRef.current && canvasRef.current) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play().catch(() => {});
         pulseDetector.initialize(videoRef.current, canvasRef.current);
+        pulseDetector.setMode('fingertip');
 
         pulseDetector.start((bpm, conf) => {
           if (bpm > 45 && bpm < 190) {
@@ -417,9 +435,11 @@ export const QuickScanModal: React.FC<QuickScanModalProps> = ({
               pulseDetector.stop();
             } catch (e) {}
             if (cameraStreamRef.current) {
+              setTorchState(cameraStreamRef.current, false).catch(() => {});
               cameraStreamRef.current.getTracks().forEach(t => t.stop());
               cameraStreamRef.current = null;
             }
+            setIsTorchActive(false);
             setIsHeartScanning(false);
             setTimeout(() => setStep('voice'), 600);
             return 0;
@@ -864,9 +884,17 @@ export const QuickScanModal: React.FC<QuickScanModalProps> = ({
           {step === 'heart' && (
             <div className="space-y-4 text-center">
               <div className="flex items-center justify-between">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-600 dark:text-rose-300 text-xs font-semibold">
-                  <Heart className="w-3.5 h-3.5 animate-pulse text-rose-500 dark:text-rose-400" />
-                  <span>Step 1 of 3: Optical PPG</span>
+                <div className="flex items-center gap-1.5">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-600 dark:text-rose-300 text-xs font-semibold">
+                    <Heart className="w-3.5 h-3.5 animate-pulse text-rose-500 dark:text-rose-400" />
+                    <span>Step 1 of 3: Optical PPG</span>
+                  </div>
+                  {isTorchActive && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/30 text-amber-600 dark:text-amber-300 text-[10px] font-bold">
+                      <Zap className="w-3 h-3 fill-amber-500 text-amber-500 animate-pulse" />
+                      Flashlight Active
+                    </span>
+                  )}
                 </div>
 
                 <div className="text-xs font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-white/[0.04] px-2.5 py-1 rounded-full border border-slate-200 dark:border-white/[0.08]">
@@ -928,7 +956,9 @@ export const QuickScanModal: React.FC<QuickScanModalProps> = ({
               </div>
 
               <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                Position your face toward the camera in good lighting. Optical sensor detects blood volume changes in facial capillaries.
+                {isTorchActive 
+                  ? 'Gently place and hold your index fingertip over the illuminated rear camera lens and flashlight.' 
+                  : 'Place your fingertip gently over the camera lens in steady light, or position your face toward the camera.'}
               </div>
             </div>
           )}
