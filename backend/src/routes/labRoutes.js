@@ -3,7 +3,7 @@ import Assessment from '../models/Assessment.js';
 import GaitAnalysisAssessment from '../models/GaitAnalysisAssessment.js';
 import TremorAssessment from '../models/TremorAssessment.js';
 import HyperventilationAssessment from '../models/HyperventilationAssessment.js';
-import { optionalAuth, requireOwnership } from '../middleware/auth.js';
+import { requireAuth } from '../middleware/auth.js';
 import {
   validateGaitAssessment,
   validateTremorAssessment,
@@ -50,15 +50,14 @@ const errorResponse = (res, error, message, statusCode = 500, details = null) =>
 
 /**
  * Verify user can access the requested data
- * For optional auth: if user is authenticated, verify ownership
+ * Requires authenticated user to match userId, or have an admin role
  */
 const verifyUserAccess = (req, userId) => {
-  // If user is authenticated, verify they're accessing their own data
-  if (req.user && req.user.uid !== userId) {
-    // Allow admins to access any data
-    if (req.user.role !== 'admin') {
-      return false;
-    }
+  if (!req.user) {
+    return false;
+  }
+  if (req.user.uid !== userId && req.user.role !== 'admin') {
+    return false;
   }
   return true;
 };
@@ -72,7 +71,7 @@ const verifyUserAccess = (req, userId) => {
  * POST /api/labs/gait/save
  */
 router.post('/gait/save',
-  optionalAuth,
+  requireAuth,
   assessmentLimiter,
   validateGaitAssessment,
   asyncHandler(async (req, res) => {
@@ -103,7 +102,7 @@ router.post('/gait/save',
  * GET /api/labs/gait/history/:userId
  */
 router.get('/gait/history/:userId',
-  optionalAuth,
+  requireAuth,
   validateUserId,
   validatePagination,
   asyncHandler(async (req, res) => {
@@ -144,7 +143,7 @@ router.get('/gait/history/:userId',
  * POST /api/labs/tremor/save
  */
 router.post('/tremor/save',
-  optionalAuth,
+  requireAuth,
   assessmentLimiter,
   validateTremorAssessment,
   asyncHandler(async (req, res) => {
@@ -175,7 +174,7 @@ router.post('/tremor/save',
  * GET /api/labs/tremor/history/:userId
  */
 router.get('/tremor/history/:userId',
-  optionalAuth,
+  requireAuth,
   validateUserId,
   validatePagination,
   asyncHandler(async (req, res) => {
@@ -216,7 +215,7 @@ router.get('/tremor/history/:userId',
  * POST /api/labs/hyperventilation/save
  */
 router.post('/hyperventilation/save',
-  optionalAuth,
+  requireAuth,
   assessmentLimiter,
   validateHyperventilationAssessment,
   asyncHandler(async (req, res) => {
@@ -247,7 +246,7 @@ router.post('/hyperventilation/save',
  * GET /api/labs/hyperventilation/history/:userId
  */
 router.get('/hyperventilation/history/:userId',
-  optionalAuth,
+  requireAuth,
   validateUserId,
   validatePagination,
   asyncHandler(async (req, res) => {
@@ -288,7 +287,7 @@ router.get('/hyperventilation/history/:userId',
  * POST /api/labs/assessment/save
  */
 router.post('/assessment/save',
-  optionalAuth,
+  requireAuth,
   assessmentLimiter,
   validateGenericAssessment,
   asyncHandler(async (req, res) => {
@@ -320,7 +319,7 @@ router.post('/assessment/save',
  * GET /api/labs/history/:userId
  */
 router.get('/history/:userId',
-  optionalAuth,
+  requireAuth,
   validateUserId,
   validatePagination,
   asyncHandler(async (req, res) => {
@@ -364,7 +363,7 @@ router.get('/history/:userId',
  * GET /api/labs/assessment/:id
  */
 router.get('/assessment/:id',
-  optionalAuth,
+  requireAuth,
   asyncHandler(async (req, res) => {
     const { id } = req.params;
 
@@ -393,7 +392,7 @@ router.get('/assessment/:id',
  * DELETE /api/labs/assessment/:id
  */
 router.delete('/assessment/:id',
-  optionalAuth,
+  requireAuth,
   asyncHandler(async (req, res) => {
     const { id } = req.params;
 
@@ -426,7 +425,7 @@ router.delete('/assessment/:id',
  * GET /api/labs/stats/:userId
  */
 router.get('/stats/:userId',
-  optionalAuth,
+  requireAuth,
   validateUserId,
   asyncHandler(async (req, res) => {
     const { userId } = req.params;

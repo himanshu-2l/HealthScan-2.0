@@ -1,7 +1,7 @@
 import express from 'express';
 import FeatureData from '../models/FeatureData.js';
 import EmergencyContact from '../models/EmergencyContact.js';
-import { optionalAuth } from '../middleware/auth.js';
+import { requireAuth } from '../middleware/auth.js';
 import { validateUserId, validatePagination } from '../middleware/validate.js';
 import { assessmentLimiter } from '../middleware/rateLimiter.js';
 
@@ -41,12 +41,14 @@ const errorResponse = (res, error, message, statusCode = 500, details = null) =>
 
 /**
  * Verify user can access the requested data
+ * Requires authenticated user to match userId, or have an admin role
  */
 const verifyUserAccess = (req, userId) => {
-  if (req.user && req.user.uid !== userId) {
-    if (req.user.role !== 'admin') {
-      return false;
-    }
+  if (!req.user) {
+    return false;
+  }
+  if (req.user.uid !== userId && req.user.role !== 'admin') {
+    return false;
   }
   return true;
 };
@@ -67,7 +69,7 @@ const isValidObjectId = (id) => {
  * POST /api/features/symptoms/save
  */
 router.post('/symptoms/save',
-  optionalAuth,
+  requireAuth,
   assessmentLimiter,
   asyncHandler(async (req, res) => {
     const { userId, bodyArea, symptoms, aiAnalysis, severity } = req.body;
@@ -100,7 +102,7 @@ router.post('/symptoms/save',
  * GET /api/features/symptoms/history/:userId
  */
 router.get('/symptoms/history/:userId',
-  optionalAuth,
+  requireAuth,
   validateUserId,
   validatePagination,
   asyncHandler(async (req, res) => {
@@ -131,7 +133,7 @@ router.get('/symptoms/history/:userId',
  * POST /api/features/period/log
  */
 router.post('/period/log',
-  optionalAuth,
+  requireAuth,
   assessmentLimiter,
   asyncHandler(async (req, res) => {
     const { userId, date, flowIntensity, symptoms, mood, notes } = req.body;
@@ -164,7 +166,7 @@ router.post('/period/log',
  * GET /api/features/period/history/:userId
  */
 router.get('/period/history/:userId',
-  optionalAuth,
+  requireAuth,
   validateUserId,
   validatePagination,
   asyncHandler(async (req, res) => {
@@ -191,7 +193,7 @@ router.get('/period/history/:userId',
  * DELETE /api/features/period/log/:id
  */
 router.delete('/period/log/:id',
-  optionalAuth,
+  requireAuth,
   asyncHandler(async (req, res) => {
     const { id } = req.params;
 
@@ -226,7 +228,7 @@ router.delete('/period/log/:id',
  * POST /api/features/vaccinations/save
  */
 router.post('/vaccinations/save',
-  optionalAuth,
+  requireAuth,
   assessmentLimiter,
   asyncHandler(async (req, res) => {
     const { userId, vaccineName, date, dose, provider, nextDue } = req.body;
@@ -259,7 +261,7 @@ router.post('/vaccinations/save',
  * GET /api/features/vaccinations/:userId
  */
 router.get('/vaccinations/:userId',
-  optionalAuth,
+  requireAuth,
   validateUserId,
   validatePagination,
   asyncHandler(async (req, res) => {
@@ -286,7 +288,7 @@ router.get('/vaccinations/:userId',
  * PUT /api/features/vaccinations/:id
  */
 router.put('/vaccinations/:id',
-  optionalAuth,
+  requireAuth,
   asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { vaccineName, date, dose, provider, nextDue } = req.body;
@@ -319,7 +321,7 @@ router.put('/vaccinations/:id',
  * DELETE /api/features/vaccinations/:id
  */
 router.delete('/vaccinations/:id',
-  optionalAuth,
+  requireAuth,
   asyncHandler(async (req, res) => {
     const { id } = req.params;
 
@@ -354,7 +356,7 @@ router.delete('/vaccinations/:id',
  * POST /api/features/emergency/contacts
  */
 router.post('/emergency/contacts',
-  optionalAuth,
+  requireAuth,
   asyncHandler(async (req, res) => {
     const { userId, contacts } = req.body;
 
@@ -383,7 +385,7 @@ router.post('/emergency/contacts',
  * GET /api/features/emergency/contacts/:userId
  */
 router.get('/emergency/contacts/:userId',
-  optionalAuth,
+  requireAuth,
   validateUserId,
   asyncHandler(async (req, res) => {
     const { userId } = req.params;
@@ -403,7 +405,7 @@ router.get('/emergency/contacts/:userId',
  * PUT /api/features/emergency/contacts/:id
  */
 router.put('/emergency/contacts/:id',
-  optionalAuth,
+  requireAuth,
   asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { userId, name, phone, relationship, isPrimary } = req.body;
@@ -439,7 +441,7 @@ router.put('/emergency/contacts/:id',
  * DELETE /api/features/emergency/contacts/:id
  */
 router.delete('/emergency/contacts/:id',
-  optionalAuth,
+  requireAuth,
   asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { userId } = req.query;
@@ -469,7 +471,7 @@ router.delete('/emergency/contacts/:id',
  * PUT /api/features/emergency/medical-id/:userId
  */
 router.put('/emergency/medical-id/:userId',
-  optionalAuth,
+  requireAuth,
   validateUserId,
   asyncHandler(async (req, res) => {
     const { userId } = req.params;
@@ -505,7 +507,7 @@ router.put('/emergency/medical-id/:userId',
  * POST /api/features/predictions/save
  */
 router.post('/predictions/save',
-  optionalAuth,
+  requireAuth,
   assessmentLimiter,
   asyncHandler(async (req, res) => {
     const { userId, scores, trends, aiAnalysis } = req.body;
@@ -538,7 +540,7 @@ router.post('/predictions/save',
  * GET /api/features/predictions/latest/:userId
  */
 router.get('/predictions/latest/:userId',
-  optionalAuth,
+  requireAuth,
   validateUserId,
   asyncHandler(async (req, res) => {
     const { userId } = req.params;
@@ -562,7 +564,7 @@ router.get('/predictions/latest/:userId',
  * POST /api/features/recommendations/save
  */
 router.post('/recommendations/save',
-  optionalAuth,
+  requireAuth,
   assessmentLimiter,
   asyncHandler(async (req, res) => {
     const { userId, diet, exercise, lifestyle, sleep } = req.body;
@@ -595,7 +597,7 @@ router.post('/recommendations/save',
  * GET /api/features/recommendations/latest/:userId
  */
 router.get('/recommendations/latest/:userId',
-  optionalAuth,
+  requireAuth,
   validateUserId,
   asyncHandler(async (req, res) => {
     const { userId } = req.params;
@@ -619,7 +621,7 @@ router.get('/recommendations/latest/:userId',
  * POST /api/features/voice/entry
  */
 router.post('/voice/entry',
-  optionalAuth,
+  requireAuth,
   asyncHandler(async (req, res) => {
     const { userId, type, value, unit, rawTranscript } = req.body;
 
@@ -655,7 +657,7 @@ router.post('/voice/entry',
  * POST /api/features/reports/generate
  */
 router.post('/reports/generate',
-  optionalAuth,
+  requireAuth,
   assessmentLimiter,
   asyncHandler(async (req, res) => {
     const { userId, reportContent, metrics, notes, reportType } = req.body;
@@ -688,7 +690,7 @@ router.post('/reports/generate',
  * GET /api/features/reports/history/:userId
  */
 router.get('/reports/history/:userId',
-  optionalAuth,
+  requireAuth,
   validateUserId,
   validatePagination,
   asyncHandler(async (req, res) => {
@@ -719,7 +721,7 @@ router.get('/reports/history/:userId',
  * POST /api/features/anomalies/report
  */
 router.post('/anomalies/report',
-  optionalAuth,
+  requireAuth,
   asyncHandler(async (req, res) => {
     const { userId, anomalies, severity, affectedMetrics, recommendations } = req.body;
 
@@ -751,7 +753,7 @@ router.post('/anomalies/report',
  * GET /api/features/anomalies/:userId
  */
 router.get('/anomalies/:userId',
-  optionalAuth,
+  requireAuth,
   validateUserId,
   validatePagination,
   asyncHandler(async (req, res) => {
