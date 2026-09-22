@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Download, 
   X, 
@@ -29,11 +30,12 @@ export const PWAInstallModal: React.FC<PWAInstallModalProps> = ({
   isInstalled,
 }) => {
   if (!isOpen) return null;
+  if (typeof document === 'undefined') return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md animate-fadeIn">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md animate-fadeIn overflow-y-auto">
       <div 
-        className="relative w-full max-w-lg rounded-2xl bg-white dark:bg-[#0F1523] border border-slate-200/90 dark:border-white/[0.08] shadow-2xl p-6 sm:p-8 text-slate-900 dark:text-white overflow-hidden transition-colors duration-200"
+        className="relative w-full max-w-lg rounded-2xl bg-white dark:bg-[#0F1523] border border-slate-200/90 dark:border-white/[0.08] shadow-2xl p-6 sm:p-8 text-slate-900 dark:text-white overflow-hidden my-auto max-h-[92vh] overflow-y-auto transition-colors duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
@@ -188,6 +190,7 @@ export const PWAInstallModal: React.FC<PWAInstallModalProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

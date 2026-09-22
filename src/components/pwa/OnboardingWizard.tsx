@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Activity, Camera, Mic, ArrowRight, X, Sparkles } from 'lucide-react';
 
 interface OnboardingWizardProps {
@@ -69,9 +70,11 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, 
     onComplete();
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="w-full max-w-md bg-white dark:bg-[#0F1523] border border-slate-200/90 dark:border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden">
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 overflow-y-auto animate-fade-in">
+      <div className="relative w-full max-w-md bg-white dark:bg-[#0F1523] border border-slate-200/90 dark:border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden my-auto max-h-[92vh]">
         {/* Header */}
         <div className="relative p-6 pb-4">
           <button
@@ -166,6 +169,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, 
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

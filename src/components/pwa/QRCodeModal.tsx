@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import QRCode from 'qrcode';
 import { 
   X, 
@@ -58,6 +59,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
+  if (typeof document === 'undefined') return null;
 
   const handleCopy = async () => {
     try {
@@ -71,16 +73,16 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 animate-fade-in">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-fade-in">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
 
       {/* Modal Surface */}
-      <div className="relative w-full max-w-md bg-white dark:bg-[#0F1523] rounded-3xl border border-slate-200/90 dark:border-white/[0.08] shadow-2xl p-6 sm:p-8 space-y-6 z-10 transition-all transform animate-scale-up">
+      <div className="relative w-full max-w-md bg-white dark:bg-[#0F1523] rounded-3xl border border-slate-200/90 dark:border-white/[0.08] shadow-2xl p-6 sm:p-8 space-y-6 z-10 my-auto transition-all transform animate-scale-up max-h-[92vh] overflow-y-auto">
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -192,6 +194,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
