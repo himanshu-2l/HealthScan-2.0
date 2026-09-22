@@ -1,79 +1,100 @@
-const { google } = require('googleapis');
-require('dotenv').config();
+import { google } from 'googleapis';
+import dotenv from 'dotenv';
 
+dotenv.config();
+
+/**
+ * Google Fit Service
+ *
+ * Security Architecture:
+ * - Stateless request-isolated OAuth2 clients (no shared mutable credentials).
+ * - Per-request authentication passing user tokens explicitly.
+ * - State parameter support for OAuth CSRF protection.
+ */
 class GoogleFitService {
   constructor() {
-    // Validate environment variables
+    this.fitness = google.fitness('v1');
+  }
+
+  /**
+   * Check if real Google Fit credentials are configured in environment
+   */
+  isConfigured() {
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    const redirectUri = process.env.GOOGLE_REDIRECT_URI;
-
-    if (!clientId || !clientSecret || !redirectUri) {
-      const missing = [];
-      if (!clientId) missing.push('GOOGLE_CLIENT_ID');
-      if (!clientSecret) missing.push('GOOGLE_CLIENT_SECRET');
-      if (!redirectUri) missing.push('GOOGLE_REDIRECT_URI');
-      
-      console.error(`Missing Google OAuth environment variables: ${missing.join(', ')}`);
-      console.error('Please set these in your .env file to enable Google Fit integration.');
-      throw new Error(`Google OAuth credentials not configured. Missing: ${missing.join(', ')}`);
-    }
-
-    try {
-      this.oauth2Client = new google.auth.OAuth2(
-        clientId,
-        clientSecret,
-        redirectUri
-      );
-
-      this.fitness = google.fitness('v1');
-    } catch (error) {
-      console.error('Failed to initialize Google OAuth2 client:', error);
-      throw error;
-    }
+    return Boolean(
+      clientId &&
+      clientSecret &&
+      clientId !== 'your_google_client_id' &&
+      !clientId.startsWith('your_')
+    );
   }
 
-  // Generate OAuth URL
-  getAuthUrl() {
-    if (!this.oauth2Client) {
-      throw new Error('OAuth2 client not initialized. Please check your environment variables.');
+  /**
+   * Create an isolated, ephemeral OAuth2 client instance for the given tokens.
+   * Avoids storing mutable credentials on a shared singleton.
+   */
+  createClient(tokens = null) {
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    const redirectUri = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5174/auth/google/callback';
+
+    if (!this.isConfigured()) {
+      throw new Error('Google OAuth credentials not configured on server.');
     }
 
-    try {
-      return this.oauth2Client.generateAuthUrl({
-        access_type: 'offline',
-        scope: [
-          'https://www.googleapis.com/auth/fitness.activity.read',
-          'https://www.googleapis.com/auth/fitness.heart_rate.read',
-          'https://www.googleapis.com/auth/fitness.sleep.read',
-          'https://www.googleapis.com/auth/fitness.body.read',
-        ],
-      });
-    } catch (error) {
-      console.error('Error generating auth URL:', error);
-      throw new Error(`Failed to generate auth URL: ${error.message}`);
+    const client = new google.auth.OAuth2(
+      clientId,
+      clientSecret,
+      redirectUri
+    );
+
+    if (tokens) {
+      client.setCredentials(tokens);
     }
+
+    return client;
   }
 
-  // Exchange authorization code for tokens
+  /**
+   * Generate OAuth URL with mandatory CSRF state parameter
+   */
+  getAuthUrl(state) {
+    const client = this.createClient();
+
+    return client.generateAuthUrl({
+      access_type: 'offline',
+      prompt: 'consent',
+      scope: [
+        'https://www.googleapis.com/auth/fitness.activity.read',
+        'https://www.googleapis.com/auth/fitness.heart_rate.read',
+        'https://www.googleapis.com/auth/fitness.sleep.read',
+        'https://www.googleapis.com/auth/fitness.body.read',
+      ],
+      state,
+    });
+  }
+
+  /**
+   * Exchange authorization code for tokens using an ephemeral client
+   */
   async getTokens(code) {
-    const { tokens } = await this.oauth2Client.getToken(code);
+    const client = this.createClient();
+    const { tokens } = await client.getToken(code);
     return tokens;
   }
 
-  // Set credentials for API calls
-  setCredentials(tokens) {
-    this.oauth2Client.setCredentials(tokens);
-  }
-
-  // Fetch heart rate data (last 7 days)
-  async getHeartRateData() {
+  /**
+   * Fetch heart rate data (last 7 days) using user-specific tokens
+   */
+  async getHeartRateData(tokens) {
+    const auth = this.createClient(tokens);
     const now = Date.now();
     const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
 
     const response = await this.fitness.users.dataset.aggregate({
       userId: 'me',
-      auth: this.oauth2Client,
+      auth,
       requestBody: {
         aggregateBy: [{
           dataTypeName: 'com.google.heart_rate.bpm',
@@ -87,14 +108,17 @@ class GoogleFitService {
     return this.parseHeartRateData(response.data);
   }
 
-  // Fetch steps data (last 7 days)
-  async getStepsData() {
+  /**
+   * Fetch steps data (last 7 days) using user-specific tokens
+   */
+  async getStepsData(tokens) {
+    const auth = this.createClient(tokens);
     const now = Date.now();
     const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
 
     const response = await this.fitness.users.dataset.aggregate({
       userId: 'me',
-      auth: this.oauth2Client,
+      auth,
       requestBody: {
         aggregateBy: [{
           dataTypeName: 'com.google.step_count.delta',
@@ -109,14 +133,17 @@ class GoogleFitService {
     return this.parseStepsData(response.data);
   }
 
-  // Fetch calories data (last 7 days)
-  async getCaloriesData() {
+  /**
+   * Fetch calories data (last 7 days) using user-specific tokens
+   */
+  async getCaloriesData(tokens) {
+    const auth = this.createClient(tokens);
     const now = Date.now();
     const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
 
     const response = await this.fitness.users.dataset.aggregate({
       userId: 'me',
-      auth: this.oauth2Client,
+      auth,
       requestBody: {
         aggregateBy: [{
           dataTypeName: 'com.google.calories.expended',
@@ -130,14 +157,17 @@ class GoogleFitService {
     return this.parseCaloriesData(response.data);
   }
 
-  // Fetch sleep data (last 7 days)
-  async getSleepData() {
+  /**
+   * Fetch sleep data (last 7 days) using user-specific tokens
+   */
+  async getSleepData(tokens) {
+    const auth = this.createClient(tokens);
     const now = Date.now();
     const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
 
     const response = await this.fitness.users.dataset.aggregate({
       userId: 'me',
-      auth: this.oauth2Client,
+      auth,
       requestBody: {
         aggregateBy: [{
           dataTypeName: 'com.google.sleep.segment',
@@ -151,13 +181,15 @@ class GoogleFitService {
     return this.parseSleepData(response.data);
   }
 
-  // Fetch all fitness data
-  async getAllFitnessData() {
+  /**
+   * Fetch all fitness data using user-specific tokens
+   */
+  async getAllFitnessData(tokens) {
     const [heartRate, steps, calories, sleep] = await Promise.all([
-      this.getHeartRateData(),
-      this.getStepsData(),
-      this.getCaloriesData(),
-      this.getSleepData(),
+      this.getHeartRateData(tokens),
+      this.getStepsData(tokens),
+      this.getCaloriesData(tokens),
+      this.getSleepData(tokens),
     ]);
 
     return {
@@ -169,7 +201,6 @@ class GoogleFitService {
     };
   }
 
-  // Parse heart rate data
   parseHeartRateData(data) {
     const heartRateData = [];
     data.bucket?.forEach(bucket => {
@@ -184,7 +215,6 @@ class GoogleFitService {
     return heartRateData;
   }
 
-  // Parse steps data
   parseStepsData(data) {
     const stepsData = [];
     data.bucket?.forEach(bucket => {
@@ -203,7 +233,6 @@ class GoogleFitService {
     return stepsData;
   }
 
-  // Parse calories data
   parseCaloriesData(data) {
     const caloriesData = [];
     data.bucket?.forEach(bucket => {
@@ -222,7 +251,6 @@ class GoogleFitService {
     return caloriesData;
   }
 
-  // Parse sleep data
   parseSleepData(data) {
     const sleepData = [];
     data.bucket?.forEach(bucket => {
@@ -230,7 +258,7 @@ class GoogleFitService {
         const startTime = parseInt(point.startTimeNanos) / 1000000;
         const endTime = parseInt(point.endTimeNanos) / 1000000;
         const durationHours = ((endTime - startTime) / (1000 * 60 * 60)).toFixed(1);
-        
+
         sleepData.push({
           date: new Date(startTime),
           durationHours,
@@ -242,7 +270,6 @@ class GoogleFitService {
     return sleepData;
   }
 
-  // Get sleep type from value
   getSleepType(value) {
     const types = {
       1: 'Awake',
@@ -255,7 +282,6 @@ class GoogleFitService {
     return types[value] || 'Unknown';
   }
 
-  // Generate summary statistics
   generateSummary(heartRate, steps, calories, sleep) {
     const avgHeartRate = heartRate.length > 0
       ? Math.round(heartRate.reduce((sum, hr) => sum + hr.bpm, 0) / heartRate.length)
@@ -283,5 +309,5 @@ class GoogleFitService {
   }
 }
 
-module.exports = new GoogleFitService();
-
+const googleFitService = new GoogleFitService();
+export default googleFitService;

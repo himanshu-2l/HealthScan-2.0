@@ -3,13 +3,14 @@ import cors from 'cors';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 import crypto from 'crypto';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import labRoutes from './routes/labRoutes.js';
 import featureRoutes from './routes/featureRoutes.js';
-import { apiLimiter, reportLimiter, aiProxyLimiter, authLimiter } from './middleware/rateLimiter.js';
+import { apiLimiter, aiProxyLimiter, authLimiter } from './middleware/rateLimiter.js';
 import { requireAuth, generateToken } from './middleware/auth.js';
 import session from 'express-session';
-import googleFitRoutes from './routes/googleFitRoutes.js';
+import jwt from 'jsonwebtoken';
+import googleFitRoutes, { setUserGoogleTokens } from './routes/googleFitRoutes.js';
+import googleFitService from '../googleFitService.js';
 import geminiProxyHandler from '../../api/gemini-proxy.js';
 
 dotenv.config();
@@ -119,9 +120,6 @@ app.use(apiLimiter);
 morgan.token('request-id', (req) => req.requestId || '-');
 app.use(morgan(':method :url :status :response-time ms - :request-id'));
 
-const geminiApiKey = process.env.GEMINI_API_KEY;
-const genAI = geminiApiKey ? new GoogleGenerativeAI(geminiApiKey) : null;
-
 // Demo session token endpoint for development/demo testing
 app.post('/api/auth/demo-token', authLimiter, (req, res) => {
   const demoUser = {
@@ -167,41 +165,6 @@ app.get('/api/body-temperature', (req, res) => {
 
 app.post('/api/gemini-proxy', requireAuth, aiProxyLimiter, (req, res) => geminiProxyHandler(req, res));
 
-app.post('/api/generate-report', reportLimiter, async (req, res) => {
-  try {
-    const { metrics, note } = req.body;
-    
-    if (!metrics) {
-      return res.status(400).json({
-        error: 'Bad Request',
-        message: 'Metrics data is required',
-        requestId: req.requestId
-      });
-    }
-
-    if (!genAI) {
-      return res.status(500).json({
-        error: 'Configuration Error',
-        message: 'Gemini API key is not configured',
-        requestId: req.requestId
-      });
-    }
-    
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-    const prompt = `Generate a clinical report for: ${JSON.stringify(metrics)}. Note: ${note}`;
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    res.json({ report: response.text() });
-  } catch (error) {
-    console.error(`[${req.requestId}] Report generation error:`, error);
-    res.status(500).json({
-      error: 'Internal Server Error',
-      message: 'Failed to generate report',
-      requestId: req.requestId
-    });
-  }
-});
-
 // New Lab Routes
 app.use('/api/labs', labRoutes);
 
@@ -211,9 +174,9 @@ app.use('/api/features', featureRoutes);
 // Google Fit API routes
 app.use('/api/google-fit', googleFitRoutes);
 
-// Google OAuth callback endpoint
+// Google OAuth callback endpoint with CSRF state verification
 app.get('/auth/google/callback', async (req, res) => {
-  const { code } = req.query;
+  const { code, state } = req.query;
   const referer = req.get('referer') || '';
   const frontendPort = referer.includes('5173') ? '5173' : '5174';
   const baseUrl = `http://localhost:${frontendPort}`;
@@ -222,15 +185,35 @@ app.get('/auth/google/callback', async (req, res) => {
     return res.redirect(`${baseUrl}/dashboard?error=no_code`);
   }
 
+  if (!state) {
+    return res.redirect(`${baseUrl}/dashboard?error=missing_state`);
+  }
+
+  let decodedState;
   try {
-    const { createRequire } = await import('module');
-    const require = createRequire(import.meta.url);
-    const fitService = require('../../googleFitService.cjs');
-    const tokens = await fitService.getTokens(code);
-    req.session.googleFitTokens = tokens;
-    req.session.googleFitConnected = true;
-    const tokenString = Buffer.from(JSON.stringify(tokens)).toString('base64');
-    return res.redirect(`${baseUrl}/dashboard?google_fit=connected&token=${encodeURIComponent(tokenString)}`);
+    const jwtSecret = process.env.JWT_SECRET || 'healthscan-jwt-dev-secret-do-not-use-in-production';
+    decodedState = jwt.verify(state, jwtSecret);
+  } catch (stateErr) {
+    console.error('OAuth state verification failed:', stateErr.message);
+    return res.redirect(`${baseUrl}/dashboard?error=invalid_state`);
+  }
+
+  try {
+    const tokens = await googleFitService.getTokens(code);
+    const userId = decodedState.userId;
+
+    if (userId) {
+      setUserGoogleTokens(userId, tokens);
+    }
+
+    if (req.session) {
+      req.session.googleFitTokens = tokens;
+      req.session.googleFitConnected = true;
+      req.session.googleFitUserId = userId;
+    }
+
+    // Clean redirect without exposing any tokens in URL parameters
+    return res.redirect(`${baseUrl}/dashboard?google_fit=connected`);
   } catch (error) {
     console.error('OAuth callback error:', error);
     return res.redirect(`${baseUrl}/dashboard?error=auth_failed&message=${encodeURIComponent(error.message || 'OAuth failed')}`);

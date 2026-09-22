@@ -23,6 +23,7 @@ import {
   Zap,
   X,
 } from 'lucide-react';
+import { getAuthHeaders } from '@/utils/authUtils';
 import {
   analyzeSensorData,
   saveAlert,
@@ -117,16 +118,11 @@ export const EarlyWarningAlerts: React.FC = () => {
 
   const loadSensorData = async () => {
     try {
-      const token = localStorage.getItem('googleFitToken');
-      if (!token) {
-        return;
-      }
-
+      const headers = await getAuthHeaders();
       const hrResponse = await fetch('/api/google-fit/data/heart-rate', {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
+        headers,
+        credentials: 'include',
       });
       if (hrResponse.ok) {
         const hrData = await hrResponse.json();

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { auth } from '../lib/firebase';
+import { getAuthToken } from '../utils/authUtils';
 
 /**
  * Universal AI Caller for HealthScan.
@@ -9,42 +9,6 @@ import { auth } from '../lib/firebase';
  * - ZERO Gemini API keys or generative AI libraries exist in the client bundle.
  * - Provides graceful deterministic offline fallbacks for clinical continuity.
  */
-
-async function getAuthToken(): Promise<string | null> {
-  // 1. Check active Firebase user session
-  if (auth?.currentUser) {
-    try {
-      const token = await auth.currentUser.getIdToken();
-      if (token) return token;
-    } catch {
-      // Ignore and check local tokens
-    }
-  }
-
-  // 2. Check stored session / auth token
-  if (typeof window !== 'undefined') {
-    const storedToken = localStorage.getItem('healthscan_auth_token') || sessionStorage.getItem('healthscan_auth_token');
-    if (storedToken) return storedToken;
-
-    // 3. If in demo mode and backend is reachable, retrieve demo session token
-    if (localStorage.getItem('healthscan_demo_user')) {
-      try {
-        const res = await fetch('/api/auth/demo-token', { method: 'POST' });
-        if (res.ok) {
-          const data = await res.json();
-          if (data?.token) {
-            localStorage.setItem('healthscan_auth_token', data.token);
-            return data.token;
-          }
-        }
-      } catch {
-        // Backend not reachable
-      }
-    }
-  }
-
-  return null;
-}
 
 function getOfflineFallback(type: string, payload: any): any {
   switch (type) {

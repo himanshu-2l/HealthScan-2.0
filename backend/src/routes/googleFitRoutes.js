@@ -1,35 +1,41 @@
 import express from 'express';
 import dotenv from 'dotenv';
+import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
+import googleFitService from '../../googleFitService.js';
+import { requireAuth } from '../middleware/auth.js';
 
 dotenv.config();
 
 const router = express.Router();
 
-// Helper to check if real Google Fit credentials are configured
-export const isGoogleFitConfigured = () => {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  return Boolean(
-    clientId &&
-    clientSecret &&
-    clientId !== 'your_google_client_id' &&
-    !clientId.startsWith('your_')
-  );
+/**
+ * Server-Side In-Memory User Google Token Store
+ * Binds Google OAuth tokens strictly to authenticated HealthScan user IDs.
+ * Tokens are never transmitted to client-side localStorage or URLs.
+ */
+export const userGoogleTokens = new Map();
+
+export const setUserGoogleTokens = (userId, tokens) => {
+  if (userId && tokens) {
+    userGoogleTokens.set(userId, tokens);
+  }
 };
 
-let googleFitService = null;
-if (isGoogleFitConfigured()) {
-  try {
-    const { createRequire } = await import('module');
-    const require = createRequire(import.meta.url);
-    googleFitService = require('../../googleFitService.cjs');
-  } catch (err) {
-    console.warn('Google Fit Service initialization warning:', err.message);
+export const getUserGoogleTokens = (userId) => {
+  return userId ? userGoogleTokens.get(userId) : null;
+};
+
+export const removeUserGoogleTokens = (userId) => {
+  if (userId) {
+    userGoogleTokens.delete(userId);
   }
-}
+};
+
+export const isGoogleFitConfigured = () => googleFitService.isConfigured();
 
 // Generate realistic mock fitness data for demonstration when offline/unconnected
-const getMockFitnessData = () => {
+export const getMockFitnessData = () => {
   const now = new Date();
   const heartRate = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(now.getTime() - (6 - i) * 24 * 60 * 60 * 1000);
@@ -92,11 +98,12 @@ const getMockFitnessData = () => {
 
 /**
  * GET /api/google-fit/auth
- * Initiate Google Fit OAuth flow
+ * Initiate Google Fit OAuth flow with signed CSRF state parameter.
+ * Requires HealthScan authentication.
  */
-router.get('/auth', (req, res) => {
+router.get('/auth', requireAuth, (req, res) => {
   try {
-    if (!isGoogleFitConfigured()) {
+    if (!googleFitService.isConfigured()) {
       return res.status(200).json({
         configured: false,
         error: 'Google OAuth credentials not configured',
@@ -104,15 +111,20 @@ router.get('/auth', (req, res) => {
       });
     }
 
-    if (!googleFitService) {
-      return res.status(200).json({
-        configured: false,
-        error: 'Google Fit service not ready',
-        message: 'Could not initialize Google Fit service.'
-      });
-    }
+    const userId = req.user.userId || req.user.uid;
+    const jwtSecret = process.env.JWT_SECRET || 'healthscan-jwt-dev-secret-do-not-use-in-production';
 
-    const authUrl = googleFitService.getAuthUrl();
+    // Generate cryptographic CSRF state token bound to the authenticated user
+    const state = jwt.sign(
+      {
+        userId,
+        nonce: crypto.randomBytes(16).toString('hex')
+      },
+      jwtSecret,
+      { expiresIn: '15m' }
+    );
+
+    const authUrl = googleFitService.getAuthUrl(state);
     res.json({ configured: true, authUrl });
   } catch (error) {
     console.error('Google Fit auth URL error:', error);
@@ -125,12 +137,13 @@ router.get('/auth', (req, res) => {
 
 /**
  * GET /api/google-fit/status
- * Check Google Fit connection status
+ * Check Google Fit connection status for the authenticated user.
  */
-router.get('/status', (req, res) => {
-  const configured = isGoogleFitConfigured();
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  const connected = Boolean(req.session?.googleFitConnected || token);
+router.get('/status', requireAuth, (req, res) => {
+  const configured = googleFitService.isConfigured();
+  const userId = req.user.userId || req.user.uid;
+  const hasToken = userGoogleTokens.has(userId) || Boolean(req.session?.googleFitTokens);
+  const connected = Boolean(req.session?.googleFitConnected || hasToken);
 
   res.json({
     connected,
@@ -140,45 +153,42 @@ router.get('/status', (req, res) => {
 
 /**
  * POST /api/google-fit/disconnect
- * Disconnect Google Fit
+ * Disconnect Google Fit and purge credentials for the authenticated user.
  */
-router.post('/disconnect', (req, res) => {
+router.post('/disconnect', requireAuth, (req, res) => {
+  const userId = req.user.userId || req.user.uid;
+  removeUserGoogleTokens(userId);
+
   if (req.session) {
     req.session.googleFitTokens = null;
     req.session.googleFitConnected = false;
+    req.session.googleFitUserId = null;
   }
+
   res.json({ success: true, message: 'Google Fit disconnected' });
 });
 
 /**
  * GET /api/google-fit/data
- * Get all fitness data
+ * Get all fitness data for the authenticated user.
+ * Access is strictly isolated to the caller's own credentials.
  */
-router.get('/data', async (req, res) => {
+router.get('/data', requireAuth, async (req, res) => {
   try {
-    const authHeader = req.headers.authorization;
-    let tokens = req.session?.googleFitTokens;
+    const userId = req.user.userId || req.user.uid;
+    const tokens = userGoogleTokens.get(userId) || req.session?.googleFitTokens;
+    const isConnected = Boolean(req.session?.googleFitConnected || tokens);
 
-    if (!tokens && authHeader?.startsWith('Bearer ')) {
-      try {
-        const rawToken = authHeader.replace('Bearer ', '');
-        tokens = JSON.parse(Buffer.from(rawToken, 'base64').toString());
-      } catch (e) {
-        // Not a base64 JSON token
-      }
-    }
-
-    if (!tokens && !req.session?.googleFitConnected) {
+    if (!isConnected) {
       return res.status(401).json({ error: 'Google Fit not connected' });
     }
 
-    if (googleFitService && tokens) {
-      googleFitService.setCredentials(tokens);
-      const data = await googleFitService.getAllFitnessData();
+    if (googleFitService.isConfigured() && tokens) {
+      const data = await googleFitService.getAllFitnessData(tokens);
       return res.json(data);
     }
 
-    // Return mock data for dev mode if connected in session
+    // Return mock data for demo mode if connected in session
     return res.json(getMockFitnessData());
   } catch (error) {
     console.error('Error fetching Google Fit data:', error);
@@ -191,13 +201,39 @@ router.get('/data', async (req, res) => {
 
 /**
  * GET /api/google-fit/data/:type
- * Get specific fitness data type
+ * Get specific fitness data type for the authenticated user.
+ * Access is strictly isolated to the caller's own credentials.
  */
-router.get('/data/:type', async (req, res) => {
+router.get('/data/:type', requireAuth, async (req, res) => {
   try {
-    const { type } = req.params;
-    const mockData = getMockFitnessData();
+    const userId = req.user.userId || req.user.uid;
+    const tokens = userGoogleTokens.get(userId) || req.session?.googleFitTokens;
+    const isConnected = Boolean(req.session?.googleFitConnected || tokens);
 
+    if (!isConnected) {
+      return res.status(401).json({ error: 'Google Fit not connected' });
+    }
+
+    const { type } = req.params;
+    const validTypes = ['heart-rate', 'steps', 'calories', 'sleep'];
+    if (!validTypes.includes(type)) {
+      return res.status(400).json({ error: 'Invalid data type' });
+    }
+
+    if (googleFitService.isConfigured() && tokens) {
+      switch (type) {
+        case 'heart-rate':
+          return res.json(await googleFitService.getHeartRateData(tokens));
+        case 'steps':
+          return res.json(await googleFitService.getStepsData(tokens));
+        case 'calories':
+          return res.json(await googleFitService.getCaloriesData(tokens));
+        case 'sleep':
+          return res.json(await googleFitService.getSleepData(tokens));
+      }
+    }
+
+    const mockData = getMockFitnessData();
     switch (type) {
       case 'heart-rate':
         return res.json(mockData.heartRate);
@@ -207,8 +243,6 @@ router.get('/data/:type', async (req, res) => {
         return res.json(mockData.calories);
       case 'sleep':
         return res.json(mockData.sleep);
-      default:
-        return res.status(400).json({ error: 'Invalid data type' });
     }
   } catch (error) {
     console.error(`Error fetching ${req.params.type} data:`, error);
@@ -216,19 +250,6 @@ router.get('/data/:type', async (req, res) => {
       error: `Failed to fetch ${req.params.type} data`,
       message: error.message
     });
-  }
-});
-
-/**
- * GET /api/google-fit/heart-rate
- * Real-time heart rate endpoint
- */
-router.get('/heart-rate', async (req, res) => {
-  try {
-    const mock = getMockFitnessData();
-    res.json(mock.heartRate);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch heart rate data' });
   }
 });
 

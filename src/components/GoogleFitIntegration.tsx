@@ -21,6 +21,7 @@ import {
   Scale,
   ExternalLink,
 } from 'lucide-react';
+import { getAuthHeaders } from '@/utils/authUtils';
 
 // Using relative URLs - Vite proxy handles routing to backend
 
@@ -56,12 +57,9 @@ export const GoogleFitIntegration: React.FC<GoogleFitIntegrationProps> = ({ onVi
   useEffect(() => {
     // Check for Google Fit connection success from redirect
     const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
 
-    if (urlParams.get('google_fit') === 'connected' && token) {
-      // Store token in localStorage
-      localStorage.setItem('googleFitToken', token);
-      // Clear the query parameter
+    if (urlParams.get('google_fit') === 'connected') {
+      // Clear the query parameter without exposing tokens in URL history
       window.history.replaceState({}, '', window.location.pathname);
       // Refresh connection status and fetch data
       setTimeout(() => {
@@ -74,12 +72,11 @@ export const GoogleFitIntegration: React.FC<GoogleFitIntegrationProps> = ({ onVi
 
   const checkConnectionStatus = async () => {
     try {
-      const token = localStorage.getItem('googleFitToken');
+      const headers = await getAuthHeaders();
       const response = await fetch('/api/google-fit/status', {
         method: 'GET',
-        headers: token ? {
-          'Authorization': `Bearer ${token}`
-        } : {},
+        headers,
+        credentials: 'include',
       });
 
       // Handle non-OK responses gracefully
@@ -101,9 +98,10 @@ export const GoogleFitIntegration: React.FC<GoogleFitIntegrationProps> = ({ onVi
         return;
       }
 
-      setConnected(data.connected);
+      const isConnected = Boolean(data.connected);
+      setConnected(isConnected);
 
-      if (data.connected && token) {
+      if (isConnected) {
         fetchFitnessData();
         fetchHeartRateData();
       }
@@ -118,7 +116,9 @@ export const GoogleFitIntegration: React.FC<GoogleFitIntegrationProps> = ({ onVi
       setLoading(true);
       setError(null);
 
+      const headers = await getAuthHeaders();
       const response = await fetch('/api/google-fit/auth', {
+        headers,
         credentials: 'include',
       });
 
@@ -166,22 +166,20 @@ export const GoogleFitIntegration: React.FC<GoogleFitIntegrationProps> = ({ onVi
   const handleDisconnect = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('googleFitToken');
-      
+      const headers = await getAuthHeaders();
+
       // Try to call disconnect endpoint, but don't fail if it errors
       try {
         await fetch('/api/google-fit/disconnect', {
           method: 'POST',
-          headers: token ? {
-            'Authorization': `Bearer ${token}`
-          } : {},
+          headers,
+          credentials: 'include',
         });
       } catch (fetchErr) {
         console.warn('Disconnect API call failed, continuing with local cleanup:', fetchErr);
       }
-      
-      // Always clean up local state regardless of API success
-      localStorage.removeItem('googleFitToken');
+
+      // Clean up local state
       setConnected(false);
       setFitnessData(null);
       setHeartRateData(null);
@@ -190,8 +188,6 @@ export const GoogleFitIntegration: React.FC<GoogleFitIntegrationProps> = ({ onVi
       setNotConfigured(false);
     } catch (err) {
       console.warn('Failed to disconnect Google Fit:', err);
-      // Still clean up local state
-      localStorage.removeItem('googleFitToken');
       setConnected(false);
       setFitnessData(null);
       setHeartRateData(null);
@@ -206,25 +202,17 @@ export const GoogleFitIntegration: React.FC<GoogleFitIntegrationProps> = ({ onVi
       setLoading(true);
       setError(null);
 
-      const token = localStorage.getItem('googleFitToken');
-      if (!token) {
-        setConnected(false);
-        return;
-      }
-
+      const headers = await getAuthHeaders();
       const response = await fetch('/api/google-fit/data', {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
+        headers,
+        credentials: 'include',
       });
 
       // Handle non-OK responses gracefully
       if (!response.ok) {
         console.warn('Google Fit data fetch failed with status:', response.status);
         if (response.status === 401) {
-          // Token expired or invalid, disconnect
-          localStorage.removeItem('googleFitToken');
           setConnected(false);
         }
         return;
@@ -252,16 +240,11 @@ export const GoogleFitIntegration: React.FC<GoogleFitIntegrationProps> = ({ onVi
 
   const fetchHeartRateData = async () => {
     try {
-      const token = localStorage.getItem('googleFitToken');
-      if (!token) {
-        return;
-      }
-
+      const headers = await getAuthHeaders();
       const response = await fetch('/api/google-fit/data/heart-rate', {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
+        headers,
+        credentials: 'include',
       });
 
       // Handle non-OK responses gracefully

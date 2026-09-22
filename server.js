@@ -1,5 +1,4 @@
 const express = require('express');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
 const session = require('express-session');
 const cors = require('cors');
 require('dotenv').config();
@@ -50,10 +49,6 @@ app.use((req, res, next) => {
   next();
 });
 
-const genAI = process.env.GEMINI_API_KEY
-  ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
-  : null;
-
 // Load Google Fit Service (may fail if env vars not set)
 let googleFitService;
 try {
@@ -89,48 +84,6 @@ app.get('/api/body-temperature', (req, res) => {
   } catch (error) {
     console.error('Error generating temperature data:', error);
     res.status(500).json({ error: 'Failed to generate temperature data' });
-  }
-});
-
-app.post('/api/generate-report', async (req, res) => {
-  try {
-    const { metrics, note } = req.body;
-
-    if (!metrics) {
-      return res.status(400).json({ error: 'Metrics data is required' });
-    }
-
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-
-    const prompt = `
-      Generate a clinical-style report based on the following motor skills assessment data.
-      Explain the results, potential clinical implications, and recommended next steps in plain English for a patient.
-
-      Metrics:
-      - Finger Taps: ${metrics.fingerTaps}
-      - Test Duration: ${metrics.testDuration.toFixed(1)}s
-      - Tap Rate: ${metrics.tapRate.toFixed(2)} taps/sec
-      - Coordination Score: ${metrics.coordinationScore}%
-      - Movement Quality (0-100): ${metrics.movementQuality}
-      - Estimated Tremor Frequency: ${metrics.tremorFreq.toFixed(2)} Hz
-      - Tremor Amplitude (normalized): ${metrics.tremorAmpPercent.toFixed(3)}%
-
-      Patient Note: ${note}
-
-      Structure the report with the following sections:
-      1.  **Summary of Results**: Briefly explain what each metric means and the patient's score.
-      2.  **Interpretation**: What do these results suggest about the patient's motor function?
-      3.  **Recommendations**: What are the suggested next steps? (e.g., "Consult a neurologist for a formal evaluation," "Repeat the test in 3 months," "No immediate concerns.").
-    `;
-
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
-
-    res.json({ report: text });
-  } catch (error) {
-    console.error('Error generating report:', error);
-    res.status(500).json({ error: 'Failed to generate report' });
   }
 });
 
