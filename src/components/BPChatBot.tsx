@@ -11,6 +11,7 @@ import { VoiceInputButton } from './ui/VoiceInputButton';
 import { useSettings } from '@/contexts/SettingsContext';
 import { BPReading, BPStats, calculateBPStats, getBPCategory, detectBPAlerts } from '@/services/bpService';
 import { format, parseISO } from 'date-fns';
+import { callAIProxy } from '@/services/aiProxyService';
 
 interface Message {
   id: string;
@@ -197,19 +198,7 @@ Please provide helpful, accurate, and personalized analysis about the user's BP 
 
 Remember: ${languageInstruction}`;
 
-      const response = await fetch('/api/gemini-proxy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'bp-chat', payload: { prompt: prompt } }),
-      });
-
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || 'Failed to get AI response');
-      }
-
-      const data = await response.json();
-      const botResponse = data.result || 'I apologize, but I encountered an error receiving a valid response. Please try again.';
+      const botResponse = await callAIProxy('bp-chat', { prompt }) || 'I apologize, but I encountered an error receiving a valid response. Please try again.';
 
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),

@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { callAIProxy } from '@/services/aiProxyService';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -206,17 +207,7 @@ Please analyze this data and respond with ONLY a valid JSON object (no markdown,
 
 Be realistic but encouraging. If data is limited, acknowledge this and provide general guidance.`;
 
-      const response = await fetch('/api/gemini-proxy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'health-predictions', payload: { prompt } }),
-      });
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || 'Failed to generate predictions');
-      }
-      const data = await response.json();
-      const text = data.result;
+      const text = await callAIProxy('health-predictions', { prompt });
 
       // Parse JSON response
       let parsedResponse: HealthPrediction;

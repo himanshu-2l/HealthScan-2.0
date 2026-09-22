@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { callAIProxy } from '@/services/aiProxyService';
 import {
   Sparkles,
   Apple,
@@ -234,17 +235,7 @@ Respond ONLY with valid JSON in this exact format (no markdown, no code blocks):
   }
 }`;
 
-      const response = await fetch('/api/gemini-proxy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'recommendations', payload: { prompt } }),
-      });
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || 'Failed to generate recommendations');
-      }
-      const data = await response.json();
-      let text = data.result;
+      let text = await callAIProxy('recommendations', { prompt });
 
       // Clean up the response
       text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();

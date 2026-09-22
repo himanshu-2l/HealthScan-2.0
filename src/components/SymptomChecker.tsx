@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { callAIProxy } from '@/services/aiProxyService';
 
 import {
   Brain,
@@ -132,27 +133,12 @@ export default function SymptomChecker() {
         ...(symptomDescription ? [symptomDescription] : [])
       ].join(', ');
 
-      const response = await fetch('/api/gemini-proxy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'symptom-check',
-          payload: {
-            bodyArea: selectedArea.name,
-            symptoms: allSymptoms,
-            duration: duration || 'Not specified',
-            severity,
-          },
-        }),
+      const parsed: AnalysisResult = await callAIProxy('symptom-check', {
+        bodyArea: selectedArea.name,
+        symptoms: allSymptoms,
+        duration: duration || 'Not specified',
+        severity,
       });
-
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || 'Failed to analyze symptoms');
-      }
-
-      const data = await response.json();
-      const parsed: AnalysisResult = data.result;
       setAnalysisResult(parsed);
       setCurrentStep(4);
     } catch (err) {

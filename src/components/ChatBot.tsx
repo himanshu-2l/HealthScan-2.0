@@ -5,6 +5,7 @@ import { X, Send, Bot, User, Loader2, Settings, Sparkles } from 'lucide-react';
 import { VoiceInputButton } from './ui/VoiceInputButton';
 import { useSettings } from '@/contexts/SettingsContext';
 import { HealthTestResult } from '@/types/health';
+import { callAIProxy } from '@/services/aiProxyService';
 
 interface Message {
   id: string;
@@ -188,19 +189,7 @@ ${languageInstruction}
 Provide a brief, accurate response (max 3 sentences) about health screening, tests, or general health questions. Focus on key information only.`;
       }
 
-      const response = await fetch('/api/gemini-proxy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'chat', payload: { prompt: prompt } }),
-      });
-
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || 'Failed to get AI response');
-      }
-
-      const data = await response.json();
-      const botResponse = data.result || 'I apologize, but I encountered an error receiving a valid response. Please try again.';
+      const botResponse = await callAIProxy('chat', { prompt }) || 'I apologize, but I encountered an error receiving a valid response. Please try again.';
 
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),

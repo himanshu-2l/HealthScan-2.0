@@ -7,6 +7,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { callAIProxy } from '@/services/aiProxyService';
 import {
   FileText,
   User,
@@ -251,19 +252,8 @@ Blood Glucose (Latest):
 
 Please provide observations, potential concerns, and any recommendations for the physician's review.`;
 
-      const response = await fetch('/api/gemini-proxy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'doctor-report', payload: { prompt } }),
-      });
-
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || 'Failed to get AI response');
-      }
-
-      const data = await response.json();
-      setAiSummary(data.result);
+      const result = await callAIProxy('doctor-report', { prompt });
+      setAiSummary(result);
     } catch (error) {
       console.error('Error generating AI summary:', error);
       setAiError('Failed to generate AI summary. Please try again.');
