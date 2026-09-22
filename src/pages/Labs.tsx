@@ -3,8 +3,8 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { GlassNavbar } from '@/components/GlassNavbar';
 import { SiteFooter } from '@/components/SiteFooter';
 import { 
-  Heart, Hand, Footprints, Eye, Mic, Brain, Ear, Wind, Scan, Apple, 
-  Lock, ArrowRight, FlaskConical, Clock, CheckCircle2, Pill
+  Heart, Hand, Footprints, Eye, Mic, Brain, Ear, Pill,
+  Lock, ArrowRight, FlaskConical, Clock, CheckCircle2
 } from 'lucide-react';
 import { getRecentResults } from '@/services/healthDataService';
 import type { LucideIcon } from 'lucide-react';
@@ -29,9 +29,6 @@ const labCategories: LabCategory[] = [
   { id: 'voice', name: 'Voice Lab', description: 'Voice pattern and speech analysis', icon: Mic, color: 'purple', status: 'available', path: 'voice', image: '/images/voice-scan.jpg' },
   { id: 'mental-health', name: 'Mental Health Lab', description: 'Cognitive and psychological assessments', icon: Brain, color: 'pink', status: 'available', path: 'mental-health' },
   { id: 'vision-hearing', name: 'Vision & Hearing Lab', description: 'Visual acuity and hearing tests', icon: Ear, color: 'amber', status: 'available', path: 'vision-hearing' },
-  { id: 'respiratory', name: 'Respiratory Lab', description: 'Breathing patterns and lung capacity', icon: Wind, color: 'teal', status: 'coming-soon', path: 'respiratory' },
-  { id: 'skin-dermal', name: 'Skin & Dermal Lab', description: 'Skin analysis and dermatological screening', icon: Scan, color: 'orange', status: 'coming-soon', path: 'skin-dermal' },
-  { id: 'nutritional', name: 'Nutritional Lab', description: 'Dietary analysis and nutritional assessment', icon: Apple, color: 'lime', status: 'coming-soon', path: 'nutritional' },
 ];
 
 const colorMap: Record<string, { bg: string; text: string; border: string }> = {

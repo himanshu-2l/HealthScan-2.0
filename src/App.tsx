@@ -110,9 +110,6 @@ const AppContent = () => {
           <Route path="vision-hearing" element={<VisionHearingLab />} />
           <Route path="gait" element={<GaitLab />} />
           <Route path="medicine-lens" element={<MedicineLensLab />} />
-          <Route path="respiratory" element={<ComingSoon title="Respiratory Lab" description="Advanced respiratory analysis and breathing pattern assessment coming soon." />} />
-          <Route path="skin-dermal" element={<ComingSoon title="Skin & Dermal Lab" description="Skin health analysis and dermal condition assessment coming soon." />} />
-          <Route path="nutritional" element={<ComingSoon title="Nutritional Lab" description="Comprehensive nutritional analysis and dietary assessment coming soon." />} />
         </Route>
         <Route path="/ehr" element={
           <ProtectedRoute>

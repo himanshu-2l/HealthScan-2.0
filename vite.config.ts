@@ -39,7 +39,7 @@ export default defineConfig({
           'vendor-query': ['@tanstack/react-query'],
           'vendor-ai': ['@google/generative-ai'],
           'vendor-ml': ['@tensorflow/tfjs', '@tensorflow/tfjs-backend-webgl', '@tensorflow-models/pose-detection'],
-          'vendor-mediapipe': ['@mediapipe/tasks-vision', '@mediapipe/face_mesh', '@mediapipe/hands'],
+          'vendor-mediapipe': ['@mediapipe/tasks-vision', '@mediapipe/hands'],
         },
       },
     },

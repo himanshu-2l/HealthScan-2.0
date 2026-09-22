@@ -46,6 +46,7 @@ export const MobileAppView: React.FC = () => {
 
   const handleScanComplete = () => {
     setRefreshKey(prev => prev + 1);
+    setActiveTab('today');
   };
 
   return (

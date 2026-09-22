@@ -19,6 +19,8 @@ import {
   Moon
 } from 'lucide-react';
 import { getAllResults } from '../../services/healthDataService';
+import { getAllGlucoseReadings } from '../../services/glucoseService';
+import { getAllBPReadings } from '../../services/bpService';
 import { HealthTestResult } from '../../types/health';
 import { ClinicalRangeBar } from './ClinicalRangeBar';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -44,8 +46,8 @@ export const TodayDashboard: React.FC<TodayDashboardProps> = ({
   const [latestHRV, setLatestHRV] = useState<number | null>(null);
   const [latestTapSpeed, setLatestTapSpeed] = useState<number | null>(null);
   const [latestPitch, setLatestPitch] = useState<number | null>(null);
-  const [glucoseVal] = useState<number | null>(null); // No real glucose sensor
-  const [bpReading] = useState<string | null>(null); // No real BP sensor
+  const [glucoseVal, setGlucoseVal] = useState<number | null>(null);
+  const [bpReading, setBpReading] = useState<string | null>(null);
 
   useEffect(() => {
     try {
@@ -70,6 +72,18 @@ export const TodayDashboard: React.FC<TodayDashboardProps> = ({
         const voiceResult = stored.find(r => r.data?.voicePitch || r.data?.pitch);
         if (voiceResult?.data?.voicePitch) setLatestPitch(Math.round(voiceResult.data.voicePitch));
         else if (voiceResult?.data?.pitch) setLatestPitch(Math.round(voiceResult.data.pitch));
+      }
+
+      const glucoseList = getAllGlucoseReadings();
+      if (glucoseList.length > 0) {
+        const g = glucoseList[0];
+        setGlucoseVal(g.fasting ?? g.postMeal ?? null);
+      }
+
+      const bpList = getAllBPReadings();
+      if (bpList.length > 0) {
+        const b = bpList[0];
+        setBpReading(`${b.systolic}/${b.diastolic} mmHg`);
       }
     } catch (e) {
       console.error(e);
@@ -166,25 +180,25 @@ export const TodayDashboard: React.FC<TodayDashboardProps> = ({
               <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/[0.05] text-center">
                 <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-medium">Resting HR</span>
                 <span className="text-sm sm:text-base font-bold text-slate-900 dark:text-white font-mono">
-                  {latestHR !== null ? `${latestHR} bpm` : '— bpm'}
+                  {latestHR !== null ? `${latestHR} bpm` : 'Scan ❯'}
                 </span>
               </div>
               <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/[0.05] text-center">
                 <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-medium">HRV Recovery</span>
                 <span className="text-sm sm:text-base font-bold text-slate-900 dark:text-white font-mono">
-                  {latestHRV !== null ? `${latestHRV} ms` : '— ms'}
+                  {latestHRV !== null ? `${latestHRV} ms` : 'Scan ❯'}
                 </span>
               </div>
               <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/[0.05] text-center">
                 <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-medium">Estimated Glucose</span>
                 <span className="text-sm sm:text-base font-bold text-slate-900 dark:text-white font-mono">
-                  {glucoseVal !== null ? `${glucoseVal} mg/dL` : '— mg/dL'}
+                  {glucoseVal !== null ? `${glucoseVal} mg/dL` : 'Log ❯'}
                 </span>
               </div>
               <div className="hidden sm:block p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/[0.05] text-center">
                 <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-medium">Blood Pressure</span>
                 <span className="text-sm sm:text-base font-bold text-slate-900 dark:text-white font-mono">
-                  {bpReading || '— mmHg'}
+                  {bpReading || 'Log ❯'}
                 </span>
               </div>
             </div>

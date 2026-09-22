@@ -8,6 +8,7 @@ import {
 } from 'firebase/auth';
 import { auth, googleProvider, isFirebaseConfigured } from '../lib/firebase';
 import { useToast } from '@/components/ui/use-toast';
+import { seedDemoData } from '../services/demoDataSeeder';
 
 export interface AppUser {
     uid: string;
@@ -76,6 +77,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
         localStorage.setItem('healthscan_demo_user', JSON.stringify(defaultUser));
         setCurrentUser(defaultUser);
+        seedDemoData();
         setLoading(false);
     }, []);
 
@@ -88,6 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
         localStorage.setItem('healthscan_demo_user', JSON.stringify(demoUser));
         setCurrentUser(demoUser);
+        seedDemoData();
         toast({
             title: "Demo Mode Active",
             description: "Signed in as Dr. Alex Mercer. All features are unlocked!",
