@@ -21,7 +21,10 @@ import {
   Zap,
   Volume2,
   VolumeX,
-  Radio
+  Radio,
+  Plus,
+  Minus,
+  User
 } from 'lucide-react';
 import { 
   pulseDetector, 
@@ -73,8 +76,39 @@ export const CardiovascularLab: React.FC = () => {
   const lastBeatTimeRef = useRef<number | null>(null);
   const isBeatActiveRef = useRef<boolean>(false);
   const beatTimeoutRef = useRef<number | null>(null);
-  const lastBeatTickRef = useRef<number>(0);
-  const [age, setAge] = useState<number>(35);
+  const [age, setAge] = useState<number | string>(35);
+
+  const handleAgeChange = (val: string) => {
+    if (val === '') {
+      setAge('');
+      return;
+    }
+    const cleaned = val.replace(/\D/g, '');
+    if (cleaned === '') {
+      setAge('');
+    } else {
+      const num = parseInt(cleaned, 10);
+      setAge(Math.min(120, num));
+    }
+  };
+
+  const handleAgeBlur = () => {
+    const num = typeof age === 'number' ? age : parseInt(String(age), 10);
+    if (isNaN(num) || num < 18) {
+      setAge(18);
+    } else if (num > 100) {
+      setAge(100);
+    } else {
+      setAge(num);
+    }
+  };
+
+  const adjustAge = (delta: number) => {
+    if (isRecording) return;
+    const current = typeof age === 'number' ? age : (parseInt(String(age), 10) || 35);
+    const next = Math.max(18, Math.min(100, current + delta));
+    setAge(next);
+  };
 
   // Trigger pulse sound ("brap/bip" medical audio) and visual systolic pulsation
   const triggerPulseBeat = useCallback((currentSpo2?: number) => {
@@ -475,10 +509,11 @@ export const CardiovascularLab: React.FC = () => {
     const hrvMetrics = calculateHRV(rrIntervalsRef.current);
 
     // Estimate blood pressure
+    const numericAge = typeof age === 'number' && !isNaN(age) && age > 0 ? age : (parseInt(String(age), 10) || 35);
     const estimatedBP = estimateBloodPressure(
       hrvMetrics.meanRR,
       confidence / 100,
-      age
+      numericAge
     );
 
     // Calculate cardiovascular risk
@@ -486,7 +521,7 @@ export const CardiovascularLab: React.FC = () => {
       finalBpm,
       hrvMetrics,
       estimatedBP,
-      age
+      numericAge
     );
 
     const cardiovascularResults: CardiovascularResults = {
@@ -620,23 +655,105 @@ export const CardiovascularLab: React.FC = () => {
       {/* Patient Information */}
       <div className="max-w-4xl mx-auto">
         <Card className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm overflow-hidden">
-          <CardHeader className="bg-slate-50/60 dark:bg-white/[0.02] border-b border-slate-200/80 dark:border-white/5 py-4">
-            <CardTitle className="text-base font-semibold text-slate-900 dark:text-white">Patient Calibration</CardTitle>
-            <CardDescription className="text-xs text-slate-500 dark:text-slate-400">Age calibration optimizes HRV and cardiovascular risk estimates</CardDescription>
+          <CardHeader className="bg-slate-50/60 dark:bg-white/[0.02] border-b border-slate-200/80 dark:border-white/5 py-3.5 px-4 sm:px-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <User className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                <CardTitle className="text-sm sm:text-base font-semibold text-slate-900 dark:text-white">Patient Calibration</CardTitle>
+              </div>
+              <Badge variant="outline" className="text-[10px] text-slate-500 border-slate-200 dark:border-white/10">
+                Normative Baseline
+              </Badge>
+            </div>
+            <CardDescription className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Calibrating patient age optimizes physiological HRV reference bands and blood pressure calculation
+            </CardDescription>
           </CardHeader>
-          <CardContent className="p-4 sm:p-5">
-            <div className="flex items-center gap-4">
-              <label className="text-slate-800 dark:text-slate-200 font-medium text-sm">Age:</label>
+          <CardContent className="p-4 sm:p-5 space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              {/* Direct Input with Stepper Buttons */}
+              <div className="flex items-center gap-2">
+                <label className="text-slate-800 dark:text-slate-200 font-medium text-sm">Age:</label>
+                
+                <div className="flex items-center bg-slate-100 dark:bg-white/[0.06] border border-slate-200/80 dark:border-white/10 rounded-xl p-0.5 shadow-inner">
+                  <button
+                    type="button"
+                    onClick={() => adjustAge(-1)}
+                    disabled={isRecording || (typeof age === 'number' && age <= 18)}
+                    className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 disabled:opacity-30 disabled:pointer-events-none transition active:scale-95"
+                    title="Decrease age by 1"
+                  >
+                    <Minus className="w-3.5 h-3.5" />
+                  </button>
+
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={age}
+                    onChange={(e) => handleAgeChange(e.target.value)}
+                    onBlur={handleAgeBlur}
+                    className="bg-transparent border-0 w-12 text-center text-slate-900 dark:text-white text-base font-bold font-mono focus:outline-none focus:ring-0"
+                    disabled={isRecording}
+                    placeholder="35"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => adjustAge(1)}
+                    disabled={isRecording || (typeof age === 'number' && age >= 100)}
+                    className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 disabled:opacity-30 disabled:pointer-events-none transition active:scale-95"
+                    title="Increase age by 1"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                <span className="text-slate-500 dark:text-slate-400 text-xs font-medium">years old</span>
+              </div>
+
+              {/* Quick Age Preset Pills */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[11px] text-slate-400 mr-1 hidden sm:inline">Presets:</span>
+                {[20, 30, 40, 50, 60, 70].map((preset) => {
+                  const isSelected = Number(age) === preset;
+                  return (
+                    <button
+                      key={preset}
+                      type="button"
+                      disabled={isRecording}
+                      onClick={() => setAge(preset)}
+                      className={`text-xs px-2.5 py-1 rounded-lg font-medium transition active:scale-95 ${
+                        isSelected
+                          ? 'bg-teal-600 text-white shadow-sm font-bold'
+                          : 'bg-slate-100 dark:bg-white/[0.05] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10'
+                      }`}
+                    >
+                      {preset}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Interactive Smooth Slider for Touch Ergonomics */}
+            <div className="pt-1">
+              <div className="flex items-center justify-between text-[11px] text-slate-400 mb-1.5">
+                <span>Young Adult (18)</span>
+                <span className="font-semibold text-teal-600 dark:text-teal-400 font-mono">
+                  {typeof age === 'number' ? `${age} years old` : '35 years old'}
+                </span>
+                <span>Senior (90+)</span>
+              </div>
               <input
-                type="number"
-                min="18"
-                max="100"
-                value={age}
-                onChange={(e) => setAge(parseInt(e.target.value) || 35)}
-                className="bg-slate-100 dark:bg-white/[0.06] border border-slate-200/80 dark:border-white/10 rounded-xl px-3 py-1.5 w-24 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-teal-500 transition-colors"
+                type="range"
+                min={18}
+                max={90}
+                step={1}
+                value={typeof age === 'number' ? age : (parseInt(String(age), 10) || 35)}
+                onChange={(e) => setAge(parseInt(e.target.value, 10))}
                 disabled={isRecording}
+                className="w-full accent-teal-600 dark:accent-teal-400 cursor-pointer disabled:opacity-40"
               />
-              <span className="text-slate-500 dark:text-slate-400 text-sm">years old</span>
             </div>
           </CardContent>
         </Card>
