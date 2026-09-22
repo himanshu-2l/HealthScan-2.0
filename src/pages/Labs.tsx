@@ -4,7 +4,7 @@ import { GlassNavbar } from '@/components/GlassNavbar';
 import { SiteFooter } from '@/components/SiteFooter';
 import { 
   Heart, Hand, Footprints, Eye, Mic, Brain, Ear, Wind, Scan, Apple, 
-  Lock, ArrowRight, FlaskConical, Clock, CheckCircle2
+  Lock, ArrowRight, FlaskConical, Clock, CheckCircle2, Pill
 } from 'lucide-react';
 import { getRecentResults } from '@/services/healthDataService';
 import type { LucideIcon } from 'lucide-react';
@@ -22,6 +22,7 @@ interface LabCategory {
 
 const labCategories: LabCategory[] = [
   { id: 'cardiovascular', name: 'Cardiovascular Lab', description: 'Heart rate, HRV analysis, and cardiac health', icon: Heart, color: 'red', status: 'available', path: 'cardiovascular', image: '/images/ppg-scan.jpg' },
+  { id: 'medicine-lens', name: 'Medicine Lens', description: 'Packaging OCR, Indian salt resolution, and deterministic safety', icon: Pill, color: 'indigo', status: 'available', path: 'medicine-lens' },
   { id: 'motor', name: 'Motor Lab', description: 'Tremor detection and motor function analysis', icon: Hand, color: 'blue', status: 'available', path: 'motor', image: '/images/motor-scan.jpg' },
   { id: 'gait', name: 'Gait Lab', description: 'Walking pattern and balance analysis', icon: Footprints, color: 'cyan', status: 'available', path: 'gait' },
   { id: 'eye', name: 'Eye Lab', description: 'Pupil response and eye tracking tests', icon: Eye, color: 'green', status: 'available', path: 'eye' },
@@ -35,6 +36,7 @@ const labCategories: LabCategory[] = [
 
 const colorMap: Record<string, { bg: string; text: string; border: string }> = {
   red: { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500/30' },
+  indigo: { bg: 'bg-indigo-500/20', text: 'text-indigo-400', border: 'border-indigo-500/30' },
   blue: { bg: 'bg-blue-500/20', text: 'text-blue-400', border: 'border-blue-500/30' },
   cyan: { bg: 'bg-cyan-500/20', text: 'text-cyan-400', border: 'border-cyan-500/30' },
   green: { bg: 'bg-green-500/20', text: 'text-green-400', border: 'border-green-500/30' },

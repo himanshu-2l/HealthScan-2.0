@@ -25,6 +25,7 @@ const CardiovascularLab = lazy(() => import("./components/labs/CardiovascularLab
 const MentalHealthLab = lazy(() => import("./components/labs/MentalHealthLab"));
 const VisionHearingLab = lazy(() => import("./components/labs/VisionHearingLab"));
 const GaitLab = lazy(() => import("./components/labs/GaitLab"));
+const MedicineLensLab = lazy(() => import("./components/labs/MedicineLensLab"));
 const BPTrackerPage = lazy(() => import("./pages/BPTrackerPage"));
 const DiabetesManagementPage = lazy(() => import("./pages/DiabetesManagementPage"));
 const PatientProfilePage = lazy(() => import("./pages/PatientProfilePage"));
@@ -108,6 +109,7 @@ const AppContent = () => {
           <Route path="mental-health" element={<MentalHealthLab />} />
           <Route path="vision-hearing" element={<VisionHearingLab />} />
           <Route path="gait" element={<GaitLab />} />
+          <Route path="medicine-lens" element={<MedicineLensLab />} />
           <Route path="respiratory" element={<ComingSoon title="Respiratory Lab" description="Advanced respiratory analysis and breathing pattern assessment coming soon." />} />
           <Route path="skin-dermal" element={<ComingSoon title="Skin & Dermal Lab" description="Skin health analysis and dermal condition assessment coming soon." />} />
           <Route path="nutritional" element={<ComingSoon title="Nutritional Lab" description="Comprehensive nutritional analysis and dietary assessment coming soon." />} />
@@ -165,6 +167,11 @@ const AppContent = () => {
         <Route path="/smartwatch" element={
           <ProtectedRoute>
             <SmartwatchPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/medicine-lens" element={
+          <ProtectedRoute>
+            <MedicineLensLab />
           </ProtectedRoute>
         } />
 

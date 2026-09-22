@@ -12,6 +12,7 @@ import {
   Mic,
   Hand,
   Eye,
+  Pill,
   ShieldCheck,
   Smartphone,
   Sun,
@@ -696,6 +697,19 @@ export const TodayDashboard: React.FC<TodayDashboardProps> = ({
               <div>
                 <div className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-teal-700 dark:group-hover:text-teal-300 transition-colors">Eye & Cognition</div>
                 <div className="text-[10px] text-slate-500 dark:text-slate-400">Saccades & Stroop</div>
+              </div>
+            </button>
+
+            <button
+              onClick={() => navigate('/labs/medicine-lens')}
+              className="p-3 rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/[0.05] hover:border-indigo-500/40 dark:hover:border-indigo-500/30 text-left transition flex items-center gap-2.5 active:scale-[0.98] group col-span-2 sm:col-span-1"
+            >
+              <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200/60 dark:border-indigo-800/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 transition-colors">
+                <Pill className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">Medicine Lens</div>
+                <div className="text-[10px] text-slate-500 dark:text-slate-400">Blister OCR & Safety</div>
               </div>
             </button>
           </div>
