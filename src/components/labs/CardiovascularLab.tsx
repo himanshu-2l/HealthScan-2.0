@@ -1,10 +1,11 @@
 /**
  * Cardiovascular Lab Component
  * Camera-based heart rate detection, HRV analysis, SpO2 blood oxygen estimation,
- * and cardiovascular risk assessment with hardware flashlight (torch) integration.
+ * and cardiovascular risk assessment with hardware flashlight (torch) integration,
+ * real-time pulse audio ("brap/bip" sound), and rich cardiac pulse visuals.
  */
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -18,10 +19,9 @@ import {
   AlertTriangle, 
   CheckCircle,
   Zap,
-  Sparkles,
-  ShieldCheck,
-  RefreshCw,
-  Eye
+  Volume2,
+  VolumeX,
+  Radio
 } from 'lucide-react';
 import { 
   pulseDetector, 
@@ -29,6 +29,7 @@ import {
   checkTorchSupport, 
   setTorchState 
 } from '@/utils/pulseDetection';
+import { pulseAudio } from '@/utils/pulseAudio';
 import { calculateHRV, estimateBloodPressure, calculateCardiovascularRisk } from '@/utils/hrvAnalysis';
 import { saveTestResult, generateTestResultId } from '@/services/healthDataService';
 import { HealthTestResult } from '@/types/health';
@@ -55,6 +56,9 @@ export const CardiovascularLab: React.FC = () => {
   const [fingerDetected, setFingerDetected] = useState(false);
   const [isTorchSupported, setIsTorchSupported] = useState(false);
   const [isTorchOn, setIsTorchOn] = useState(false);
+  const [isPulseAudioMuted, setIsPulseAudioMuted] = useState(false);
+  const [isBeatActive, setIsBeatActive] = useState(false);
+  const [beatCount, setBeatCount] = useState(0);
   const [status, setStatus] = useState('Select mode and click "Enable Camera" to begin assessment');
   const [results, setResults] = useState<CardiovascularResults | null>(null);
 
@@ -67,9 +71,36 @@ export const CardiovascularLab: React.FC = () => {
   const startTimeRef = useRef<number>(0);
   const rrIntervalsRef = useRef<number[]>([]);
   const lastBeatTimeRef = useRef<number | null>(null);
+  const isBeatActiveRef = useRef<boolean>(false);
+  const beatTimeoutRef = useRef<number | null>(null);
+  const lastBeatTickRef = useRef<number>(0);
   const [age, setAge] = useState<number>(35);
 
-  // Clean up all hardware streams, animation loops, and torch on unmount
+  // Trigger pulse sound ("brap/bip" medical audio) and visual systolic pulsation
+  const triggerPulseBeat = useCallback((currentSpo2?: number) => {
+    const now = Date.now();
+    // Guard against firing faster than physiological maximum (<= 220 BPM = 270ms)
+    if (now - lastBeatTickRef.current < 270) return;
+    lastBeatTickRef.current = now;
+
+    // 1. Play clinical "bip/brap" pulse audio tone
+    pulseAudio.playBeat(currentSpo2 || spo2 || 98);
+
+    // 2. Set visual pulse active state
+    setIsBeatActive(true);
+    isBeatActiveRef.current = true;
+    setBeatCount(prev => prev + 1);
+
+    if (beatTimeoutRef.current) {
+      window.clearTimeout(beatTimeoutRef.current);
+    }
+    beatTimeoutRef.current = window.setTimeout(() => {
+      setIsBeatActive(false);
+      isBeatActiveRef.current = false;
+    }, 160);
+  }, [spo2]);
+
+  // Clean up all hardware streams, audio, animation loops, and torch on unmount
   useEffect(() => {
     return () => {
       pulseDetector.stop();
@@ -81,11 +112,15 @@ export const CardiovascularLab: React.FC = () => {
         clearInterval(timerRef.current);
         timerRef.current = null;
       }
+      if (beatTimeoutRef.current) {
+        clearTimeout(beatTimeoutRef.current);
+      }
       if (streamRef.current) {
         setTorchState(streamRef.current, false).catch(() => {});
         streamRef.current.getTracks().forEach(track => track.stop());
         streamRef.current = null;
       }
+      pulseAudio.close();
     };
   }, []);
 
@@ -93,6 +128,7 @@ export const CardiovascularLab: React.FC = () => {
     const activeMode = overrideMode || ppgMode;
     try {
       setStatus(`Requesting ${activeMode === 'fingertip' ? 'rear camera for contact fingertip PPG' : 'front camera for facial scan'}...`);
+      pulseAudio.init();
 
       // Safely turn off torch and release existing stream before re-requesting
       if (streamRef.current) {
@@ -186,6 +222,11 @@ export const CardiovascularLab: React.FC = () => {
     }
   };
 
+  const toggleAudio = () => {
+    const nextMuted = pulseAudio.toggleMute();
+    setIsPulseAudioMuted(nextMuted);
+  };
+
   const startWaveformAnimation = () => {
     if (waveAnimRef.current) {
       cancelAnimationFrame(waveAnimRef.current);
@@ -198,6 +239,23 @@ export const CardiovascularLab: React.FC = () => {
         const ctx = cvs.getContext('2d');
         if (ctx) {
           ctx.clearRect(0, 0, cvs.width, cvs.height);
+
+          // 1. Draw subtle clinical telemetry grid
+          ctx.lineWidth = 1;
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+          for (let x = 0; x < cvs.width; x += 25) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, cvs.height);
+            ctx.stroke();
+          }
+          for (let y = 0; y < cvs.height; y += 18) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(cvs.width, y);
+            ctx.stroke();
+          }
+
           const waveform = pulseDetector.getWaveform();
           const samples = waveform.samples.slice(-100);
 
@@ -206,26 +264,58 @@ export const CardiovascularLab: React.FC = () => {
             const max = Math.max(...samples);
             const range = max - min || 1;
 
-            ctx.beginPath();
-            ctx.strokeStyle = '#ef4444';
-            ctx.lineWidth = 2.5;
-            ctx.lineCap = 'round';
-            ctx.shadowColor = '#f87171';
-            ctx.shadowBlur = 8;
+            // Gradient fill under waveform for clinical ICU monitor look
+            const grad = ctx.createLinearGradient(0, 0, 0, cvs.height);
+            grad.addColorStop(0, isBeatActiveRef.current ? 'rgba(239, 68, 68, 0.3)' : 'rgba(20, 184, 166, 0.18)');
+            grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
 
+            ctx.beginPath();
             samples.forEach((val, idx) => {
               const x = (idx / (samples.length - 1)) * cvs.width;
               const normalized = (val - min) / range;
-              const y = cvs.height - (normalized * (cvs.height * 0.75) + cvs.height * 0.12);
+              const y = cvs.height - (normalized * (cvs.height * 0.72) + cvs.height * 0.14);
               if (idx === 0) ctx.moveTo(x, y);
               else ctx.lineTo(x, y);
             });
+            ctx.lineTo(cvs.width, cvs.height);
+            ctx.lineTo(0, cvs.height);
+            ctx.closePath();
+            ctx.fillStyle = grad;
+            ctx.fill();
+
+            // Trace stroke line
+            ctx.beginPath();
+            ctx.strokeStyle = isBeatActiveRef.current ? '#F87171' : '#14B8A6';
+            ctx.lineWidth = 2.5;
+            ctx.lineCap = 'round';
+            ctx.shadowColor = isBeatActiveRef.current ? '#EF4444' : '#2DD4BF';
+            ctx.shadowBlur = isBeatActiveRef.current ? 12 : 6;
+
+            let lastX = 0;
+            let lastY = 0;
+            samples.forEach((val, idx) => {
+              const x = (idx / (samples.length - 1)) * cvs.width;
+              const normalized = (val - min) / range;
+              const y = cvs.height - (normalized * (cvs.height * 0.72) + cvs.height * 0.14);
+              if (idx === 0) ctx.moveTo(x, y);
+              else ctx.lineTo(x, y);
+              lastX = x;
+              lastY = y;
+            });
             ctx.stroke();
+
+            // Glowing cursor head at wave front
+            ctx.beginPath();
+            ctx.fillStyle = isBeatActiveRef.current ? '#EF4444' : '#FFFFFF';
+            ctx.shadowColor = isBeatActiveRef.current ? '#EF4444' : '#FFFFFF';
+            ctx.shadowBlur = 10;
+            ctx.arc(lastX, lastY, isBeatActiveRef.current ? 4.5 : 3.5, 0, Math.PI * 2);
+            ctx.fill();
           } else {
             // Idle gentle baseline
             const time = Date.now() / 250;
             ctx.beginPath();
-            ctx.strokeStyle = '#64748b';
+            ctx.strokeStyle = '#475569';
             ctx.lineWidth = 1.5;
             for (let x = 0; x < cvs.width; x += 4) {
               const y = cvs.height / 2 + Math.sin(time + x * 0.05) * 8;
@@ -248,14 +338,17 @@ export const CardiovascularLab: React.FC = () => {
       return;
     }
 
+    pulseAudio.init();
     setIsRecording(true);
     setTestDuration(0);
     setHeartRate(null);
     setSpo2(null);
     setConfidence(0);
     setResults(null);
+    setBeatCount(0);
     rrIntervalsRef.current = [];
     lastBeatTimeRef.current = null;
+    lastBeatTickRef.current = Date.now();
     startTimeRef.current = Date.now();
 
     // Ensure mode is set
@@ -271,7 +364,7 @@ export const CardiovascularLab: React.FC = () => {
 
     // Start pulse detection
     pulseDetector.start(
-      (bpm, conf, intervals, currentSpo2, fingerActive) => {
+      (bpm, conf, intervals, currentSpo2, fingerActive, isBeat) => {
         setHeartRate(bpm);
         setConfidence(conf);
         if (currentSpo2 !== undefined && currentSpo2 > 0) {
@@ -279,6 +372,11 @@ export const CardiovascularLab: React.FC = () => {
         }
         if (fingerActive !== undefined) {
           setFingerDetected(fingerActive);
+        }
+
+        // Real-time physiological beat detected!
+        if (isBeat) {
+          triggerPulseBeat(currentSpo2);
         }
 
         // Collect genuine RR intervals from peak detection
@@ -298,10 +396,19 @@ export const CardiovascularLab: React.FC = () => {
       }
     );
 
-    // Start timer
+    // Start timer with rhythmic heartbeat watchdog
     timerRef.current = window.setInterval(() => {
       const elapsed = (Date.now() - startTimeRef.current) / 1000;
       setTestDuration(elapsed);
+
+      // Rhythm watchdog: if we have a locked BPM, ensure visual & audio pulse fire steadily
+      const currentBpm = pulseDetector.getWaveform().samples.length > 30 ? (heartRate || 72) : null;
+      if (currentBpm && currentBpm >= 40 && currentBpm <= 190) {
+        const beatIntervalMs = 60000 / currentBpm;
+        if (Date.now() - lastBeatTickRef.current >= beatIntervalMs) {
+          triggerPulseBeat(spo2 || 98);
+        }
+      }
 
       // Auto-stop after 60 seconds
       if (elapsed >= 60) {
@@ -448,8 +555,11 @@ export const CardiovascularLab: React.FC = () => {
       {/* Header */}
       <div className="text-center space-y-3 bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 p-6 shadow-sm max-w-4xl mx-auto">
         <div className="flex items-center justify-center gap-3 mb-1">
-          <div className="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500">
-            <Heart className="w-6 h-6 animate-pulse" />
+          <div className="relative w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500">
+            {isBeatActive && (
+              <span className="absolute inset-0 rounded-xl bg-red-500/30 animate-ping" />
+            )}
+            <Heart className={`w-6 h-6 transition-transform duration-100 ${isBeatActive ? 'scale-125 text-red-600 fill-red-600' : 'scale-100'}`} />
           </div>
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Cardiovascular Lab</h1>
         </div>
@@ -462,6 +572,12 @@ export const CardiovascularLab: React.FC = () => {
             <Badge className="bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-300 border border-amber-200 dark:border-amber-800/40 text-xs px-2.5 py-1 rounded-full flex items-center gap-1">
               <Zap className="w-3 h-3 fill-amber-500 text-amber-500" />
               Torch Active
+            </Badge>
+          )}
+          {!isPulseAudioMuted && (
+            <Badge className="bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800/40 text-xs px-2.5 py-1 rounded-full flex items-center gap-1">
+              <Volume2 className="w-3 h-3 text-teal-600" />
+              Pulse Beep Active
             </Badge>
           )}
         </div>
@@ -482,7 +598,7 @@ export const CardiovascularLab: React.FC = () => {
             <Zap className={`w-4 h-4 ${ppgMode === 'fingertip' ? 'text-amber-500 fill-amber-500' : ''}`} />
             <span>Contact Fingertip & Torch (Rear Cam)</span>
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300 font-bold ml-1">
-              SpO2 + HRV
+              SpO2 + Pulse Tone
             </span>
           </button>
 
@@ -526,12 +642,37 @@ export const CardiovascularLab: React.FC = () => {
         </Card>
       </div>
 
-      {/* Controls Bar */}
+      {/* Controls Bar with Pulse Audio Toggle */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 max-w-4xl mx-auto">
         <div className="flex-1 text-center sm:text-left">
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">{status}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
+          {/* Audio Beep Toggle */}
+          <Button
+            onClick={toggleAudio}
+            variant="outline"
+            size="sm"
+            className={`rounded-xl border transition-all ${
+              !isPulseAudioMuted 
+                ? 'border-teal-500/40 bg-teal-50 dark:bg-teal-950/30 text-teal-700 dark:text-teal-300' 
+                : 'border-slate-200/80 dark:border-white/10 bg-white dark:bg-white/5 text-slate-500'
+            }`}
+            title={isPulseAudioMuted ? "Enable pulse beep sound" : "Mute pulse sound"}
+          >
+            {!isPulseAudioMuted ? (
+              <>
+                <Volume2 className="w-3.5 h-3.5 mr-1.5 text-teal-600 dark:text-teal-400 animate-pulse" />
+                Pulse Sound: ON
+              </>
+            ) : (
+              <>
+                <VolumeX className="w-3.5 h-3.5 mr-1.5 text-slate-400" />
+                Pulse Sound: Muted
+              </>
+            )}
+          </Button>
+
           {/* Torch Manual Toggle Button if Hardware Supported */}
           {isTorchSupported && permission === 'granted' && (
             <Button
@@ -599,7 +740,12 @@ export const CardiovascularLab: React.FC = () => {
           </CardHeader>
 
           <CardContent className="p-4 sm:p-5 space-y-3">
-            <div className="relative bg-slate-950 rounded-xl overflow-hidden aspect-video border border-slate-200/80 dark:border-white/10 shadow-inner">
+            {/* Video container with vascular pulse glow border on systole */}
+            <div className={`relative bg-slate-950 rounded-xl overflow-hidden aspect-video border transition-all duration-150 shadow-inner ${
+              isBeatActive && isRecording 
+                ? 'border-red-500 ring-2 ring-red-500/50 shadow-[0_0_24px_rgba(239,68,68,0.5)]' 
+                : 'border-slate-200/80 dark:border-white/10'
+            }`}>
               <video
                 ref={videoRef}
                 className="w-full h-full object-cover opacity-90"
@@ -615,6 +761,18 @@ export const CardiovascularLab: React.FC = () => {
                 <div className="absolute top-3 left-3 bg-red-600/90 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-2 shadow-sm">
                   <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
                   Recording PPG
+                </div>
+              )}
+
+              {/* Live Beating Systolic Pulse Badge inside Video */}
+              {isRecording && (
+                <div className={`absolute top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full backdrop-blur-md text-xs font-bold flex items-center gap-1.5 transition-all duration-100 ${
+                  isBeatActive 
+                    ? 'bg-red-600 text-white scale-110 shadow-lg shadow-red-600/50' 
+                    : 'bg-black/60 text-slate-200 scale-100'
+                }`}>
+                  <Heart className={`w-3.5 h-3.5 transition-transform duration-100 ${isBeatActive ? 'fill-white text-white scale-125' : 'text-red-400 fill-red-400/40'}`} />
+                  <span className="font-mono">{heartRate ? `${heartRate} BPM` : 'Acquiring...'}</span>
                 </div>
               )}
 
@@ -648,10 +806,12 @@ export const CardiovascularLab: React.FC = () => {
             <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 text-left">
               <div className="flex items-center justify-between text-xs text-slate-400 mb-1.5 font-mono">
                 <span className="flex items-center gap-1.5 text-[11px] text-teal-400 font-semibold">
-                  <Activity className="w-3.5 h-3.5 animate-pulse" />
+                  <Activity className={`w-3.5 h-3.5 ${isBeatActive ? 'text-red-400 scale-125' : 'text-teal-400'} transition-transform duration-100`} />
                   Live Arterial Plethysmogram (PPG)
                 </span>
-                <span className="text-[10px] text-slate-500">30 FPS Live Trace</span>
+                <span className="text-[10px] text-slate-500">
+                  {isBeatActive ? '⚡ Peak Inflow' : '30 FPS Live Trace'}
+                </span>
               </div>
               <canvas 
                 ref={waveCanvasRef} 
@@ -684,22 +844,82 @@ export const CardiovascularLab: React.FC = () => {
         <Card className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm overflow-hidden">
           <CardHeader className="bg-slate-50/60 dark:bg-white/[0.02] border-b border-slate-200/80 dark:border-white/5 py-4">
             <CardTitle className="text-base font-semibold text-slate-900 dark:text-white">Live Telemetry</CardTitle>
-            <CardDescription className="text-xs text-slate-500 dark:text-slate-400">Real-time cardiovascular biometrics</CardDescription>
+            <CardDescription className="text-xs text-slate-500 dark:text-slate-400">Real-time cardiovascular biometrics & sound</CardDescription>
           </CardHeader>
           <CardContent className="p-4 sm:p-5">
             <div className="space-y-4">
               {heartRate ? (
                 <>
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="text-center p-4 bg-red-50 dark:bg-red-950/20 rounded-xl border border-red-200/60 dark:border-red-800/30">
-                      <div className="text-xs font-semibold text-red-700 dark:text-red-300 uppercase tracking-wider mb-0.5">Heart Rate</div>
-                      <div className="text-3xl font-extrabold text-red-600 dark:text-red-400">{heartRate}</div>
-                      <div className="text-[11px] text-red-600/70 dark:text-red-300/70">BPM</div>
+                    {/* Beating Heart Monitor Card */}
+                    <div className="relative overflow-hidden text-center p-4 bg-red-50 dark:bg-red-950/20 rounded-xl border border-red-200/60 dark:border-red-800/30 transition-all duration-150">
+                      {/* Systolic flash glow backdrop */}
+                      <div 
+                        className={`absolute inset-0 bg-red-500/15 transition-opacity duration-150 pointer-events-none ${
+                          isBeatActive ? 'opacity-100' : 'opacity-0'
+                        }`}
+                      />
+
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[11px] font-semibold text-red-700 dark:text-red-300 uppercase tracking-wider">Heart Rate</span>
+                        <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold transition-all ${
+                          isBeatActive ? 'bg-red-600 text-white scale-105' : 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300'
+                        }`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${isBeatActive ? 'bg-white animate-ping' : 'bg-red-500'}`} />
+                          {isBeatActive ? 'SYSTOLE' : 'DIASTOLE'}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-center gap-2 my-1">
+                        {/* Animated Heart with systolic pulse expansion & radiating acoustic wave */}
+                        <div className="relative flex items-center justify-center">
+                          {isBeatActive && (
+                            <span className="absolute w-8 h-8 rounded-full bg-red-500/30 animate-ping" />
+                          )}
+                          <Heart 
+                            className={`w-7 h-7 text-red-600 dark:text-red-400 transition-transform duration-100 ${
+                              isBeatActive ? 'scale-125 fill-red-600 dark:fill-red-500 drop-shadow-[0_0_12px_rgba(239,68,68,0.8)]' : 'scale-100 fill-red-500/20'
+                            }`} 
+                          />
+                        </div>
+                        <div className="text-4xl font-extrabold text-red-600 dark:text-red-400 tracking-tight font-mono">
+                          {heartRate}
+                        </div>
+                      </div>
+                      <div className="text-[11px] text-red-600/70 dark:text-red-300/70">
+                        BPM • {beatCount} Beats Counted
+                      </div>
                     </div>
+
+                    {/* SpO2 Blood Oxygen Card */}
                     <div className="text-center p-4 bg-teal-50 dark:bg-teal-950/20 rounded-xl border border-teal-200/60 dark:border-teal-800/30">
-                      <div className="text-xs font-semibold text-teal-700 dark:text-teal-300 uppercase tracking-wider mb-0.5">Blood Oxygen</div>
-                      <div className="text-3xl font-extrabold text-teal-600 dark:text-teal-400">{spo2 || 98}%</div>
-                      <div className="text-[11px] text-teal-600/70 dark:text-teal-300/70">SpO2</div>
+                      <div className="text-xs font-semibold text-teal-700 dark:text-teal-300 uppercase tracking-wider mb-1">Blood Oxygen</div>
+                      <div className="text-4xl font-extrabold text-teal-600 dark:text-teal-400 font-mono">{spo2 || 98}%</div>
+                      <div className="text-[11px] text-teal-600/70 dark:text-teal-300/70">SpO2 Saturation</div>
+                    </div>
+                  </div>
+
+                  {/* Arterial Capillary Pulse Wave Visualizer */}
+                  <div className="p-3 bg-slate-50 dark:bg-white/[0.03] rounded-xl border border-slate-200/80 dark:border-white/10 space-y-1.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-medium">
+                        <Radio className={`w-3.5 h-3.5 ${isBeatActive ? 'text-red-500 animate-pulse' : 'text-slate-400'}`} />
+                        Arterial Capillary Pulse Wave
+                      </span>
+                      <span className={`font-mono text-[10px] font-semibold ${isBeatActive ? 'text-red-600 dark:text-red-400' : 'text-slate-500'}`}>
+                        {isBeatActive ? '⚡ Peak Inflow' : '○ Diastolic Recoil'}
+                      </span>
+                    </div>
+
+                    {/* Real-time pulse amplitude visual track */}
+                    <div className="relative h-2 w-full bg-slate-200 dark:bg-white/[0.08] rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full rounded-full transition-all duration-150 ${
+                          isBeatActive 
+                            ? 'w-full bg-gradient-to-r from-teal-500 via-rose-500 to-red-600 shadow-[0_0_12px_rgba(239,68,68,0.8)]' 
+                            : 'w-1/4 bg-slate-300 dark:bg-white/20'
+                        }`}
+                      />
                     </div>
                   </div>
 
@@ -712,7 +932,7 @@ export const CardiovascularLab: React.FC = () => {
                     </div>
                     <div className="flex items-center justify-between">
                       <span>RR Intervals Collected:</span>
-                      <span className="text-blue-600 dark:text-blue-400 font-semibold">{rrIntervalsRef.current.length}</span>
+                      <span className="text-blue-600 dark:text-blue-400 font-semibold font-mono">{rrIntervalsRef.current.length}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span>Optical Mode:</span>
@@ -733,7 +953,7 @@ export const CardiovascularLab: React.FC = () => {
                   <p className="text-sm">Click "Start Assessment" to begin live telemetry capture</p>
                   <p className="text-xs text-slate-400 mt-1">
                     {ppgMode === 'fingertip' 
-                      ? 'Flashlight will illuminate finger capillary beds' 
+                      ? 'Flashlight will illuminate finger capillary beds • Pulse sound active' 
                       : 'Ensure good lighting on your forehead and face'}
                   </p>
                 </div>
@@ -760,22 +980,22 @@ export const CardiovascularLab: React.FC = () => {
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
               <div className="text-center p-3.5 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200/60 dark:border-red-800/30">
                 <div className="text-[11px] font-semibold text-red-700 dark:text-red-300 uppercase tracking-wider mb-1">Heart Rate</div>
-                <div className="text-xl font-bold text-red-700 dark:text-red-300">{results.heartRate} BPM</div>
+                <div className="text-xl font-bold text-red-700 dark:text-red-300 font-mono">{results.heartRate} BPM</div>
               </div>
 
               <div className="text-center p-3.5 rounded-xl bg-teal-50 dark:bg-teal-950/20 border border-teal-200/60 dark:border-teal-800/30">
                 <div className="text-[11px] font-semibold text-teal-700 dark:text-teal-300 uppercase tracking-wider mb-1">Blood Oxygen</div>
-                <div className="text-xl font-bold text-teal-700 dark:text-teal-300">{results.spo2 || 98}% SpO2</div>
+                <div className="text-xl font-bold text-teal-700 dark:text-teal-300 font-mono">{results.spo2 || 98}% SpO2</div>
               </div>
 
               <div className="text-center p-3.5 rounded-xl bg-blue-50 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-800/30">
                 <div className="text-[11px] font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wider mb-1">HRV Score</div>
-                <div className="text-xl font-bold text-blue-700 dark:text-blue-300">{results.hrvMetrics.hrvScore}/100</div>
+                <div className="text-xl font-bold text-blue-700 dark:text-blue-300 font-mono">{results.hrvMetrics.hrvScore}/100</div>
               </div>
 
               <div className="text-center p-3.5 rounded-xl bg-purple-50 dark:bg-purple-950/20 border border-purple-200/60 dark:border-purple-800/30">
                 <div className="text-[11px] font-semibold text-purple-700 dark:text-purple-300 uppercase tracking-wider mb-1">Est. BP</div>
-                <div className="text-lg font-bold text-purple-700 dark:text-purple-300">
+                <div className="text-lg font-bold text-purple-700 dark:text-purple-300 font-mono">
                   {results.estimatedBP.systolic}/{results.estimatedBP.diastolic}
                 </div>
                 <div className="text-[10px] text-purple-600/70 dark:text-purple-400/70">mmHg</div>
@@ -783,7 +1003,7 @@ export const CardiovascularLab: React.FC = () => {
 
               <div className="col-span-2 sm:col-span-1 text-center p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/30">
                 <div className="text-[11px] font-semibold text-amber-700 dark:text-amber-300 uppercase tracking-wider mb-1">Risk Score</div>
-                <div className="text-xl font-bold text-amber-700 dark:text-amber-300">{results.riskAssessment.riskScore}</div>
+                <div className="text-xl font-bold text-amber-700 dark:text-amber-300 font-mono">{results.riskAssessment.riskScore}</div>
                 <Badge className={`mt-1 ${getRiskBadgeVariant(results.riskAssessment.riskLevel)} border-0 text-[10px]`}>
                   {results.riskAssessment.riskLevel.toUpperCase()}
                 </Badge>
@@ -796,15 +1016,15 @@ export const CardiovascularLab: React.FC = () => {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                 <div className="bg-slate-50 dark:bg-white/[0.03] p-3 rounded-xl border border-slate-200/80 dark:border-white/10">
                   <div className="text-xs text-slate-500 dark:text-slate-400">RMSSD</div>
-                  <div className="text-base font-bold text-slate-900 dark:text-white">{results.hrvMetrics.rmssd} ms</div>
+                  <div className="text-base font-bold text-slate-900 dark:text-white font-mono">{results.hrvMetrics.rmssd} ms</div>
                 </div>
                 <div className="bg-slate-50 dark:bg-white/[0.03] p-3 rounded-xl border border-slate-200/80 dark:border-white/10">
                   <div className="text-xs text-slate-500 dark:text-slate-400">SDNN</div>
-                  <div className="text-base font-bold text-slate-900 dark:text-white">{results.hrvMetrics.sdnn} ms</div>
+                  <div className="text-base font-bold text-slate-900 dark:text-white font-mono">{results.hrvMetrics.sdnn} ms</div>
                 </div>
                 <div className="bg-slate-50 dark:bg-white/[0.03] p-3 rounded-xl border border-slate-200/80 dark:border-white/10">
                   <div className="text-xs text-slate-500 dark:text-slate-400">pNN50</div>
-                  <div className="text-base font-bold text-slate-900 dark:text-white">{results.hrvMetrics.pnn50.toFixed(1)}%</div>
+                  <div className="text-base font-bold text-slate-900 dark:text-white font-mono">{results.hrvMetrics.pnn50.toFixed(1)}%</div>
                 </div>
                 <div className="bg-slate-50 dark:bg-white/[0.03] p-3 rounded-xl border border-slate-200/80 dark:border-white/10">
                   <div className="text-xs text-slate-500 dark:text-slate-400">Stress State</div>

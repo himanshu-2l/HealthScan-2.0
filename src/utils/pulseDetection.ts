@@ -43,13 +43,14 @@ export interface PulseWaveform {
 /** PPG operation mode: fingertip contact with rear camera + flash, or facial rPPG with front camera */
 export type PPGMode = 'fingertip' | 'face';
 
-/** Callback signature delivering pulse, confidence, RR intervals, estimated SpO2, and finger contact status */
+/** Callback signature delivering pulse, confidence, RR intervals, estimated SpO2, finger contact status, and beat trigger */
 export type PulseUpdateCallback = (
   bpm: number,
   confidence: number,
   rrIntervals?: number[],
   spo2?: number,
-  fingerDetected?: boolean
+  fingerDetected?: boolean,
+  isBeat?: boolean
 ) => void;
 
 /**
@@ -206,6 +207,7 @@ class PulseDetector {
   private onPulseUpdate: PulseUpdateCallback | null = null;
   private onError: ((error: string) => void) | null = null;
   private lastRRIntervals: number[] = [];
+  private lastBeatTimestamp: number = 0;
 
   /**
    * Set active PPG mode: 'fingertip' (rear camera + torch) or 'face' (front camera rPPG)
@@ -372,11 +374,11 @@ class PulseDetector {
 
         // Calculate pulse when we have enough samples (at least 3 seconds)
         if (this.redValues.length >= 90) { // ~3 seconds at 30fps
-          const bpm = this.calculateBPM(this.greenValues, this.timestamps);
+          const { bpm, isBeat } = this.calculateBPM(this.greenValues, this.timestamps);
           const confidence = this.calculateConfidence(this.greenValues);
           
           if (this.onPulseUpdate && bpm > 0) {
-            this.onPulseUpdate(bpm, confidence, this.lastRRIntervals, this.latestSpo2, this.fingerDetected);
+            this.onPulseUpdate(bpm, confidence, this.lastRRIntervals, this.latestSpo2, this.fingerDetected, isBeat);
           }
         }
       }
@@ -393,8 +395,8 @@ class PulseDetector {
    * Calculate BPM from signal using peak detection with noise filtering
    * Uses adaptive thresholding and validates peak intervals
    */
-  private calculateBPM(signal: number[], timestamps: number[]): number {
-    if (signal.length < 60) return 0;
+  private calculateBPM(signal: number[], timestamps: number[]): { bpm: number; isBeat: boolean } {
+    if (signal.length < 60) return { bpm: 0, isBeat: false };
 
     // Apply bandpass-like filtering by removing DC component and high-frequency noise
     const mean = signal.reduce((a, b) => a + b, 0) / signal.length;
@@ -406,7 +408,7 @@ class PulseDetector {
     // Adaptive peak detection with noise filtering
     const peaks = this.findPeaksAdaptive(smoothed);
     
-    if (peaks.length < 2) return 0;
+    if (peaks.length < 2) return { bpm: 0, isBeat: false };
 
     // Calculate intervals between peaks and filter outliers
     const intervals: number[] = [];
@@ -418,19 +420,35 @@ class PulseDetector {
       }
     }
 
-    if (intervals.length === 0) return 0;
+    if (intervals.length === 0) return { bpm: 0, isBeat: false };
 
     // Remove outlier intervals using IQR method
     const filteredIntervals = this.removeIntervalOutliers(intervals);
-    if (filteredIntervals.length === 0) return 0;
+    if (filteredIntervals.length === 0) return { bpm: 0, isBeat: false };
 
     const avgInterval = filteredIntervals.reduce((a, b) => a + b, 0) / filteredIntervals.length;
     const bpm = (60000 / avgInterval);
 
     this.lastRRIntervals = [...filteredIntervals];
 
+    // Detect if newest peak is a fresh beat occurring right now
+    const latestPeakIdx = peaks[peaks.length - 1];
+    const latestPeakTime = timestamps[latestPeakIdx];
+    let isBeat = false;
+    if (
+      latestPeakIdx >= signal.length - 4 &&
+      latestPeakTime &&
+      latestPeakTime - this.lastBeatTimestamp >= 380
+    ) {
+      this.lastBeatTimestamp = latestPeakTime;
+      isBeat = true;
+    }
+
     // Validate BPM range (30-200 BPM for physiological plausibility)
-    return Math.max(30, Math.min(200, Math.round(bpm)));
+    return {
+      bpm: Math.max(30, Math.min(200, Math.round(bpm))),
+      isBeat
+    };
   }
 
   /**
@@ -609,6 +627,7 @@ class PulseDetector {
     this.detectionRegion = null;
     this.fingerDetected = false;
     this.latestSpo2 = 98;
+    this.lastBeatTimestamp = 0;
   }
 }
 
