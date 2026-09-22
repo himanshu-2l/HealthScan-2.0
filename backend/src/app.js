@@ -9,6 +9,7 @@ import featureRoutes from './routes/featureRoutes.js';
 import { apiLimiter, reportLimiter } from './middleware/rateLimiter.js';
 import session from 'express-session';
 import googleFitRoutes from './routes/googleFitRoutes.js';
+import geminiProxyHandler from '../../api/gemini-proxy.js';
 
 dotenv.config();
 
@@ -106,7 +107,8 @@ app.use(apiLimiter);
 morgan.token('request-id', (req) => req.requestId || '-');
 app.use(morgan(':method :url :status :response-time ms - :request-id'));
 
-const genAI = new GoogleGenerativeAI(process.env.VITE_GEMINI_API_KEY);
+const geminiApiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+const genAI = geminiApiKey ? new GoogleGenerativeAI(geminiApiKey) : null;
 
 // Health check endpoint (no rate limiting)
 app.get('/api/health', (req, res) => {
@@ -139,6 +141,8 @@ app.get('/api/body-temperature', (req, res) => {
   }
 });
 
+app.post('/api/gemini-proxy', (req, res) => geminiProxyHandler(req, res));
+
 app.post('/api/generate-report', reportLimiter, async (req, res) => {
   try {
     const { metrics, note } = req.body;
@@ -150,8 +154,16 @@ app.post('/api/generate-report', reportLimiter, async (req, res) => {
         requestId: req.requestId
       });
     }
+
+    if (!genAI) {
+      return res.status(500).json({
+        error: 'Configuration Error',
+        message: 'Gemini API key is not configured',
+        requestId: req.requestId
+      });
+    }
     
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
     const prompt = `Generate a clinical report for: ${JSON.stringify(metrics)}. Note: ${note}`;
     const result = await model.generateContent(prompt);
     const response = await result.response;
