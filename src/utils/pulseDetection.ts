@@ -150,8 +150,9 @@ class PulseDetector {
   private detectionRegion: { x: number; y: number; width: number; height: number } | null = null;
   
   // Callbacks
-  private onPulseUpdate: ((bpm: number, confidence: number) => void) | null = null;
+  private onPulseUpdate: ((bpm: number, confidence: number, rrIntervals?: number[]) => void) | null = null;
   private onError: ((error: string) => void) | null = null;
+  private lastRRIntervals: number[] = [];
 
   /**
    * Initialize pulse detection with video element
@@ -177,7 +178,7 @@ class PulseDetector {
    * Start pulse detection
    */
   start(
-    onPulseUpdate: (bpm: number, confidence: number) => void,
+    onPulseUpdate: (bpm: number, confidence: number, rrIntervals?: number[]) => void,
     onError?: (error: string) => void
   ): void {
     if (!this.videoElement || !this.canvas || !this.ctx) {
@@ -191,6 +192,7 @@ class PulseDetector {
     this.greenValues = [];
     this.blueValues = [];
     this.timestamps = [];
+    this.lastRRIntervals = [];
 
     // Default detection region (center-top of video, forehead area)
     if (!this.detectionRegion) {
@@ -276,7 +278,7 @@ class PulseDetector {
           const confidence = this.calculateConfidence(this.greenValues);
           
           if (this.onPulseUpdate && bpm > 0) {
-            this.onPulseUpdate(bpm, confidence);
+            this.onPulseUpdate(bpm, confidence, this.lastRRIntervals);
           }
         }
       }
@@ -326,6 +328,8 @@ class PulseDetector {
 
     const avgInterval = filteredIntervals.reduce((a, b) => a + b, 0) / filteredIntervals.length;
     const bpm = (60000 / avgInterval);
+
+    this.lastRRIntervals = [...filteredIntervals];
 
     // Validate BPM range (30-200 BPM for physiological plausibility)
     return Math.max(30, Math.min(200, Math.round(bpm)));
@@ -465,6 +469,13 @@ class PulseDetector {
   }
 
   /**
+   * Get latest RR intervals detected from pulse peaks
+   */
+  getRRIntervals(): number[] {
+    return [...this.lastRRIntervals];
+  }
+
+  /**
    * Reset detector
    */
   reset(): void {
@@ -473,6 +484,7 @@ class PulseDetector {
     this.greenValues = [];
     this.blueValues = [];
     this.timestamps = [];
+    this.lastRRIntervals = [];
     this.detectionRegion = null;
   }
 }

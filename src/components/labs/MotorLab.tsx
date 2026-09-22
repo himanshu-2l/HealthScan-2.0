@@ -689,16 +689,27 @@ export const MotorLab: React.FC = () => {
       try {
         setStatus("Loading ML runtime + model...");
         const vision = await FilesetResolver.forVisionTasks(WASM_PATH);
-        globalHandLandmarker = await HandLandmarker.createFromOptions(vision, {
-          baseOptions: { modelAssetPath: MODEL_PATH },
-          runningMode: "VIDEO",
-          numHands: 2,
-        });
+        let landmarker: HandLandmarker | undefined;
+        try {
+          landmarker = await HandLandmarker.createFromOptions(vision, {
+            baseOptions: { modelAssetPath: MODEL_PATH },
+            runningMode: "VIDEO",
+            numHands: 2,
+          });
+        } catch (localErr) {
+          console.warn("Local hand landmarker model load failed, attempting CDN fallback:", localErr);
+          landmarker = await HandLandmarker.createFromOptions(vision, {
+            baseOptions: { modelAssetPath: "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task" },
+            runningMode: "VIDEO",
+            numHands: 2,
+          });
+        }
+        globalHandLandmarker = landmarker;
         if (!mounted) return;
         setStatus('Model loaded. Click "Enable Camera" to begin motor assessment');
       } catch (err) {
         console.error("Model init error:", err);
-        setStatus("Failed to load model. Check console/model path.");
+        setStatus("Failed to load model. Check camera and network connection.");
       }
     })();
     return () => {
@@ -800,10 +811,14 @@ export const MotorLab: React.FC = () => {
     setTimeout(() => {
       const { tapRate, coordinationScore, tremorMetrics, movementQuality } = liveMetricsRef.current;
       const video = videoRef.current;
+      const finalTaps = fingerTapsRef.current || fingerTaps;
+      const finalDuration = testDurationRef.current || testDuration || 5.0;
+      const computedTapRate = +(finalTaps / finalDuration).toFixed(2);
       
       console.log('Advanced analysis using:', {
-        fingerTaps,
-        testDuration,
+        finalTaps,
+        finalDuration,
+        computedTapRate,
         tapIntervals: tapIntervals.length,
         tremorSamples: tremorSamplesRef.current.length
       });
@@ -823,7 +838,7 @@ export const MotorLab: React.FC = () => {
 
       // 4. Motor Quality Score
       const motorQuality = calculateMotorQualityScore({
-        tapRate,
+        tapRate: computedTapRate,
         coordinationScore,
         tremorAmplitude: advancedTremor.amplitudeNormalized,
         fatigueIndex,
@@ -832,7 +847,7 @@ export const MotorLab: React.FC = () => {
 
       // 5. Advanced Parkinson's Risk Assessment
       const parkinsonsRisk = calculateParkinsonsRiskScore({
-        tapRate,
+        tapRate: computedTapRate,
         coordinationScore,
         tremorFrequency: advancedTremor.dominantFrequency,
         tremorAmplitude: advancedTremor.amplitudeNormalized,
@@ -845,9 +860,9 @@ export const MotorLab: React.FC = () => {
       // Create comprehensive results
       const results: MotorAnalysisResults = {
         timestamp: new Date().toISOString(),
-        fingerTaps,
-        testDuration,
-        tapRate,
+        fingerTaps: finalTaps,
+        testDuration: finalDuration,
+        tapRate: computedTapRate,
         coordinationScore,
         tremorFrequency: advancedTremor.dominantFrequency,
         tremorAmplitude: advancedTremor.amplitudeNormalized * 100,
@@ -856,12 +871,12 @@ export const MotorLab: React.FC = () => {
                    parkinsonsRisk.riskLevel === 'high' ? 'High' :
                    parkinsonsRisk.riskLevel === 'moderate' ? 'Medium' : 'Low',
         clinicalFindings: generateAdvancedClinicalFindings(
-          fingerTaps, testDuration, tapRate, coordinationScore, advancedTremor, 
+          finalTaps, finalDuration, computedTapRate, coordinationScore, advancedTremor, 
           fatigueIndex, rhythmAnalysis, motorQuality
         ),
         diseaseRiskAssessment: generateAdvancedRiskAssessment(parkinsonsRisk, advancedTremor),
         motorCharacteristics: generateAdvancedMotorCharacteristics(
-          tapRate, coordinationScore, advancedTremor, rhythmAnalysis, fatigueIndex, motorQuality
+          computedTapRate, coordinationScore, advancedTremor, rhythmAnalysis, fatigueIndex, motorQuality
         ),
         recommendations: generateAdvancedRecommendations(parkinsonsRisk, motorQuality, advancedTremor)
       };
@@ -871,20 +886,26 @@ export const MotorLab: React.FC = () => {
 
       // Save to unified health data storage
       try {
+        const safeScore = Math.max(0, Math.min(100, Math.round(motorQuality.score || movementQuality || 85)));
         const healthTestResult: HealthTestResult = {
           id: generateTestResultId('motor'),
           testType: 'motor',
           category: 'neurological',
           testDate: new Date().toISOString(),
           timestamp: results.timestamp,
-          data: results,
-          score: Math.round(movementQuality),
+          data: {
+            ...results,
+            tapSpeed: computedTapRate,
+            tapRate: computedTapRate,
+            motorScore: safeScore,
+          },
+          score: safeScore,
           maxScore: 100,
-          scorePercentage: movementQuality,
+          scorePercentage: safeScore,
           riskLevel: results.riskLevel.toLowerCase() as 'low' | 'medium' | 'high',
-          interpretation: `Motor Quality Score: ${movementQuality.toFixed(1)}% | Tap Rate: ${tapRate.toFixed(2)}/sec | Coordination: ${coordinationScore}%`,
+          interpretation: `Motor Quality Score: ${safeScore}% | Tap Rate: ${computedTapRate.toFixed(2)}/sec | Coordination: ${coordinationScore}%`,
           recommendations: results.recommendations,
-          duration: testDuration * 1000, // Convert to milliseconds
+          duration: finalDuration * 1000, // Convert to milliseconds
           status: 'final',
         };
         saveTestResult(healthTestResult);
@@ -1017,7 +1038,7 @@ export const MotorLab: React.FC = () => {
       }
     } catch (err) {
       console.error("Detection loop error:", err);
-      setStatus("Error running model: Please run this lab on localhost, because due to the DeepLearning requirements, it cannot be run on vercel.");
+      setStatus("Vision tracking paused: Ensure good lighting and keep your hand clearly in frame.");
     }
 
     animationFrameIdRef.current = requestAnimationFrame(predictWebcam);

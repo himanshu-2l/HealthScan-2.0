@@ -53,10 +53,22 @@ export const TodayDashboard: React.FC<TodayDashboardProps> = ({
         setHasData(true);
         const latest = stored[0];
         if (latest.score) setCurrentScore(latest.score);
-        if (latest.data?.heartRate) setLatestHR(latest.data.heartRate);
-        if (latest.data?.hrv) setLatestHRV(latest.data.hrv);
-        if (latest.data?.tapSpeed) setLatestTapSpeed(latest.data.tapSpeed);
-        if (latest.data?.voicePitch) setLatestPitch(latest.data.voicePitch);
+
+        // Find latest valid metric from across all individual labs
+        const hrResult = stored.find(r => r.data?.heartRate);
+        if (hrResult?.data?.heartRate) setLatestHR(hrResult.data.heartRate);
+
+        const hrvResult = stored.find(r => r.data?.hrv || r.data?.hrvMetrics?.rmssd);
+        if (hrvResult?.data?.hrv) setLatestHRV(hrvResult.data.hrv);
+        else if (hrvResult?.data?.hrvMetrics?.rmssd) setLatestHRV(hrvResult.data.hrvMetrics.rmssd);
+
+        const motorResult = stored.find(r => r.data?.tapSpeed || r.data?.tapRate);
+        if (motorResult?.data?.tapSpeed) setLatestTapSpeed(motorResult.data.tapSpeed);
+        else if (motorResult?.data?.tapRate) setLatestTapSpeed(motorResult.data.tapRate);
+
+        const voiceResult = stored.find(r => r.data?.voicePitch || r.data?.pitch);
+        if (voiceResult?.data?.voicePitch) setLatestPitch(Math.round(voiceResult.data.voicePitch));
+        else if (voiceResult?.data?.pitch) setLatestPitch(Math.round(voiceResult.data.pitch));
       }
     } catch (e) {
       console.error(e);
