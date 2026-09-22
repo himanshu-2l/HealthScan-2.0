@@ -70,9 +70,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Auto-provision demo session so hackathon judges & local testers never hit an auth wall
         const defaultUser: AppUser = {
             uid: 'demo-user-healthscan',
-            displayName: 'Alex Rivera',
-            email: 'alex.rivera@abdm',
-            photoURL: null
+            displayName: 'Dr. Alex Mercer',
+            email: 'alex.mercer@healthscan.io',
+            photoURL: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=200&h=200&q=80'
         };
         localStorage.setItem('healthscan_demo_user', JSON.stringify(defaultUser));
         setCurrentUser(defaultUser);

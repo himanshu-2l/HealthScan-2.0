@@ -51,8 +51,10 @@ export const getAllResults = (): HealthTestResult[] => {
   try {
     const stored = localStorage.getItem(STORAGE_KEYS.HEALTH_RESULTS);
     if (!stored) {
-      // Migrate legacy data if exists
-      migrateLegacyData();
+      if (!localStorage.getItem('healthScan_migrated')) {
+        migrateLegacyData();
+        localStorage.setItem('healthScan_migrated', 'true');
+      }
       return [];
     }
     

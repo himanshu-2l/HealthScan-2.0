@@ -10,20 +10,30 @@ const port = 3001; // Different port from your Vite dev server
 app.use(express.json());
 
 // CORS configuration
+const isProduction = process.env.NODE_ENV === 'production';
+const corsOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',')
+  : ['http://localhost:5173', 'http://localhost:5174'];
+
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5174'],
+  origin: corsOrigins,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
 }));
 
 // Session middleware
+if (isProduction && !process.env.SESSION_SECRET) {
+  console.error('FATAL: SESSION_SECRET env var is required in production.');
+  process.exit(1);
+}
+
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'healthscan-secret-key',
+  secret: process.env.SESSION_SECRET || 'dev-only-healthscan-secret',
   resave: false,
-  saveUninitialized: true,
+  saveUninitialized: false,
   cookie: {
-    secure: false,
+    secure: isProduction,
     httpOnly: true,
     sameSite: 'lax',
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
@@ -84,7 +94,7 @@ app.post('/api/generate-report', async (req, res) => {
       return res.status(400).json({ error: 'Metrics data is required' });
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     const prompt = `
       Generate a clinical-style report based on the following motor skills assessment data.
@@ -152,15 +162,16 @@ app.get('/api/google-fit/auth', (req, res) => {
 
 // Google OAuth callback
 app.get('/auth/google/callback', async (req, res) => {
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
   try {
     if (!googleFitService) {
-      return res.redirect('http://localhost:5173?error=service_not_configured');
+      return res.redirect(`${frontendUrl}?error=service_not_configured`);
     }
 
     const { code } = req.query;
 
     if (!code) {
-      return res.redirect('http://localhost:5173?error=no_code');
+      return res.redirect(`${frontendUrl}?error=no_code`);
     }
 
     const tokens = await googleFitService.getTokens(code);
@@ -170,11 +181,10 @@ app.get('/auth/google/callback', async (req, res) => {
     req.session.googleFitConnected = true;
 
     // Redirect back to frontend
-    const frontendPort = req.get('referer')?.includes('5174') ? '5174' : '5173';
-    res.redirect(`http://localhost:${frontendPort}/dashboard?google_fit=connected`);
+    res.redirect(`${frontendUrl}/?google_fit=connected`);
   } catch (error) {
     console.error('Google OAuth callback error:', error);
-    res.redirect('http://localhost:5173?error=auth_failed');
+    res.redirect(`${frontendUrl}?error=auth_failed`);
   }
 });
 

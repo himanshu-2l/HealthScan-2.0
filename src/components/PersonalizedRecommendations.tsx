@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import {
   Sparkles,
   Apple,
@@ -197,14 +196,6 @@ export const PersonalizedRecommendations: React.FC = () => {
     setError(null);
 
     try {
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-      if (!apiKey) {
-        throw new Error('Gemini API key not configured');
-      }
-
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-
       const healthData = collectHealthData();
       const hasAnyData = Object.keys(healthData).length > 0;
 
@@ -243,9 +234,17 @@ Respond ONLY with valid JSON in this exact format (no markdown, no code blocks):
   }
 }`;
 
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      let text = response.text();
+      const response = await fetch('/api/gemini-proxy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'recommendations', payload: { prompt } }),
+      });
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to generate recommendations');
+      }
+      const data = await response.json();
+      let text = data.result;
 
       // Clean up the response
       text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();

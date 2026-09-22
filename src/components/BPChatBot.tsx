@@ -61,7 +61,7 @@ const detectLanguage = (text: string): 'hindi' | 'english' => {
 
 export const BPChatBot: React.FC<BPChatBotProps> = ({ isOpen, onClose, readings, stats }) => {
   const { settings } = useSettings();
-  const apiKey = settings.geminiApiKey || import.meta.env.VITE_GEMINI_API_KEY || '';
+  const apiKey = 'proxy-mode';
 
   const getInitialMessage = (): Message => {
     if (readings.length === 0) {
@@ -158,17 +158,6 @@ BP Categories:
   const sendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
 
-    if (!apiKey || apiKey.trim() === '' || !isValidApiKey(apiKey)) {
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: 'Please configure your Gemini API key in Settings before using the BP Analysis chat. You can get your API key from [Google AI Studio](https://makersuite.google.com/app/apikey).',
-        sender: 'bot',
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, errorMessage]);
-      return;
-    }
-
     const userMessage: Message = {
       id: Date.now().toString(),
       content: inputValue,
@@ -208,29 +197,19 @@ Please provide helpful, accurate, and personalized analysis about the user's BP 
 
 Remember: ${languageInstruction}`;
 
-      // Using gemini-flash-latest for better stability and quota management
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`, {
+      const response = await fetch('/api/gemini-proxy', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: prompt
-            }]
-          }]
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'bp-chat', payload: { prompt: prompt } }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Gemini API Error:', response.status, response.statusText, errorData);
-        throw new Error(`API Error: ${response.status} ${errorData.error?.message || response.statusText}`);
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to get AI response');
       }
 
       const data = await response.json();
-      const botResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || 'I apologize, but I encountered an error receiving a valid response. Please try again.';
+      const botResponse = data.result || 'I apologize, but I encountered an error receiving a valid response. Please try again.';
 
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),

@@ -39,8 +39,8 @@ class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-          <div className="w-full max-w-md backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-8 shadow-2xl">
+        <div className="min-h-screen flex items-center justify-center p-4 bg-slate-50 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+          <div className="w-full max-w-md backdrop-blur-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-8 shadow-2xl">
             <div className="flex flex-col items-center text-center">
               {/* Icon */}
               <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mb-6">
@@ -48,10 +48,10 @@ class ErrorBoundary extends Component<Props, State> {
               </div>
 
               {/* Heading */}
-              <h1 className="text-2xl font-bold text-white mb-2">
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
                 Something went wrong
               </h1>
-              <p className="text-white/60 mb-6">
+              <p className="text-slate-600 dark:text-white/60 mb-6">
                 An unexpected error occurred. Please try again or return home.
               </p>
 

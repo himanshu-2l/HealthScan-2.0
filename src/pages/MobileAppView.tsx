@@ -5,6 +5,7 @@ import { MobileBottomNav, NavTabId } from '../components/pwa/MobileBottomNav';
 import { TodayDashboard } from '../components/pwa/TodayDashboard';
 import { QuickScanModal } from '../components/pwa/QuickScanModal';
 import { PWAInstallModal } from '../components/pwa/PWAInstallModal';
+import { OnboardingWizard, useOnboarding } from '../components/pwa/OnboardingWizard';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 import { 
   Heart, 
@@ -31,6 +32,7 @@ export const MobileAppView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<NavTabId>('today');
   const [isScanModalOpen, setIsScanModalOpen] = useState<boolean>(false);
   const [refreshKey, setRefreshKey] = useState<number>(0);
+  const { showOnboarding, completeOnboarding } = useOnboarding();
 
   const {
     isInstalled,
@@ -47,6 +49,17 @@ export const MobileAppView: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 font-sans antialiased selection:bg-teal-500/30 flex flex-col transition-colors duration-200">
+      {/* Onboarding wizard for first-time users */}
+      {showOnboarding && (
+        <OnboardingWizard
+          onComplete={completeOnboarding}
+          onStartScan={() => {
+            completeOnboarding();
+            setIsScanModalOpen(true);
+          }}
+        />
+      )}
+
       {/* 1. TOP NAVBAR (Full on Desktop, Clean on Mobile) */}
       <AppNavbar 
         activeTab={activeTab} 
@@ -302,12 +315,12 @@ export const MobileAppView: React.FC = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/[0.04]">
                   <div>
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-medium">Estimated CGM</span>
-                    <div className="text-base font-extrabold text-slate-900 dark:text-white mt-0.5 font-mono">104 mg/dL (→ Steady)</div>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-medium">Latest Glucose</span>
+                    <div className="text-base font-extrabold text-slate-900 dark:text-white mt-0.5 font-mono">No readings yet</div>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-medium">Time in Range</span>
-                    <div className="text-base font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5 font-mono">92% In Target</div>
+                    <div className="text-base font-extrabold text-slate-500 dark:text-slate-400 mt-0.5 font-mono">—</div>
                   </div>
                 </div>
                 <div className="flex items-center justify-between text-xs text-slate-700 dark:text-slate-300 font-semibold group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
@@ -338,11 +351,11 @@ export const MobileAppView: React.FC = () => {
                 <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/[0.04]">
                   <div>
                     <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-medium">Recent Reading</span>
-                    <div className="text-base font-extrabold text-slate-900 dark:text-white mt-0.5 font-mono">118 / 76 mmHg</div>
+                    <div className="text-base font-extrabold text-slate-900 dark:text-white mt-0.5 font-mono">No readings yet</div>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-medium">7-Day Mean</span>
-                    <div className="text-base font-extrabold text-teal-700 dark:text-teal-300 mt-0.5 font-mono">116 / 74 mmHg</div>
+                    <div className="text-base font-extrabold text-slate-500 dark:text-slate-400 mt-0.5 font-mono">—</div>
                   </div>
                 </div>
                 <div className="flex items-center justify-between text-xs text-slate-700 dark:text-slate-300 font-semibold group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">

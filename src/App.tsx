@@ -174,8 +174,12 @@ const AppContent = () => {
         <Route path="/hardware-integration" element={<HardwareIntegration />} />
         <Route path="/device-model" element={<DeviceModel />} />
         
-        {/* Caregiver Route - Not protected, accessible without login */}
-        <Route path="/caregiver/:patientId" element={<CaregiverDashboard />} />
+        {/* Caregiver Route - Protected to prevent unauthorized access */}
+        <Route path="/caregiver/:patientId" element={
+          <ProtectedRoute>
+            <CaregiverDashboard />
+          </ProtectedRoute>
+        } />
         
         <Route path="*" element={<NotFound />} />
       </Routes>

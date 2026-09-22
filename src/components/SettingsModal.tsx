@@ -207,31 +207,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                       </SelectContent>
                     </Select>
                   </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-gray-300">Gemini API Key (for chatbot)</Label>
-                    <Input
-                      type="password"
-                      value={settings.geminiApiKey}
-                      onChange={(e) => updateSetting('geminiApiKey', e.target.value)}
-                      placeholder={
-                        import.meta.env.VITE_GEMINI_API_KEY
-                          ? "Using environment variable (leave empty to use default)"
-                          : "Enter your Gemini API key"
-                      }
-                      className="bg-gray-800/50 border-gray-600 text-white"
-                    />
-                    <div className="space-y-1">
-                      {import.meta.env.VITE_GEMINI_API_KEY && (
-                        <p className="text-xs text-green-400">
-                          ✓ Environment variable detected - will be used as fallback if no key is entered above
-                        </p>
-                      )}
-                      <p className="text-xs text-gray-400">
-                        Get your API key from <a href="https://makersuite.google.com/app/apikey" target="_blank" className="text-purple-400 hover:underline">Google AI Studio</a>
-                      </p>
-                    </div>
-                  </div>
                 </div>
               </div>
             </TabsContent>

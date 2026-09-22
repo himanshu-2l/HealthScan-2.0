@@ -3,7 +3,7 @@
  * Integrates heart rate, temperature, and glucose data
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { VoiceInputButton } from './ui/VoiceInputButton';
@@ -44,6 +44,14 @@ export const EarlyWarningAlerts: React.FC = () => {
   const [phoneNumber, setPhoneNumber] = useState<string>('');
   const [autoCheck, setAutoCheck] = useState(true);
   const [dismissedAlerts, setDismissedAlerts] = useState<string[]>([]);
+
+  const heartRateRef = useRef(heartRate);
+  const temperatureRef = useRef(temperature);
+  const glucoseRef = useRef(glucose);
+
+  useEffect(() => { heartRateRef.current = heartRate; }, [heartRate]);
+  useEffect(() => { temperatureRef.current = temperature; }, [temperature]);
+  useEffect(() => { glucoseRef.current = glucose; }, [glucose]);
 
   // Voice patterns for sensor readings
   const sensorVoicePatterns: VoicePattern[] = [
@@ -144,12 +152,10 @@ export const EarlyWarningAlerts: React.FC = () => {
         const tempData = await tempResponse.json();
         setTemperature(tempData.temperature);
       } else {
-        // Fallback realistic normal body temp for PWA standalone demo
-        setTemperature(36.6);
+        setTemperature(null);
       }
     } catch (error) {
-      console.log('Temperature data not available, using baseline:', error);
-      setTemperature(36.6);
+      setTemperature(null);
     }
 
     const glucoseReadings = getAllGlucoseReadings();
@@ -161,9 +167,9 @@ export const EarlyWarningAlerts: React.FC = () => {
 
   const checkSensorData = () => {
     const sensorData: SensorData = {
-      heartRate: heartRate || undefined,
-      temperature: temperature || undefined,
-      glucose: glucose || undefined,
+      heartRate: heartRateRef.current || undefined,
+      temperature: temperatureRef.current || undefined,
+      glucose: glucoseRef.current || undefined,
       timestamp: new Date().toISOString(),
     };
 
@@ -390,15 +396,16 @@ export const EarlyWarningAlerts: React.FC = () => {
           <VoiceInputButton
             patterns={sensorVoicePatterns}
             onParsedResult={(result) => {
+              const numValue = Number(result.value);
               switch (result.patternName) {
                 case 'heartRate':
-                  setHeartRate(result.value as number);
+                  if (!isNaN(numValue)) setHeartRate(numValue);
                   break;
                 case 'temperature':
-                  setTemperature(result.value as number);
+                  if (!isNaN(numValue)) setTemperature(numValue);
                   break;
                 case 'glucose':
-                  setGlucose(result.value as number);
+                  if (!isNaN(numValue)) setGlucose(numValue);
                   break;
                 case 'bloodPressure':
                   const [sys, dia] = String(result.value).split('/');

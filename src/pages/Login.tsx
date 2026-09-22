@@ -9,7 +9,7 @@ const Login: React.FC = () => {
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
     if (currentUser) {
-        return <Navigate to="/dashboard" />;
+        return <Navigate to="/" />;
     }
 
     const handleGoogleLogin = async () => {
@@ -156,14 +156,7 @@ const Login: React.FC = () => {
                 {/* Footer links */}
                 <div className="mt-6 text-center space-y-3">
                     <p className="text-white/40 text-xs">
-                        By continuing, you agree to our{' '}
-                        <Link to="/terms" className="text-white/60 hover:text-white transition-colors underline underline-offset-2">
-                            Terms of Service
-                        </Link>
-                        {' '}and{' '}
-                        <Link to="/privacy" className="text-white/60 hover:text-white transition-colors underline underline-offset-2">
-                            Privacy Policy
-                        </Link>
+                        Your health data stays on your device. Privacy by design.
                     </p>
                     <Link
                         to="/"

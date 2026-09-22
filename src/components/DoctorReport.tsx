@@ -222,20 +222,10 @@ export const DoctorReport: React.FC = () => {
 
   // Generate AI Summary
   const generateAISummary = async () => {
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    if (!apiKey) {
-      setAiError('AI API key not configured');
-      return;
-    }
-
     setIsGeneratingAI(true);
     setAiError('');
 
     try {
-      const { GoogleGenerativeAI } = await import('@google/generative-ai');
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-
       const prompt = `As a medical AI assistant, generate a brief clinical summary for a physician based on the following patient health data. Keep it professional and concise (2-3 paragraphs max).
 
 Patient Information:
@@ -261,9 +251,19 @@ Blood Glucose (Latest):
 
 Please provide observations, potential concerns, and any recommendations for the physician's review.`;
 
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      setAiSummary(response.text());
+      const response = await fetch('/api/gemini-proxy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'doctor-report', payload: { prompt } }),
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to get AI response');
+      }
+
+      const data = await response.json();
+      setAiSummary(data.result);
     } catch (error) {
       console.error('Error generating AI summary:', error);
       setAiError('Failed to generate AI summary. Please try again.');

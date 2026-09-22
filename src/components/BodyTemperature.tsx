@@ -71,9 +71,7 @@ export const BodyTemperature: React.FC = () => {
 
   // Secret button handler - simulate sensor connection
   const handleSecretConnect = useCallback(() => {
-    console.log('Secret connect button clicked, isConnected:', isConnected);
     if (!isConnected) {
-      console.log('Starting connection process...');
       setIsLoading(true);
       setIsSimulatingConnection(true);
       setShowConnectionSuccess(false);
@@ -90,16 +88,13 @@ export const BodyTemperature: React.FC = () => {
 
       // After 4 seconds, show "Sensor successfully connected!" message
       connectionTimeoutRef.current = setTimeout(() => {
-        console.log('4 second timeout fired - showing connection success');
         setIsSimulatingConnection(false);
         setShowConnectionSuccess(true);
         setIsConnected(true); // Mark as connected but don't show temperature yet
         setIsWaitingForTemperature(true);
 
-        console.log('Setting up 30 second timeout for temperature data...');
         // After another 30 seconds (total 34 seconds), generate and show fake random temperature data
         temperatureTimeoutRef.current = setTimeout(() => {
-          console.log('Temperature timeout fired - generating fake data');
 
           // Generate fake random temperature data using the helper function FIRST
           const tempValue = generateFakeTemperature();
@@ -111,7 +106,6 @@ export const BodyTemperature: React.FC = () => {
             status: 'active'
           };
 
-          console.log('Generated temperature data:', simulatedData);
 
           setTemperatureData(simulatedData);
           setLastUpdate(new Date());
@@ -120,11 +114,9 @@ export const BodyTemperature: React.FC = () => {
           setShowConnectionSuccess(false);
           setIsLoading(false);
 
-          console.log('Temperature data set, flags updated');
 
 
           if (!intervalRef.current) {
-            console.log('Starting polling interval');
             intervalRef.current = setInterval(() => {
 
               const newTempValue = generateFakeTemperature();
@@ -136,7 +128,6 @@ export const BodyTemperature: React.FC = () => {
                 status: 'active'
               };
 
-              console.log('Polling update - new temperature:', newSimulatedData.temperature);
               setTemperatureData(newSimulatedData);
               setLastUpdate(new Date());
             }, 30000); // 30 seconds
@@ -166,6 +157,14 @@ export const BodyTemperature: React.FC = () => {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
+      if (connectionTimeoutRef.current) {
+        clearTimeout(connectionTimeoutRef.current);
+        connectionTimeoutRef.current = null;
+      }
+      if (temperatureTimeoutRef.current) {
+        clearTimeout(temperatureTimeoutRef.current);
+        temperatureTimeoutRef.current = null;
+      }
     };
   }, [isConnected, temperatureData, isWaitingForTemperature]);
 
@@ -185,18 +184,7 @@ export const BodyTemperature: React.FC = () => {
   const tempStatus = temperatureData ? getTemperatureStatus(temperatureData.temperature) : { status: 'Unknown', variant: 'outline' as const };
   const unitSymbol = unit === 'celsius' ? '°C' : '°F';
 
-  // Debug logging
-  useEffect(() => {
-    console.log('BodyTemperature render state:', {
-      isConnected,
-      isLoading,
-      isSimulatingConnection,
-      showConnectionSuccess,
-      isWaitingForTemperature,
-      hasTemperatureData: !!temperatureData,
-      temperature: temperatureData?.temperature
-    });
-  }, [isConnected, isLoading, isSimulatingConnection, showConnectionSuccess, isWaitingForTemperature, temperatureData]);
+
 
   return (
     <Card className="glass-panel border-0 hover:border-white/20 transition-all duration-300">

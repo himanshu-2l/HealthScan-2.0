@@ -96,6 +96,7 @@ export const GoogleFitIntegration: React.FC<GoogleFitIntegrationProps> = ({ onVi
         data = text ? JSON.parse(text) : { connected: false };
       } catch (parseError) {
         console.warn('Failed to parse Google Fit status response:', parseError);
+        setError('Could not read Google Fit connection status. Please try reconnecting.');
         setConnected(false);
         return;
       }

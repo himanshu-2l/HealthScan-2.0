@@ -26,7 +26,6 @@ import {
   Line,
   ResponsiveContainer,
 } from 'recharts';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // Types
 interface HealthPrediction {
@@ -156,15 +155,6 @@ export const HealthPredictions: React.FC = () => {
     const healthData = collectHealthData();
 
     try {
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-      
-      if (!apiKey) {
-        throw new Error('Gemini API key not configured');
-      }
-
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-
       // Build the prompt
       const prompt = `You are a health analysis AI assistant. Analyze the following health data and provide predictions.
 
@@ -216,9 +206,17 @@ Please analyze this data and respond with ONLY a valid JSON object (no markdown,
 
 Be realistic but encouraging. If data is limited, acknowledge this and provide general guidance.`;
 
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
+      const response = await fetch('/api/gemini-proxy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'health-predictions', payload: { prompt } }),
+      });
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to generate predictions');
+      }
+      const data = await response.json();
+      const text = data.result;
 
       // Parse JSON response
       let parsedResponse: HealthPrediction;

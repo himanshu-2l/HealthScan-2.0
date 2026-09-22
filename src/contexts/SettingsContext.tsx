@@ -21,9 +21,6 @@ export interface AppSettings {
   dataRetention: string;
   anonymousUsage: boolean;
   
-  // API Settings
-  geminiApiKey: string;
-  
   // Accessibility
   highContrast: boolean;
   largeText: boolean;
@@ -50,9 +47,6 @@ const defaultSettings: AppSettings = {
   // Privacy Settings
   dataRetention: '30days',
   anonymousUsage: false,
-  
-  // API Settings
-  geminiApiKey: import.meta.env.VITE_GEMINI_API_KEY || '',
   
   // Accessibility
   highContrast: false,

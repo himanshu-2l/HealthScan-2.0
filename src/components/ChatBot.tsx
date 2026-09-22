@@ -64,8 +64,7 @@ const detectLanguage = (text: string): 'hindi' | 'hinglish' | 'english' => {
 export const ChatBot: React.FC<ChatBotProps> = ({ isOpen, onClose, reportContext }) => {
   const { settings } = useSettings();
 
-  // Use settings API key first, then fall back to environment variable
-  const apiKey = settings.geminiApiKey || import.meta.env.VITE_GEMINI_API_KEY || '';
+  const apiKey = 'proxy-mode';
 
   // Initialize messages based on whether report context is provided
   const getInitialMessage = (): Message => {
@@ -122,29 +121,6 @@ export const ChatBot: React.FC<ChatBotProps> = ({ isOpen, onClose, reportContext
   const sendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
 
-    // Check if API key is configured and valid
-    if (!apiKey || apiKey.trim() === '') {
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: 'Please configure your Gemini API key in Settings before using the chatbot. You can get your API key from [Google AI Studio](https://makersuite.google.com/app/apikey).',
-        sender: 'bot',
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, errorMessage]);
-      return;
-    }
-
-    if (!isValidApiKey(apiKey)) {
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: 'The configured API key appears to be invalid. Gemini API keys should start with "AIza" and be longer than 20 characters. Please check your API key in Settings.',
-        sender: 'bot',
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, errorMessage]);
-      return;
-    }
-
     const userMessage: Message = {
       id: Date.now().toString(),
       content: inputValue,
@@ -157,8 +133,6 @@ export const ChatBot: React.FC<ChatBotProps> = ({ isOpen, onClose, reportContext
     setIsLoading(true);
 
     try {
-      // Use combined API key (settings or environment)
-      const GEMINI_API_KEY = apiKey;
 
       // Detect the language of user input
       const detectedLanguage = detectLanguage(inputValue);
@@ -214,29 +188,19 @@ ${languageInstruction}
 Provide a brief, accurate response (max 3 sentences) about health screening, tests, or general health questions. Focus on key information only.`;
       }
 
-      // Using gemini-flash-latest for better stability and quota management
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`, {
+      const response = await fetch('/api/gemini-proxy', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: prompt
-            }]
-          }]
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'chat', payload: { prompt: prompt } }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Gemini API Error:', response.status, response.statusText, errorData);
-        throw new Error(`API Error: ${response.status} ${errorData.error?.message || response.statusText}`);
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to get AI response');
       }
 
       const data = await response.json();
-      const botResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || 'I apologize, but I encountered an error receiving a valid response. Please try again.';
+      const botResponse = data.result || 'I apologize, but I encountered an error receiving a valid response. Please try again.';
 
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),

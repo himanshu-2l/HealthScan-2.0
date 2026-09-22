@@ -1,5 +1,5 @@
 import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
+import react from "@vitejs/plugin-react-swc";
 import path from "path";
 
 export default defineConfig({
@@ -27,12 +27,13 @@ export default defineConfig({
     },
   },
   build: {
-    chunkSizeWarningLimit: 3000,
     rollupOptions: {
       output: {
         manualChunks: {
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
           'vendor-ui': ['lucide-react', 'clsx', 'tailwind-merge'],
+          'vendor-ml': ['@tensorflow/tfjs', '@tensorflow/tfjs-backend-webgl', '@tensorflow-models/pose-detection'],
+          'vendor-mediapipe': ['@mediapipe/tasks-vision', '@mediapipe/face_mesh', '@mediapipe/hands'],
         },
       },
     },

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+
 import {
   Brain,
   Eye,
@@ -127,59 +127,32 @@ export default function SymptomChecker() {
     setError(null);
 
     try {
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-      if (!apiKey) {
-        throw new Error('Gemini API key not configured');
-      }
-
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-
       const allSymptoms = [
         ...selectedSymptoms,
         ...(symptomDescription ? [symptomDescription] : [])
       ].join(', ');
 
-      const prompt = `You are a medical information assistant. Based on the following symptoms, provide a structured analysis. This is NOT a diagnosis - only general health information.
+      const response = await fetch('/api/gemini-proxy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'symptom-check',
+          payload: {
+            bodyArea: selectedArea.name,
+            symptoms: allSymptoms,
+            duration: duration || 'Not specified',
+            severity,
+          },
+        }),
+      });
 
-Body Area: ${selectedArea.name}
-Symptoms: ${allSymptoms}
-Duration: ${duration || 'Not specified'}
-Severity: ${severity}
-
-Respond ONLY with valid JSON in this exact format (no markdown, no code blocks, just raw JSON):
-{
-  "possibleConditions": [
-    {
-      "name": "Condition name",
-      "likelihood": "High" | "Medium" | "Low",
-      "description": "Brief description of the condition"
-    }
-  ],
-  "riskLevel": "Low" | "Moderate" | "High" | "Urgent",
-  "whenToSeeDoctor": ["Reason 1", "Reason 2"],
-  "selfCareTips": ["Tip 1", "Tip 2", "Tip 3"]
-}
-
-Provide 2-4 possible conditions, 2-4 reasons to see a doctor, and 3-5 self-care tips. Be informative but always recommend consulting a healthcare professional.`;
-
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
-
-      // Clean the response - remove markdown code blocks if present
-      let cleanedText = text.trim();
-      if (cleanedText.startsWith('```json')) {
-        cleanedText = cleanedText.slice(7);
-      } else if (cleanedText.startsWith('```')) {
-        cleanedText = cleanedText.slice(3);
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to analyze symptoms');
       }
-      if (cleanedText.endsWith('```')) {
-        cleanedText = cleanedText.slice(0, -3);
-      }
-      cleanedText = cleanedText.trim();
 
-      const parsed: AnalysisResult = JSON.parse(cleanedText);
+      const data = await response.json();
+      const parsed: AnalysisResult = data.result;
       setAnalysisResult(parsed);
       setCurrentStep(4);
     } catch (err) {
