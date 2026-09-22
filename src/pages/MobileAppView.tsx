@@ -23,7 +23,8 @@ import {
   ArrowRight, 
   ChevronRight,
   FileText,
-  Smartphone
+  Smartphone,
+  Pill
 } from 'lucide-react';
 import { getAllResults } from '../services/healthDataService';
 
@@ -100,6 +101,36 @@ export const MobileAppView: React.FC = () => {
 
             {/* Labs Grid: 2 columns on desktop/tablet, 1 column on mobile */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Medicine Lens Lab */}
+              <div
+                onClick={() => navigate('/labs/medicine-lens')}
+                className="p-5 rounded-2xl bg-white dark:bg-[#0F1523] border border-indigo-200/80 dark:border-indigo-500/20 hover:border-indigo-500/50 dark:hover:border-indigo-500/40 transition-all cursor-pointer group active:scale-[0.99] flex items-center justify-between shadow-sm col-span-1 md:col-span-2 bg-gradient-to-r from-indigo-50/50 via-white to-white dark:from-indigo-950/20 dark:via-[#0F1523] dark:to-[#0F1523]"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-11 h-11 rounded-xl bg-indigo-100 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 group-hover:scale-105 transition-transform flex items-center justify-center shrink-0">
+                    <Pill className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">Medicine Lens</h3>
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 uppercase tracking-wider">
+                        NEW AI LAB
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Blister strip OCR, Indian salt resolution, safety & voice explanation</p>
+                    <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-white/[0.04] text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-white/[0.06]">
+                        Vision OCR
+                      </span>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                        • CDSCO / NLEM Aligned • Zero Hallucination Safety
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 group-hover:translate-x-0.5 transition-all shrink-0" />
+              </div>
+
               {/* Cardiovascular Lab */}
               <div
                 onClick={() => navigate('/labs/cardiovascular')}
