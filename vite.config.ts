@@ -37,7 +37,6 @@ export default defineConfig({
           'vendor-charts': ['recharts'],
           'vendor-pdf': ['jspdf', 'jspdf-autotable'],
           'vendor-query': ['@tanstack/react-query'],
-          'vendor-ai': ['@google/generative-ai'],
           'vendor-ml': ['@tensorflow/tfjs', '@tensorflow/tfjs-backend-webgl', '@tensorflow-models/pose-detection'],
           'vendor-mediapipe': ['@mediapipe/tasks-vision', '@mediapipe/hands'],
         },

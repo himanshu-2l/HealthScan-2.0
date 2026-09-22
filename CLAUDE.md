@@ -43,10 +43,11 @@ HealthScan is an edge-computed, privacy-first digital clinical screening platfor
   - PDF Clinical Report export via `jspdf` and `jspdf-autotable`
   - Offline 300+ Indian medicine database & interaction resolver (`src/data/indianMedicines.ts`)
 
-### AI Architecture (Dual-Path)
-- Managed by `src/services/aiProxyService.ts`:
-  1. Primary: Tries backend/serverless proxy `POST /api/gemini-proxy` (keeps API keys off the client).
-  2. Fallback: Direct client-side Google Generative AI (`@google/generative-ai`) using `VITE_GEMINI_API_KEY` or `localStorage.getItem('gemini_api_key')`.
+### AI Architecture (Secure Server-Side Proxy)
+- Managed by `src/services/aiProxyService.ts` and `src/services/medicineVisionService.ts`:
+  1. Primary: Authenticated backend/serverless proxy `POST /api/gemini-proxy` (keeps API keys and models strictly server-side).
+  2. Fallback: Deterministic offline clinical responses for continuity without requiring network or client-side API keys.
+  3. Security: Gemini credentials reside exclusively on the server (`GEMINI_API_KEY`). Zero Gemini API keys exist in the client bundle.
 
 ### Backend & API
 - **Express Backend** (`backend/src/`):

@@ -6,7 +6,8 @@ import crypto from 'crypto';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import labRoutes from './routes/labRoutes.js';
 import featureRoutes from './routes/featureRoutes.js';
-import { apiLimiter, reportLimiter } from './middleware/rateLimiter.js';
+import { apiLimiter, reportLimiter, aiProxyLimiter, authLimiter } from './middleware/rateLimiter.js';
+import { requireAuth, generateToken } from './middleware/auth.js';
 import session from 'express-session';
 import googleFitRoutes from './routes/googleFitRoutes.js';
 import geminiProxyHandler from '../../api/gemini-proxy.js';
@@ -118,8 +119,20 @@ app.use(apiLimiter);
 morgan.token('request-id', (req) => req.requestId || '-');
 app.use(morgan(':method :url :status :response-time ms - :request-id'));
 
-const geminiApiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+const geminiApiKey = process.env.GEMINI_API_KEY;
 const genAI = geminiApiKey ? new GoogleGenerativeAI(geminiApiKey) : null;
+
+// Demo session token endpoint for development/demo testing
+app.post('/api/auth/demo-token', authLimiter, (req, res) => {
+  const demoUser = {
+    uid: 'demo-user-healthscan',
+    name: 'Dr. Alex Mercer',
+    email: 'alex.mercer@healthscan.io',
+    role: 'user'
+  };
+  const token = generateToken(demoUser, '24h');
+  res.json({ token, user: demoUser });
+});
 
 // Health check endpoint (no rate limiting)
 app.get('/api/health', (req, res) => {
@@ -152,7 +165,7 @@ app.get('/api/body-temperature', (req, res) => {
   }
 });
 
-app.post('/api/gemini-proxy', (req, res) => geminiProxyHandler(req, res));
+app.post('/api/gemini-proxy', requireAuth, aiProxyLimiter, (req, res) => geminiProxyHandler(req, res));
 
 app.post('/api/generate-report', reportLimiter, async (req, res) => {
   try {

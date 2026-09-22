@@ -13,8 +13,8 @@ npm install
 Create a `.env` file in the project root with the following variables:
 
 ```env
-# Gemini AI API Key (for ChatBot)
-VITE_GEMINI_API_KEY=your_gemini_api_key_here
+# Server-Side Gemini AI API Key
+GEMINI_API_KEY=your_gemini_api_key_here
 
 # ABDM (Ayushman Bharat Digital Mission) Configuration
 VITE_ABDM_BASE_URL=https://dev.abdm.gov.in/gateway
@@ -78,7 +78,7 @@ To enable the AI ChatBot:
 
 2. **Add to Environment**
    ```env
-   VITE_GEMINI_API_KEY=your_gemini_api_key_here
+   GEMINI_API_KEY=your_gemini_api_key_here
    ```
 
 3. **Alternative: Use Settings UI**
@@ -236,7 +236,7 @@ Output will be in `dist/` directory.
 ### Environment Variables for Production
 
 Ensure all production environment variables are set:
-- `VITE_GEMINI_API_KEY` - Real API key
+- `GEMINI_API_KEY` - Real API key (configured server-side)
 - `VITE_ABDM_SANDBOX=false` - Production mode
 - `VITE_ABDM_CLIENT_ID` - Real ABDM client ID
 - `VITE_ABDM_CLIENT_SECRET` - Real ABDM client secret

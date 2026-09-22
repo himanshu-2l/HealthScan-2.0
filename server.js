@@ -50,7 +50,9 @@ app.use((req, res, next) => {
   next();
 });
 
-const genAI = new GoogleGenerativeAI(process.env.VITE_GEMINI_API_KEY);
+const genAI = process.env.GEMINI_API_KEY
+  ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
+  : null;
 
 // Load Google Fit Service (may fail if env vars not set)
 let googleFitService;

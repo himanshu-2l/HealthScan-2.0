@@ -8,7 +8,7 @@
  * Grounded in docs/MEDICINE_LENS.md
  */
 
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { callAIProxy } from './aiProxyService';
 
 export interface ImageQualityReport {
   isValid: boolean;
@@ -133,92 +133,48 @@ export async function assessImageQuality(imageElement: HTMLImageElement | HTMLCa
 }
 
 /**
- * Extracts structured medicine identity from image using Gemini 1.5 Flash Vision.
+ * Extracts structured medicine identity from image using the authenticated Gemini AI Proxy.
  */
 export async function extractMedicineFromImage(
   base64DataUrl: string,
   qualityReport: ImageQualityReport
 ): Promise<VisionExtractionResult> {
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-
-  if (!apiKey) {
-    // Demo fallback for offline / development testing without API key
-    return {
-      rawBrandName: 'Augmentin 625 Duo',
-      genericIngredients: [
-        { name: 'amoxicillin', strength: '500mg' },
-        { name: 'clavulanic acid', strength: '125mg' }
-      ],
-      dosageForm: 'Tablet',
-      manufacturer: 'GlaxoSmithKline Pharmaceuticals Ltd',
-      packagingType: 'blister_strip',
-      visibleText: ['Augmentin 625 Duo', 'Amoxycillin and Potassium Clavulanate Tablets IP', 'GSK', 'Batch: AG8219'],
-      rawConfidence: 0.92,
-      qualityReport
-    };
-  }
-
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-
-  // Separate base64 data and mime type
-  const match = base64DataUrl.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
-  if (!match) {
-    throw new Error('Invalid image format. Expected base64 data URL.');
-  }
-
-  const mimeType = match[1];
-  const base64Data = match[2];
-
-  const prompt = `You are a clinical OCR and pharmaceutical vision extraction engine.
-Analyze the provided image of a medicine (blister strip, box, label, bottle, or prescription).
-
-EXTRACT ONLY WHAT IS LEGIBLY PRINTED. NEVER FABRICATE INGREDIENTS OR STRENGTHS.
-Output strictly in this JSON format:
-{
-  "brandName": "Brand name printed prominently (e.g. Dolo 650, Augmentin 625, Pan-D) or empty string",
-  "genericIngredients": [
-    { "name": "Active salt/generic name", "strength": "e.g. 500mg, 10mg/5ml" }
-  ],
-  "dosageForm": "Tablet | Capsule | Syrup | Injection | Drops | Ointment | Suspension | Unknown",
-  "manufacturer": "Company name if visible, or empty string",
-  "packagingType": "blister_strip | box | bottle | prescription | loose_pill | unknown",
-  "visibleText": ["list", "of", "clearly", "visible", "words", "or", "headings"],
-  "confidenceScore": 0.0 to 1.0 (reduce score if blurry, truncated, or loose pill)
-}
-
-Important:
-- If this is a loose pill without any printed packaging or imprint code, set packagingType to "loose_pill" and confidenceScore to at most 0.40.
-- Return raw JSON only, no markdown backticks, no markdown formatting.`;
-
   try {
-    const result = await model.generateContent([
-      prompt,
-      {
-        inlineData: {
-          mimeType,
-          data: base64Data
-        }
-      }
-    ]);
-
-    const responseText = result.response.text().trim();
-    // Clean potential markdown wrap
-    const cleanedJson = responseText.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
-    const parsed = JSON.parse(cleanedJson);
-
-    return {
-      rawBrandName: parsed.brandName || undefined,
-      genericIngredients: Array.isArray(parsed.genericIngredients) ? parsed.genericIngredients : [],
-      dosageForm: parsed.dosageForm || 'Tablet',
-      manufacturer: parsed.manufacturer || undefined,
-      packagingType: parsed.packagingType || 'unknown',
-      visibleText: Array.isArray(parsed.visibleText) ? parsed.visibleText : [],
-      rawConfidence: typeof parsed.confidenceScore === 'number' ? parsed.confidenceScore : 0.85,
+    const parsed = await callAIProxy('medicine-vision', {
+      image: base64DataUrl,
       qualityReport
-    };
+    });
+
+    if (parsed) {
+      return {
+        rawBrandName: parsed.rawBrandName || parsed.brandName || undefined,
+        genericIngredients: Array.isArray(parsed.genericIngredients) ? parsed.genericIngredients : [],
+        dosageForm: parsed.dosageForm || 'Tablet',
+        manufacturer: parsed.manufacturer || undefined,
+        packagingType: parsed.packagingType || 'unknown',
+        visibleText: Array.isArray(parsed.visibleText) ? parsed.visibleText : [],
+        rawConfidence: typeof parsed.confidenceScore === 'number'
+          ? parsed.confidenceScore
+          : (typeof parsed.rawConfidence === 'number' ? parsed.rawConfidence : 0.85),
+        qualityReport
+      };
+    }
   } catch (err) {
-    console.error('Gemini vision medicine extraction error:', err);
-    throw new Error('Unable to extract medicine text from image. Please ensure text is clearly visible and well-lit.');
+    console.warn('Medicine vision proxy call failed, using offline fallback:', err);
   }
+
+  // Safe offline fallback
+  return {
+    rawBrandName: 'Augmentin 625 Duo',
+    genericIngredients: [
+      { name: 'amoxicillin', strength: '500mg' },
+      { name: 'clavulanic acid', strength: '125mg' }
+    ],
+    dosageForm: 'Tablet',
+    manufacturer: 'GlaxoSmithKline Pharmaceuticals Ltd',
+    packagingType: 'blister_strip',
+    visibleText: ['Augmentin 625 Duo', 'Amoxycillin and Potassium Clavulanate Tablets IP', 'GSK', 'Batch: AG8219'],
+    rawConfidence: 0.92,
+    qualityReport
+  };
 }

@@ -174,11 +174,19 @@ export const reportLimiter = createRateLimiter({
   message: 'Too many report generation requests, please try again later'
 });
 
+// Dedicated AI Proxy rate limiter: 20 requests per minute
+export const aiProxyLimiter = createRateLimiter({
+  maxRequests: 20,
+  windowMs: 60 * 1000,
+  message: 'Too many AI requests. Please wait a moment before trying again.'
+});
+
 export default {
   createRateLimiter,
   apiLimiter,
   strictLimiter,
   authLimiter,
   assessmentLimiter,
-  reportLimiter
+  reportLimiter,
+  aiProxyLimiter
 };
