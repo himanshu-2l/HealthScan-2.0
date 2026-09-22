@@ -59,7 +59,7 @@ HealthScan is an edge-computed, privacy-first digital clinical screening platfor
     - `/api/gemini-proxy`: Proxy endpoint for Gemini 1.5 Flash.
     - `/ws/tremor`: WebSocket feed for real-time tremor streaming.
 - **Serverless API Routes** (`api/`):
-  - Vercel serverless functions mirroring key endpoints (`api/gemini-proxy.js`, `api/body-temperature.js`, `api/features/*`, `api/google-fit/*`).
+  - Vercel serverless functions mirroring key endpoints (`api/gemini-proxy.js`, `api/body-temperature.js`, `api/google-fit/*`).
 
 ### Data Persistence
 - **Client-Side**: `localStorage` stores ABHA profile, demo user session (`healthscan_demo_user`), settings, and cached clinical records. Demo mode seeds automatically on load (`src/services/demoDataSeeder.ts`).

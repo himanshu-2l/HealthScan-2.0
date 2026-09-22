@@ -28,8 +28,12 @@ if (isProduction && !process.env.SESSION_SECRET) {
   process.exit(1);
 }
 
+if (!process.env.SESSION_SECRET) {
+  console.warn('SECURITY WARNING: SESSION_SECRET is not set. Using insecure development fallback secret. Set SESSION_SECRET in production.');
+}
+
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'dev-only-healthscan-secret',
+  secret: process.env.SESSION_SECRET || 'healthscan-session-dev-secret-do-not-use-in-production',
   resave: false,
   saveUninitialized: false,
   cookie: {

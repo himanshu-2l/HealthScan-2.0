@@ -1,6 +1,17 @@
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'healthscan-jwt-secret-change-in-production';
+const isProduction = process.env.NODE_ENV === 'production';
+
+if (isProduction && !process.env.JWT_SECRET) {
+  console.error('FATAL: JWT_SECRET environment variable is required in production.');
+  process.exit(1);
+}
+
+if (!process.env.JWT_SECRET) {
+  console.warn('SECURITY WARNING: JWT_SECRET is not set. Using insecure development fallback secret. Set JWT_SECRET in production.');
+}
+
+const JWT_SECRET = process.env.JWT_SECRET || 'healthscan-jwt-dev-secret-do-not-use-in-production';
 
 /**
  * Extract token from Authorization header

@@ -88,8 +88,19 @@ app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // Session middleware for OAuth & fit data
+const isProduction = process.env.NODE_ENV === 'production';
+
+if (isProduction && !process.env.SESSION_SECRET) {
+  console.error('FATAL: SESSION_SECRET environment variable is required in production.');
+  process.exit(1);
+}
+
+if (!process.env.SESSION_SECRET) {
+  console.warn('SECURITY WARNING: SESSION_SECRET is not set. Using insecure development fallback secret. Set SESSION_SECRET in production.');
+}
+
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'healthscan-session-secret',
+  secret: process.env.SESSION_SECRET || 'healthscan-session-dev-secret-do-not-use-in-production',
   resave: false,
   saveUninitialized: true,
   cookie: {
