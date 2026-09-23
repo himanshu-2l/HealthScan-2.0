@@ -88,7 +88,12 @@ const Login: React.FC = () => {
     setIsGoogleLoading(true);
     setErrorMessage(null);
     try {
-      await loginWithGoogle();
+      const res = await loginWithGoogle();
+      if (!res.success && res.error) {
+        setErrorMessage(res.error);
+      }
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Failed to complete Google Sign-In');
     } finally {
       setIsGoogleLoading(false);
     }
