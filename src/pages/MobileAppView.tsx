@@ -165,20 +165,28 @@ export const MobileAppView: React.FC<MobileAppViewProps> = ({ initialTab }) => {
               {/* Medicine Lens Lab */}
               <div
                 onClick={() => navigate('/labs/medicine-lens')}
-                className="p-5 rounded-2xl bg-white dark:bg-[#0F1523] border border-indigo-200/80 dark:border-indigo-500/20 hover:border-indigo-500/50 dark:hover:border-indigo-500/40 transition-all cursor-pointer group active:scale-[0.99] flex items-center justify-between shadow-sm col-span-1 md:col-span-2 bg-gradient-to-r from-indigo-50/50 via-white to-white dark:from-indigo-950/20 dark:via-[#0F1523] dark:to-[#0F1523]"
+                className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#0F1523] border border-indigo-200/80 dark:border-indigo-500/20 hover:border-indigo-500/50 dark:hover:border-indigo-500/40 transition-all cursor-pointer group active:scale-[0.99] flex items-center justify-between shadow-sm col-span-1 md:col-span-2 bg-gradient-to-r from-indigo-50/50 via-white to-white dark:from-indigo-950/20 dark:via-[#0F1523] dark:to-[#0F1523]"
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-11 h-11 rounded-xl bg-indigo-100 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 group-hover:scale-105 transition-transform flex items-center justify-center shrink-0">
-                    <Pill className="w-5 h-5" />
+                <div className="flex items-center gap-4 min-w-0">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-xl overflow-hidden relative shrink-0 border border-indigo-200/80 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-950/40 shadow-sm">
+                    <img
+                      src="/images/medicine-lens-scan.jpg"
+                      alt="Medicine Lens"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
+                    />
+                    <div className="absolute bottom-1 right-1 p-1 rounded-md bg-slate-950/85 backdrop-blur-md text-indigo-400 border border-white/10 shadow-sm">
+                      <Pill className="w-3.5 h-3.5" />
+                    </div>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <h3 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">Medicine Lens</h3>
                       <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 uppercase tracking-wider">
                         NEW AI LAB
                       </span>
                     </div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Blister strip OCR, Indian salt resolution, safety & voice explanation</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1 sm:line-clamp-none">Blister strip OCR, Indian salt resolution, safety & voice explanation</p>
                     <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                       <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-white/[0.04] text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-white/[0.06]">
                         Vision OCR
@@ -189,22 +197,30 @@ export const MobileAppView: React.FC<MobileAppViewProps> = ({ initialTab }) => {
                     </div>
                   </div>
                 </div>
-                <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 group-hover:translate-x-0.5 transition-all shrink-0" />
+                <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
               </div>
 
               {/* Cardiovascular Lab */}
               <div
                 onClick={() => navigate('/labs/cardiovascular')}
-                className="p-5 rounded-2xl bg-white dark:bg-[#0F1523] border border-slate-200/90 dark:border-white/[0.08] hover:border-teal-500/40 dark:hover:border-teal-500/30 transition-all cursor-pointer group active:scale-[0.99] flex items-center justify-between shadow-sm"
+                className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#0F1523] border border-slate-200/90 dark:border-white/[0.08] hover:border-teal-500/40 dark:hover:border-teal-500/30 transition-all cursor-pointer group active:scale-[0.99] flex items-center justify-between shadow-sm"
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-11 h-11 rounded-xl bg-slate-100 dark:bg-white/[0.05] border border-slate-200/80 dark:border-white/[0.08] text-slate-700 dark:text-slate-200 group-hover:text-teal-600 dark:group-hover:text-teal-400 group-hover:border-teal-500/30 transition-colors flex items-center justify-center shrink-0">
-                    <Heart className="w-5 h-5" />
+                <div className="flex items-center gap-4 min-w-0">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden relative shrink-0 border border-slate-200/80 dark:border-white/[0.08] bg-slate-100 dark:bg-white/[0.03] shadow-sm">
+                    <img
+                      src="/images/ppg-scan.jpg"
+                      alt="Cardiovascular Lab"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
+                    />
+                    <div className="absolute bottom-1 right-1 p-1 rounded-md bg-slate-950/85 backdrop-blur-md text-teal-400 border border-white/10 shadow-sm">
+                      <Heart className="w-3.5 h-3.5" />
+                    </div>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <h3 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-teal-700 dark:group-hover:text-teal-300 transition-colors">Cardiovascular Lab</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Camera PPG, Heart Rate & HRV analysis</p>
-                    <div className="flex items-center gap-1.5 mt-1.5">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1 sm:line-clamp-none">Camera PPG, Heart Rate & HRV analysis</p>
+                    <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                       <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-white/[0.04] text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-white/[0.06]">
                         PPG Camera Sensor
                       </span>
@@ -214,22 +230,30 @@ export const MobileAppView: React.FC<MobileAppViewProps> = ({ initialTab }) => {
                     </div>
                   </div>
                 </div>
-                <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-teal-600 dark:group-hover:text-teal-400 group-hover:translate-x-0.5 transition-all shrink-0" />
+                <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-teal-600 dark:group-hover:text-teal-400 group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
               </div>
 
               {/* Motor & Tremor Lab */}
               <div
                 onClick={() => navigate('/labs/motor')}
-                className="p-5 rounded-2xl bg-white dark:bg-[#0F1523] border border-slate-200/90 dark:border-white/[0.08] hover:border-teal-500/40 dark:hover:border-teal-500/30 transition-all cursor-pointer group active:scale-[0.99] flex items-center justify-between shadow-sm"
+                className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#0F1523] border border-slate-200/90 dark:border-white/[0.08] hover:border-teal-500/40 dark:hover:border-teal-500/30 transition-all cursor-pointer group active:scale-[0.99] flex items-center justify-between shadow-sm"
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-11 h-11 rounded-xl bg-slate-100 dark:bg-white/[0.05] border border-slate-200/80 dark:border-white/[0.08] text-slate-700 dark:text-slate-200 group-hover:text-teal-600 dark:group-hover:text-teal-400 group-hover:border-teal-500/30 transition-colors flex items-center justify-center shrink-0">
-                    <Hand className="w-5 h-5" />
+                <div className="flex items-center gap-4 min-w-0">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden relative shrink-0 border border-slate-200/80 dark:border-white/[0.08] bg-slate-100 dark:bg-white/[0.03] shadow-sm">
+                    <img
+                      src="/images/motor-scan.jpg"
+                      alt="Motor & Tremor Lab"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
+                    />
+                    <div className="absolute bottom-1 right-1 p-1 rounded-md bg-slate-950/85 backdrop-blur-md text-teal-400 border border-white/10 shadow-sm">
+                      <Hand className="w-3.5 h-3.5" />
+                    </div>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <h3 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-teal-700 dark:group-hover:text-teal-300 transition-colors">Motor & Tremor Lab</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">MDS-UPDRS finger tapping & Tremor FFT</p>
-                    <div className="flex items-center gap-1.5 mt-1.5">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1 sm:line-clamp-none">MDS-UPDRS finger tapping & Tremor FFT</p>
+                    <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                       <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-white/[0.04] text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-white/[0.06]">
                         MDS-UPDRS Finger Tap
                       </span>
@@ -239,22 +263,30 @@ export const MobileAppView: React.FC<MobileAppViewProps> = ({ initialTab }) => {
                     </div>
                   </div>
                 </div>
-                <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-teal-600 dark:group-hover:text-teal-400 group-hover:translate-x-0.5 transition-all shrink-0" />
+                <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-teal-600 dark:group-hover:text-teal-400 group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
               </div>
 
               {/* Voice & Speech Lab */}
               <div
                 onClick={() => navigate('/labs/voice')}
-                className="p-5 rounded-2xl bg-white dark:bg-[#0F1523] border border-slate-200/90 dark:border-white/[0.08] hover:border-teal-500/40 dark:hover:border-teal-500/30 transition-all cursor-pointer group active:scale-[0.99] flex items-center justify-between shadow-sm"
+                className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#0F1523] border border-slate-200/90 dark:border-white/[0.08] hover:border-teal-500/40 dark:hover:border-teal-500/30 transition-all cursor-pointer group active:scale-[0.99] flex items-center justify-between shadow-sm"
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-11 h-11 rounded-xl bg-slate-100 dark:bg-white/[0.05] border border-slate-200/80 dark:border-white/[0.08] text-slate-700 dark:text-slate-200 group-hover:text-teal-600 dark:group-hover:text-teal-400 group-hover:border-teal-500/30 transition-colors flex items-center justify-center shrink-0">
-                    <Mic className="w-5 h-5" />
+                <div className="flex items-center gap-4 min-w-0">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden relative shrink-0 border border-slate-200/80 dark:border-white/[0.08] bg-slate-100 dark:bg-white/[0.03] shadow-sm">
+                    <img
+                      src="/images/voice-scan.jpg"
+                      alt="Voice & Speech Lab"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
+                    />
+                    <div className="absolute bottom-1 right-1 p-1 rounded-md bg-slate-950/85 backdrop-blur-md text-teal-400 border border-white/10 shadow-sm">
+                      <Mic className="w-3.5 h-3.5" />
+                    </div>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <h3 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-teal-700 dark:group-hover:text-teal-300 transition-colors">Voice & Speech Lab</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Pitch autocorrelation, Jitter & Shimmer</p>
-                    <div className="flex items-center gap-1.5 mt-1.5">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1 sm:line-clamp-none">Pitch autocorrelation, Jitter & Shimmer</p>
+                    <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                       <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-white/[0.04] text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-white/[0.06]">
                         Acoustic Analysis
                       </span>
@@ -264,22 +296,30 @@ export const MobileAppView: React.FC<MobileAppViewProps> = ({ initialTab }) => {
                     </div>
                   </div>
                 </div>
-                <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-teal-600 dark:group-hover:text-teal-400 group-hover:translate-x-0.5 transition-all shrink-0" />
+                <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-teal-600 dark:group-hover:text-teal-400 group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
               </div>
 
               {/* Eye & Cognition Lab */}
               <div
                 onClick={() => navigate('/labs/eye')}
-                className="p-5 rounded-2xl bg-white dark:bg-[#0F1523] border border-slate-200/90 dark:border-white/[0.08] hover:border-teal-500/40 dark:hover:border-teal-500/30 transition-all cursor-pointer group active:scale-[0.99] flex items-center justify-between shadow-sm"
+                className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#0F1523] border border-slate-200/90 dark:border-white/[0.08] hover:border-teal-500/40 dark:hover:border-teal-500/30 transition-all cursor-pointer group active:scale-[0.99] flex items-center justify-between shadow-sm"
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-11 h-11 rounded-xl bg-slate-100 dark:bg-white/[0.05] border border-slate-200/80 dark:border-white/[0.08] text-slate-700 dark:text-slate-200 group-hover:text-teal-600 dark:group-hover:text-teal-400 group-hover:border-teal-500/30 transition-colors flex items-center justify-center shrink-0">
-                    <Eye className="w-5 h-5" />
+                <div className="flex items-center gap-4 min-w-0">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden relative shrink-0 border border-slate-200/80 dark:border-white/[0.08] bg-slate-100 dark:bg-white/[0.03] shadow-sm">
+                    <img
+                      src="/images/eye-cognition-scan.jpg"
+                      alt="Eye & Cognition Lab"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
+                    />
+                    <div className="absolute bottom-1 right-1 p-1 rounded-md bg-slate-950/85 backdrop-blur-md text-teal-400 border border-white/10 shadow-sm">
+                      <Eye className="w-3.5 h-3.5" />
+                    </div>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <h3 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-teal-700 dark:group-hover:text-teal-300 transition-colors">Eye & Cognition Lab</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Saccadic reaction time & Stroop cognitive tests</p>
-                    <div className="flex items-center gap-1.5 mt-1.5">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1 sm:line-clamp-none">Saccadic reaction time & Stroop cognitive tests</p>
+                    <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                       <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-white/[0.04] text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-white/[0.06]">
                         Saccadic Protocol
                       </span>
@@ -289,22 +329,30 @@ export const MobileAppView: React.FC<MobileAppViewProps> = ({ initialTab }) => {
                     </div>
                   </div>
                 </div>
-                <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-teal-600 dark:group-hover:text-teal-400 group-hover:translate-x-0.5 transition-all shrink-0" />
+                <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-teal-600 dark:group-hover:text-teal-400 group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
               </div>
 
-              {/* Gait & Balance Lab */}
+              {/* Gait & Mobility Lab */}
               <div
                 onClick={() => navigate('/labs/gait')}
-                className="p-5 rounded-2xl bg-white dark:bg-[#0F1523] border border-slate-200/90 dark:border-white/[0.08] hover:border-teal-500/40 dark:hover:border-teal-500/30 transition-all cursor-pointer group active:scale-[0.99] flex items-center justify-between shadow-sm"
+                className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#0F1523] border border-slate-200/90 dark:border-white/[0.08] hover:border-teal-500/40 dark:hover:border-teal-500/30 transition-all cursor-pointer group active:scale-[0.99] flex items-center justify-between shadow-sm"
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-11 h-11 rounded-xl bg-slate-100 dark:bg-white/[0.05] border border-slate-200/80 dark:border-white/[0.08] text-slate-700 dark:text-slate-200 group-hover:text-teal-600 dark:group-hover:text-teal-400 group-hover:border-teal-500/30 transition-colors flex items-center justify-center shrink-0">
-                    <Footprints className="w-5 h-5" />
+                <div className="flex items-center gap-4 min-w-0">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden relative shrink-0 border border-slate-200/80 dark:border-white/[0.08] bg-slate-100 dark:bg-white/[0.03] shadow-sm">
+                    <img
+                      src="/images/gait-mobility-scan.jpg"
+                      alt="Gait & Mobility Lab"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
+                    />
+                    <div className="absolute bottom-1 right-1 p-1 rounded-md bg-slate-950/85 backdrop-blur-md text-teal-400 border border-white/10 shadow-sm">
+                      <Footprints className="w-3.5 h-3.5" />
+                    </div>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <h3 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-teal-700 dark:group-hover:text-teal-300 transition-colors">Gait & Mobility Lab</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Pose estimation, stride cadence & fall risk index</p>
-                    <div className="flex items-center gap-1.5 mt-1.5">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1 sm:line-clamp-none">Pose estimation, stride cadence & fall risk index</p>
+                    <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                       <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-white/[0.04] text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-white/[0.06]">
                         Pose Kinematics
                       </span>
@@ -314,22 +362,30 @@ export const MobileAppView: React.FC<MobileAppViewProps> = ({ initialTab }) => {
                     </div>
                   </div>
                 </div>
-                <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-teal-600 dark:group-hover:text-teal-400 group-hover:translate-x-0.5 transition-all shrink-0" />
+                <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-teal-600 dark:group-hover:text-teal-400 group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
               </div>
 
               {/* Mental Health & Psychological Lab */}
               <div
                 onClick={() => navigate('/labs/mental-health')}
-                className="p-5 rounded-2xl bg-white dark:bg-[#0F1523] border border-slate-200/90 dark:border-white/[0.08] hover:border-teal-500/40 dark:hover:border-teal-500/30 transition-all cursor-pointer group active:scale-[0.99] flex items-center justify-between shadow-sm"
+                className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#0F1523] border border-slate-200/90 dark:border-white/[0.08] hover:border-teal-500/40 dark:hover:border-teal-500/30 transition-all cursor-pointer group active:scale-[0.99] flex items-center justify-between shadow-sm"
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-11 h-11 rounded-xl bg-slate-100 dark:bg-white/[0.05] border border-slate-200/80 dark:border-white/[0.08] text-slate-700 dark:text-slate-200 group-hover:text-teal-600 dark:group-hover:text-teal-400 group-hover:border-teal-500/30 transition-colors flex items-center justify-center shrink-0">
-                    <Brain className="w-5 h-5" />
+                <div className="flex items-center gap-4 min-w-0">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden relative shrink-0 border border-slate-200/80 dark:border-white/[0.08] bg-slate-100 dark:bg-white/[0.03] shadow-sm">
+                    <img
+                      src="/images/mental-health-scan.jpg"
+                      alt="Mental Health & Affect Lab"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
+                    />
+                    <div className="absolute bottom-1 right-1 p-1 rounded-md bg-slate-950/85 backdrop-blur-md text-teal-400 border border-white/10 shadow-sm">
+                      <Brain className="w-3.5 h-3.5" />
+                    </div>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <h3 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-teal-700 dark:group-hover:text-teal-300 transition-colors">Mental Health & Affect Lab</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Validated PHQ-9 & GAD-7 clinical instruments</p>
-                    <div className="flex items-center gap-1.5 mt-1.5">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1 sm:line-clamp-none">Validated PHQ-9 & GAD-7 clinical instruments</p>
+                    <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                       <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-white/[0.04] text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-white/[0.06]">
                         PHQ-9 / GAD-7
                       </span>
@@ -339,22 +395,30 @@ export const MobileAppView: React.FC<MobileAppViewProps> = ({ initialTab }) => {
                     </div>
                   </div>
                 </div>
-                <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-teal-600 dark:group-hover:text-teal-400 group-hover:translate-x-0.5 transition-all shrink-0" />
+                <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-teal-600 dark:group-hover:text-teal-400 group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
               </div>
 
               {/* Vision & Hearing Lab */}
               <div
                 onClick={() => navigate('/labs/vision-hearing')}
-                className="p-5 rounded-2xl bg-white dark:bg-[#0F1523] border border-slate-200/90 dark:border-white/[0.08] hover:border-teal-500/40 dark:hover:border-teal-500/30 transition-all cursor-pointer group active:scale-[0.99] flex items-center justify-between shadow-sm md:col-span-2"
+                className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#0F1523] border border-slate-200/90 dark:border-white/[0.08] hover:border-teal-500/40 dark:hover:border-teal-500/30 transition-all cursor-pointer group active:scale-[0.99] flex items-center justify-between shadow-sm md:col-span-2"
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-11 h-11 rounded-xl bg-slate-100 dark:bg-white/[0.05] border border-slate-200/80 dark:border-white/[0.08] text-slate-700 dark:text-slate-200 group-hover:text-teal-600 dark:group-hover:text-teal-400 group-hover:border-teal-500/30 transition-colors flex items-center justify-center shrink-0">
-                    <Ear className="w-5 h-5" />
+                <div className="flex items-center gap-4 min-w-0">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-xl overflow-hidden relative shrink-0 border border-slate-200/80 dark:border-white/[0.08] bg-slate-100 dark:bg-white/[0.03] shadow-sm">
+                    <img
+                      src="/images/vision-hearing-scan.jpg"
+                      alt="Vision & Hearing Sensory Lab"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
+                    />
+                    <div className="absolute bottom-1 right-1 p-1 rounded-md bg-slate-950/85 backdrop-blur-md text-teal-400 border border-white/10 shadow-sm">
+                      <Ear className="w-3.5 h-3.5" />
+                    </div>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <h3 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-teal-700 dark:group-hover:text-teal-300 transition-colors">Vision & Hearing Sensory Lab</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Tumbling E Snellen visual acuity chart & pure-tone audiometry</p>
-                    <div className="flex items-center gap-1.5 mt-1.5">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1 sm:line-clamp-none">Tumbling E Snellen visual acuity chart & pure-tone audiometry</p>
+                    <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                       <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-white/[0.04] text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-white/[0.06]">
                         Snellen & Audiometry
                       </span>
@@ -364,7 +428,7 @@ export const MobileAppView: React.FC<MobileAppViewProps> = ({ initialTab }) => {
                     </div>
                   </div>
                 </div>
-                <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-teal-600 dark:group-hover:text-teal-400 group-hover:translate-x-0.5 transition-all shrink-0" />
+                <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-teal-600 dark:group-hover:text-teal-400 group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
               </div>
             </div>
           </div>
