@@ -8,11 +8,6 @@
  * - World Health Organization. International Classification of Diseases (ICD-11) - Visual Impairment Categories.
  */
 
-import {
-  validateDataQuality,
-  confidenceInterval
-} from './statisticalAccuracy';
-
 /**
  * Visual Acuity Reference Standards (Snellen notation)
  * @reference WHO ICD-11 Visual Impairment Categories
@@ -71,6 +66,24 @@ export interface VisionTestResult {
   };
   overallScore: number;
   recommendations: string[];
+}
+
+export type ColorErrorCategory = 'redGreen' | 'blueYellow';
+
+export function deriveColorErrorPattern(
+  answerCorrectness: boolean[],
+  categories: ColorErrorCategory[]
+): { redGreen: number; blueYellow: number } {
+  return answerCorrectness.reduce(
+    (errors, isCorrect, index) => {
+      if (!isCorrect) {
+        const category = categories[index];
+        if (category) errors[category] += 1;
+      }
+      return errors;
+    },
+    { redGreen: 0, blueYellow: 0 }
+  );
 }
 
 /**
@@ -360,17 +373,17 @@ export function analyzePeripheralVision(
 export function calculateOverallVisionScore(
   visualAcuity: VisionTestResult['visualAcuity'],
   colorBlindness: VisionTestResult['colorBlindness'],
-  peripheralVision: VisionTestResult['peripheralVision']
+  peripheralVision: VisionTestResult['peripheralVision'] | null
 ): {
   overallScore: number;
   recommendations: string[];
 } {
-  // Weighted average
-  const overallScore = Math.round(
+  const assessedWeight = peripheralVision ? 1 : 0.7;
+  const weightedScore =
     (visualAcuity.score * 0.5) +
     (colorBlindness.score * 0.2) +
-    (peripheralVision.score * 0.3)
-  );
+    (peripheralVision ? peripheralVision.score * 0.3 : 0);
+  const overallScore = Math.round(weightedScore / assessedWeight);
 
   const recommendations: string[] = [];
 
@@ -384,7 +397,9 @@ export function calculateOverallVisionScore(
     recommendations.push('Be aware of color-dependent tasks in daily life');
   }
 
-  if (peripheralVision.score < 75) {
+  if (!peripheralVision) {
+    recommendations.push('Peripheral vision was not assessed; use a professional field-of-vision test if you have concerns');
+  } else if (peripheralVision.score < 75) {
     recommendations.push('Professional peripheral vision assessment recommended');
     recommendations.push('Be cautious when driving or operating machinery');
   }

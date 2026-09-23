@@ -9,10 +9,25 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Eye, Ear, Target, TrendingUp, CheckCircle, XCircle, Play, RotateCcw, Volume2 } from 'lucide-react';
-import { calculateVisualAcuity, analyzeColorBlindness, analyzePeripheralVision, calculateOverallVisionScore } from '@/utils/visionTests';
+import { calculateVisualAcuity, analyzeColorBlindness, calculateOverallVisionScore, deriveColorErrorPattern, type ColorErrorCategory } from '@/utils/visionTests';
 import { analyzeHearingTest } from '@/utils/hearingTests';
 import { saveTestResult, generateTestResultId } from '@/services/healthDataService';
 import { HealthTestResult } from '@/types/health';
+
+type VisualAcuityDisplay = ReturnType<typeof calculateVisualAcuity> | { snellenEquivalent: 'N/A' };
+type ColorVisionDisplay = ReturnType<typeof analyzeColorBlindness> | { type: 'N/A' };
+
+interface VisionHearingResults {
+  timestamp: string;
+  vision: {
+    visualAcuity: VisualAcuityDisplay;
+    colorBlindness: ColorVisionDisplay;
+    peripheralVision: null;
+    overallScore: number;
+    recommendations: string[];
+  };
+  hearing: ReturnType<typeof analyzeHearingTest>;
+}
 
 export const VisionHearingLab: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'vision' | 'hearing' | 'results'>('vision');
@@ -20,19 +35,17 @@ export const VisionHearingLab: React.FC = () => {
   // Vision test state
   const [visionTestAnswers, setVisionTestAnswers] = useState<boolean[]>([]);
   const [colorBlindAnswers, setColorBlindAnswers] = useState<boolean[]>([]);
-  const [peripheralAnswers, setPeripheralAnswers] = useState<boolean[]>([]);
 
   // Hearing test state
   const [detectedFrequencies, setDetectedFrequencies] = useState<number[]>([]);
   const [leftEarResponses, setLeftEarResponses] = useState<boolean[]>([]);
   const [rightEarResponses, setRightEarResponses] = useState<boolean[]>([]);
-  const [currentFrequency, setCurrentFrequency] = useState<number | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [waitingForResponse, setWaitingForResponse] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
   const oscillatorRef = useRef<OscillatorNode | null>(null);
 
-  const [results, setResults] = useState<any>(null);
+  const [results, setResults] = useState<VisionHearingResults | null>(null);
 
   useEffect(() => {
     return () => {
@@ -45,34 +58,29 @@ export const VisionHearingLab: React.FC = () => {
   const [currentVisionLetter, setCurrentVisionLetter] = useState(0);
 
   const handleVisionAnswer = (correct: boolean) => {
+    if (visionTestAnswers.length >= visionTestLetters.length) return;
+
     const newAnswers = [...visionTestAnswers, correct];
     setVisionTestAnswers(newAnswers);
-
-    if (currentVisionLetter < visionTestLetters.length - 1) {
-      setCurrentVisionLetter(currentVisionLetter + 1);
-    } else {
-      // Move to color blindness test
-      setActiveTab('vision'); // Keep on vision tab but switch content internally if we separated them
-    }
+    setCurrentVisionLetter(Math.min(currentVisionLetter + 1, visionTestLetters.length));
   };
 
   // Color Blindness Test (Simplified Ishihara)
   const colorBlindTests = [
-    { correct: true, description: 'Can you see the number 12?', number: '12' },
-    { correct: true, description: 'Can you see the number 8?', number: '8' },
-    { correct: false, description: 'Can you see the number 5?', number: '5' },
-    { correct: true, description: 'Can you see the number 29?', number: '29' },
-    { correct: false, description: 'Can you see the number 74?', number: '74' },
+    { correct: true, description: 'Can you see the number 12?', number: '12', category: 'redGreen' as ColorErrorCategory },
+    { correct: true, description: 'Can you see the number 8?', number: '8', category: 'redGreen' as ColorErrorCategory },
+    { correct: false, description: 'Can you see the number 5?', number: '5', category: 'redGreen' as ColorErrorCategory },
+    { correct: true, description: 'Can you see the number 29?', number: '29', category: 'redGreen' as ColorErrorCategory },
+    { correct: false, description: 'Can you see the number 74?', number: '74', category: 'blueYellow' as ColorErrorCategory },
   ];
   const [currentColorTest, setCurrentColorTest] = useState(0);
 
   const handleColorBlindAnswer = (answer: boolean) => {
+    if (colorBlindAnswers.length >= colorBlindTests.length) return;
+
     const newAnswers = [...colorBlindAnswers, answer === colorBlindTests[currentColorTest].correct];
     setColorBlindAnswers(newAnswers);
-
-    if (currentColorTest < colorBlindTests.length - 1) {
-      setCurrentColorTest(currentColorTest + 1);
-    }
+    setCurrentColorTest(Math.min(currentColorTest + 1, colorBlindTests.length));
   };
 
   // Hearing Test
@@ -89,7 +97,7 @@ export const VisionHearingLab: React.FC = () => {
       if (oscillatorRef.current) {
         try {
           oscillatorRef.current.stop();
-        } catch (e) {
+        } catch {
           // Oscillator may already be stopped
         }
         oscillatorRef.current = null;
@@ -98,7 +106,8 @@ export const VisionHearingLab: React.FC = () => {
       // Reuse existing audio context if available, otherwise create new one
       let audioContext = audioContextRef.current;
       if (!audioContext || audioContext.state === 'closed') {
-        audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const AudioContextConstructor = window.AudioContext || (window as Window & { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        audioContext = new AudioContextConstructor();
         audioContextRef.current = audioContext;
       }
 
@@ -130,8 +139,6 @@ export const VisionHearingLab: React.FC = () => {
       panner.connect(audioContext.destination);
 
       oscillatorRef.current = oscillator;
-      setCurrentFrequency(frequency);
-
       oscillator.start();
       oscillator.stop(audioContext.currentTime + 1); // Play for 1 second
 
@@ -148,8 +155,6 @@ export const VisionHearingLab: React.FC = () => {
 
   const handleHearingResponse = (heard: boolean) => {
     setWaitingForResponse(false);
-    setCurrentFrequency(null); // Reset frequency display
-
     if (hearingTestEar === 'left') {
       const newResponses = [...leftEarResponses, heard];
       setLeftEarResponses(newResponses);
@@ -167,15 +172,19 @@ export const VisionHearingLab: React.FC = () => {
     } else {
       const newResponses = [...rightEarResponses, heard];
       setRightEarResponses(newResponses);
-      if (heard) {
-        setDetectedFrequencies([...detectedFrequencies, testFrequencies[currentFreqIndex]]);
-      }
+      const newDetectedFrequencies = heard
+        ? [...detectedFrequencies, testFrequencies[currentFreqIndex]]
+        : detectedFrequencies;
+      setDetectedFrequencies(newDetectedFrequencies);
 
       if (currentFreqIndex < testFrequencies.length - 1) {
         setCurrentFreqIndex(currentFreqIndex + 1);
       } else {
         // Test complete
-        calculateResults();
+        calculateResults({
+          detectedFrequencies: newDetectedFrequencies,
+          rightEarResponses: newResponses,
+        });
       }
     }
   };
@@ -191,7 +200,12 @@ export const VisionHearingLab: React.FC = () => {
     setIsPlaying(false);
   };
 
-  const calculateResults = () => {
+  const calculateResults = (overrides?: {
+    detectedFrequencies?: number[];
+    rightEarResponses?: boolean[];
+  }) => {
+    const finalDetectedFrequencies = overrides?.detectedFrequencies ?? detectedFrequencies;
+    const finalRightEarResponses = overrides?.rightEarResponses ?? rightEarResponses;
     // Validate that we have enough data before calculating
     if (visionTestAnswers.length === 0 || colorBlindAnswers.length === 0) {
       // Allow calculating just hearing results if vision not done, or vice versa
@@ -202,9 +216,9 @@ export const VisionHearingLab: React.FC = () => {
     }
 
     let visionOverall = { overallScore: 0, recommendations: [] as string[] };
-    let visualAcuity: any = { snellenEquivalent: 'N/A' };
-    let colorBlindness: any = { type: 'N/A' };
-    let peripheralVision: any = { score: 0 };
+    let visualAcuity: VisualAcuityDisplay = { snellenEquivalent: 'N/A' };
+    let colorBlindness: ColorVisionDisplay = { type: 'N/A' };
+    const peripheralVision = null;
 
     // Vision results
     if (visionTestAnswers.length > 0) {
@@ -213,33 +227,24 @@ export const VisionHearingLab: React.FC = () => {
         visionTestAnswers.length
       );
 
+      const colorErrorPattern = deriveColorErrorPattern(
+        colorBlindAnswers,
+        colorBlindTests.map(test => test.category)
+      );
       colorBlindness = analyzeColorBlindness(
         colorBlindAnswers.filter(a => a).length,
         colorBlindAnswers.length,
-        { redGreen: 2, blueYellow: 1 } // Simplified error pattern
+        colorErrorPattern
       );
-
-      peripheralVision = peripheralAnswers.length > 0
-        ? analyzePeripheralVision(
-          peripheralAnswers.filter(a => a).length,
-          peripheralAnswers.length,
-          peripheralAnswers.filter(a => !a).length
-        )
-        : {
-          score: 100, // Default to normal if test not taken
-          blindSpots: 0,
-          fieldOfVision: 180,
-          interpretation: 'Peripheral vision test not completed.'
-        };
 
       visionOverall = calculateOverallVisionScore(visualAcuity, colorBlindness, peripheralVision);
     }
 
     // Hearing results
     const hearingResult = analyzeHearingTest(
-      detectedFrequencies.length > 0 ? detectedFrequencies : [],
+      finalDetectedFrequencies.length > 0 ? finalDetectedFrequencies : [],
       leftEarResponses,
-      rightEarResponses
+      finalRightEarResponses
     );
 
     const combinedResults = {
@@ -333,7 +338,13 @@ export const VisionHearingLab: React.FC = () => {
       </div>
 
       <div className="max-w-4xl mx-auto px-1 sm:px-4">
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="space-y-6">
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => {
+            if (value === 'vision' || value === 'hearing' || value === 'results') setActiveTab(value);
+          }}
+          className="space-y-6"
+        >
           <div className="flex justify-center max-w-md mx-auto">
             <TabsList className="grid w-full grid-cols-3 bg-slate-100 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 p-1 rounded-xl">
               <TabsTrigger
@@ -367,7 +378,9 @@ export const VisionHearingLab: React.FC = () => {
                   Visual Acuity Test
                 </CardTitle>
                 <CardDescription className="text-slate-600 dark:text-slate-400 text-xs">
-                  Identify the letters shown (Test {currentVisionLetter + 1} of {visionTestLetters.length})
+                  {visionTestAnswers.length >= visionTestLetters.length
+                    ? `Completed ${visionTestLetters.length} of ${visionTestLetters.length}`
+                    : `Identify the letters shown (Test ${currentVisionLetter + 1} of ${visionTestLetters.length})`}
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-6">
@@ -417,7 +430,9 @@ export const VisionHearingLab: React.FC = () => {
                     Color Discrimination Test (Ishihara Matrix)
                   </CardTitle>
                   <CardDescription className="text-slate-600 dark:text-slate-400 text-xs">
-                    Plate {currentColorTest + 1} of {colorBlindTests.length}
+                    {colorBlindAnswers.length >= colorBlindTests.length
+                      ? `Completed ${colorBlindTests.length} of ${colorBlindTests.length}`
+                      : `Plate ${currentColorTest + 1} of ${colorBlindTests.length}`}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="p-6">
@@ -426,7 +441,13 @@ export const VisionHearingLab: React.FC = () => {
                       <div className="flex items-center justify-center">
                         <div className="w-56 h-56 rounded-full bg-gradient-to-br from-red-400 via-green-400 to-blue-400 flex items-center justify-center relative overflow-hidden shadow-md ring-4 ring-slate-200/50 dark:ring-white/10">
                           {/* Noise overlay to simulate Ishihara plates */}
-                          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-50"></div>
+                          <div
+                            className="absolute inset-0 opacity-50"
+                            style={{
+                              backgroundImage: 'radial-gradient(circle at 25% 25%, rgba(255,255,255,.65) 0 2px, transparent 3px), radial-gradient(circle at 70% 60%, rgba(15,23,42,.25) 0 2px, transparent 3px)',
+                              backgroundSize: '18px 18px, 23px 23px',
+                            }}
+                          ></div>
                           <div className="relative z-10 text-white text-6xl font-black font-serif drop-shadow-lg select-none">
                             {colorBlindTests[currentColorTest].number}
                           </div>
@@ -594,7 +615,7 @@ export const VisionHearingLab: React.FC = () => {
                       </div>
                       <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-xl border border-blue-200/60 dark:border-blue-800/30">
                         <div className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-1">Peripheral</div>
-                        <div className="text-2xl font-black text-slate-900 dark:text-white">{results.vision.peripheralVision.score}%</div>
+                        <div className="text-xl font-black text-slate-900 dark:text-white">{results.vision.peripheralVision ? `${results.vision.peripheralVision.score}%` : 'Not tested'}</div>
                       </div>
                       <div className="bg-emerald-50 dark:bg-emerald-950/20 p-4 rounded-xl border border-emerald-200/60 dark:border-emerald-800/30">
                         <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 mb-1">Overall Vision Score</div>
