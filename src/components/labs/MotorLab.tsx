@@ -785,17 +785,14 @@ export const MotorLab: React.FC = () => {
 
     if (timerRef.current) window.clearInterval(timerRef.current);
     timerRef.current = window.setInterval(() => {
-      setTestDuration(prev => {
-        const next = +(prev + 0.1).toFixed(1);
-        testDurationRef.current = next;
-        if (next >= 5) {
-          // Ensure we set the final duration before stopping
-          testDurationRef.current = 5.0;
-          stopTest();
-          return 5;
-        }
-        return next;
-      });
+      // Increment via ref first — never call stopTest() inside a setState updater
+      const next = +(testDurationRef.current + 0.1).toFixed(1);
+      testDurationRef.current = next;
+      setTestDuration(next);
+      if (next >= 5.0) {
+        // Stop OUTSIDE the updater — direct call is safe here
+        stopTest();
+      }
     }, 100);
   }
 
