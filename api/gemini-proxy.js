@@ -117,6 +117,9 @@ export function parseAIJsonResponse(rawText, schema) {
   }
 }
 
+export function getGeminiModelName() {
+  return process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+}
 
 const MEDICINE_VISION_PROMPT = `You are a clinical OCR and pharmaceutical vision extraction engine.
 Analyze the provided image of a medicine (blister strip, box, label, bottle, or prescription).
@@ -299,8 +302,9 @@ export default async function handler(req, res) {
     }
 
     try {
+      const modelName = getGeminiModelName();
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const model = genAI.getGenerativeModel({ model: modelName });
 
     // Handle medicine-vision (multimodal image analysis)
     if (type === 'medicine-vision') {
@@ -371,8 +375,9 @@ export default async function handler(req, res) {
 
     return res.status(200).json({ result: text });
   } catch (error) {
-    // Log error message safely without leaking tokens, keys, medical metrics, or base64 images
-    console.error(`[AI Proxy Error - type: ${type}]:`, error.message || 'Unknown error');
+    // Log error message and status code safely without leaking tokens, keys, medical metrics, or base64 images
+    const statusCode = error.status || error.statusCode || error.status_code || error.code || 'UNKNOWN';
+    console.error(`[AI Proxy Error - type: ${type} - status: ${statusCode}]:`, error.message || 'Unknown error');
     return res.status(500).json({ error: 'AI service temporarily unavailable. Please try again.' });
   }
 }
