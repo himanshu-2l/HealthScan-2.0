@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Mic, MicOff, Square, TrendingUp, Activity, Brain, Download, FileText } from "lucide-react";
+import { Mic, MicOff, Square, TrendingUp, Activity, Brain, Download, FileText, RotateCcw } from "lucide-react";
 import { saveTestResult, generateTestResultId } from '@/services/healthDataService';
 import { HealthTestResult } from '@/types/health';
 import {
@@ -482,6 +482,9 @@ export const VoiceLab: React.FC = () => {
   const peakRms = useRef<number>(0);
   const peakF0 = useRef<number | null>(null);
   const peakJitter = useRef<number | null>(null);
+  const lastTelemetryFlushRef = useRef<number>(0);
+  const lastSpectrumFlushRef = useRef<number>(0);
+  const pointerDownTimeRef = useRef<number>(0);
 
   useEffect(() => {
     return () => {
@@ -593,7 +596,7 @@ export const VoiceLab: React.FC = () => {
         }
 
         const { f0: autocorrF0, rms } = autocorrelatePitch(dataArray, audioCtx.sampleRate);
-        setRms(rms);
+        // setRms throttled below
 
         let finalF0 = autocorrF0;
 
@@ -611,30 +614,46 @@ export const VoiceLab: React.FC = () => {
             if (rms > peakRms.current) peakRms.current = rms;
             if (finalF0 > (peakF0.current || 0)) peakF0.current = finalF0;
           }
-          setF0(finalF0);
 
+          let computedJitter: number | null = null;
           if (pitchHistory.current.length > 10) {
             const arr = pitchHistory.current;
             const deltas = arr.slice(1).map((v, i) => Math.abs(v - arr[i]));
             const mean = deltas.reduce((a, b) => a + b, 0) / deltas.length;
             const sd = Math.sqrt(deltas.reduce((a, b) => a + (b - mean) ** 2, 0) / deltas.length);
             const rel = mean === 0 ? 0 : sd / mean;
-            setJitter(rel);
+            computedJitter = rel;
 
             // Track peak jitter during recording
             if (isRecordingRef.current && (peakJitter.current === null || rel > peakJitter.current)) {
               peakJitter.current = rel;
             }
           }
+
+          const now = Date.now();
+          if (now - lastTelemetryFlushRef.current >= 150) {
+            lastTelemetryFlushRef.current = now;
+            setF0(finalF0);
+            setRms(rms);
+            if (computedJitter !== null) setJitter(computedJitter);
+          }
         } else {
-          setF0(null);
+          const now = Date.now();
+          if (now - lastTelemetryFlushRef.current >= 150) {
+            lastTelemetryFlushRef.current = now;
+            setF0(null);
+            setRms(rms);
+          }
         }
 
-        // Update visualizations
-
-        const spec = new Uint8Array(analyser.frequencyBinCount);
-        analyser.getByteFrequencyData(spec);
-        setSpectrum(spec);
+        // Throttle spectrum canvas redraw to ~25fps (every 40ms)
+        const now = Date.now();
+        if (now - lastSpectrumFlushRef.current >= 40) {
+          lastSpectrumFlushRef.current = now;
+          const spec = new Uint8Array(analyser.frequencyBinCount);
+          analyser.getByteFrequencyData(spec);
+          setSpectrum(spec);
+        }
 
         // Continue analysis loop
         audioFrameRef.current = requestAnimationFrame(analyzeAudio);
@@ -944,12 +963,29 @@ export const VoiceLab: React.FC = () => {
                   variant={isRecording ? "destructive" : permission === "granted" ? "default" : "secondary"}
                   size="lg"
                   disabled={isAnalyzing}
-                  onClick={permission === "granted" ? undefined : initAudio}
-                  onPointerDown={(event) => { event.preventDefault(); if (permission === "granted") startRecording(); }}
-                  onPointerUp={(event) => { event.preventDefault(); if (permission === "granted") stopRecording(); }}
-                  onPointerCancel={(event) => { event.preventDefault(); if (permission === "granted") stopRecording(); }}
+                  onClick={() => {
+                    if (permission !== "granted") {
+                      initAudio();
+                    } else if (isRecording) {
+                      stopRecording();
+                    }
+                  }}
+                  onPointerDown={(event) => {
+                    if (permission === "granted" && !isRecording) {
+                      pointerDownTimeRef.current = Date.now();
+                      startRecording();
+                    }
+                  }}
+                  onPointerUp={(event) => {
+                    if (permission === "granted" && isRecording) {
+                      const elapsed = Date.now() - pointerDownTimeRef.current;
+                      if (elapsed >= 1500) {
+                        stopRecording();
+                      }
+                    }
+                  }}
                   onContextMenu={(event) => event.preventDefault()}
-                  className={`relative min-w-[200px] h-14 rounded-2xl text-base font-semibold shadow-sm transition-all transform active:scale-95 touch-none select-none ${isRecording ? 'animate-pulse ring-4 ring-red-500/30 bg-red-600' : 'bg-teal-600 hover:bg-teal-700 text-white'
+                  className={`relative min-w-[200px] h-14 rounded-2xl text-base font-semibold shadow-sm transition-all transform active:scale-95 select-none ${isRecording ? 'animate-pulse ring-4 ring-red-500/30 bg-red-600' : 'bg-teal-600 hover:bg-teal-700 text-white'
                     }`}
                 >
                   {isAnalyzing ? (
@@ -960,12 +996,12 @@ export const VoiceLab: React.FC = () => {
                   ) : isRecording ? (
                     <>
                       <Square className="w-5 h-5 mr-2" />
-                      Release to Finish
+                      Tap to Stop ({recordingDuration.toFixed(1)}s)
                     </>
                   ) : permission === "granted" ? (
                     <>
                       <Mic className="w-5 h-5 mr-2" />
-                      Hold to Record
+                      Click or Hold to Record
                     </>
                   ) : (
                     <>
@@ -1102,13 +1138,28 @@ export const VoiceLab: React.FC = () => {
         <div className="max-w-4xl mx-auto">
           <Card ref={reportRef} className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm overflow-hidden">
             <CardHeader className="bg-slate-50/60 dark:bg-white/[0.02] border-b border-slate-200/80 dark:border-white/5 py-4">
-              <CardTitle className="text-slate-900 dark:text-white font-semibold text-lg flex items-center gap-2">
-                <FileText className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                Advanced Voice Biomarker Report
-              </CardTitle>
-              <CardDescription className="text-xs text-slate-500 dark:text-slate-400">
-                Acoustic analysis findings and risk screening
-              </CardDescription>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <CardTitle className="text-slate-900 dark:text-white font-semibold text-lg flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                    Advanced Voice Biomarker Report
+                  </CardTitle>
+                  <CardDescription className="text-xs text-slate-500 dark:text-slate-400">
+                    Acoustic analysis findings and risk screening
+                  </CardDescription>
+                </div>
+                <Button
+                  onClick={() => {
+                    setAnalysisResults(null);
+                    startRecording();
+                  }}
+                  size="sm"
+                  className="bg-teal-600 hover:bg-teal-700 text-white rounded-xl self-start sm:self-auto font-medium text-xs shadow-sm"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
+                  Retake Assessment
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="space-y-6 p-5 sm:p-6">
               <div className="text-xs text-slate-500 dark:text-slate-400">
@@ -1289,6 +1340,7 @@ Generated: ${new Date().toLocaleString()}
 
 function CanvasSpectrum({ data, height = 120 }: { data: Uint8Array; height?: number }) {
   const ref = useRef<HTMLCanvasElement | null>(null);
+  const drawRef = useRef<() => void>(() => {});
 
   const drawSpectrum = useCallback(() => {
     const canvas = ref.current;
@@ -1296,19 +1348,28 @@ function CanvasSpectrum({ data, height = 120 }: { data: Uint8Array; height?: num
 
     const w = canvas.clientWidth;
     const h = height;
-    canvas.width = w * window.devicePixelRatio;
-    canvas.height = h * window.devicePixelRatio;
+    if (w === 0 || h === 0) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    const targetW = Math.round(w * dpr);
+    const targetH = Math.round(h * dpr);
+
+    if (canvas.width !== targetW || canvas.height !== targetH) {
+      canvas.width = targetW;
+      canvas.height = targetH;
+    }
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    ctx.save();
+    ctx.scale(dpr, dpr);
     ctx.clearRect(0, 0, w, h);
 
     // Draw background grid
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
     ctx.lineWidth = 1;
-    for (let i = 0; i <= w; i += 20) {
+    for (let i = 0; i <= w; i += 25) {
       ctx.beginPath();
       ctx.moveTo(i, 0);
       ctx.lineTo(i, h);
@@ -1321,36 +1382,37 @@ function CanvasSpectrum({ data, height = 120 }: { data: Uint8Array; height?: num
       ctx.stroke();
     }
 
-    // Draw spectrum bars
-    const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '260 75% 55%';
-    const primary = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '260 75% 55%';
+    // Draw spectrum bars with teal-emerald medical gradient
     const gradient = ctx.createLinearGradient(0, 0, 0, h);
-    gradient.addColorStop(0, `hsl(${accent})`);
-    gradient.addColorStop(1, `hsl(${primary})`);
+    gradient.addColorStop(0, '#14B8A6');
+    gradient.addColorStop(1, '#0D9488');
     ctx.fillStyle = gradient;
 
     const N = data.length;
     for (let i = 0; i < w; i++) {
-      const idx = Math.floor((i / w) * N);
-      const mag = data[idx] / 255;
+      const idx = Math.floor((i / w) * (N / 2));
+      const mag = (data[idx] || 0) / 255;
       const barH = mag * h;
-      if (barH > 0.5) { // Only draw bars above threshold
+      if (barH > 0.5) {
         ctx.fillRect(i, h - barH, 1, barH);
       }
     }
 
     // Draw frequency labels
-    ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
-    ctx.font = "10px monospace";
+    ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+    ctx.font = "9px monospace";
     ctx.textAlign = "center";
     const frequencies = [100, 500, 1000, 2000, 4000];
     frequencies.forEach(freq => {
       const x = (freq / 4000) * w;
       if (x < w) {
-        ctx.fillText(`${freq}Hz`, x, h - 5);
+        ctx.fillText(`${freq}Hz`, x, h - 4);
       }
     });
+    ctx.restore();
   }, [data, height]);
+
+  drawRef.current = drawSpectrum;
 
   useEffect(() => {
     drawSpectrum();
@@ -1361,7 +1423,7 @@ function CanvasSpectrum({ data, height = 120 }: { data: Uint8Array; height?: num
     if (!canvas) return;
 
     const resizeObserver = new ResizeObserver(() => {
-      drawSpectrum();
+      drawRef.current();
     });
 
     resizeObserver.observe(canvas);
@@ -1369,7 +1431,7 @@ function CanvasSpectrum({ data, height = 120 }: { data: Uint8Array; height?: num
     return () => {
       resizeObserver.disconnect();
     };
-  }, [drawSpectrum]);
+  }, []);
 
   return (
     <div className="relative w-full h-full">

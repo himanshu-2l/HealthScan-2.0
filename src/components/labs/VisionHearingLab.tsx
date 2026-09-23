@@ -81,6 +81,14 @@ export const VisionHearingLab: React.FC = () => {
     const newAnswers = [...colorBlindAnswers, answer === colorBlindTests[currentColorTest].correct];
     setColorBlindAnswers(newAnswers);
     setCurrentColorTest(Math.min(currentColorTest + 1, colorBlindTests.length));
+
+    // Automatically compute vision results upon completing final plate
+    if (newAnswers.length >= colorBlindTests.length) {
+      calculateResults({
+        colorBlindAnswers: newAnswers,
+        switchTab: false
+      });
+    }
   };
 
   // Hearing Test
@@ -119,13 +127,6 @@ export const VisionHearingLab: React.FC = () => {
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
 
-      // Create stereo panner to direct sound to specific ear
-      const panner = audioContext.createStereoPanner();
-
-      // Set pan value: -1 = left ear, 1 = right ear, 0 = center
-      // This works with stereo speakers and Bluetooth headphones
-      panner.pan.value = hearingTestEar === 'left' ? -1 : 1;
-
       oscillator.frequency.value = frequency;
 
       // Fade in/out to avoid clicking sound
@@ -133,10 +134,17 @@ export const VisionHearingLab: React.FC = () => {
       gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.1);
       gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 1.0);
 
-      // Connect: oscillator -> gain -> panner -> destination
       oscillator.connect(gainNode);
-      gainNode.connect(panner);
-      panner.connect(audioContext.destination);
+
+      // Safe stereo panning or direct fallback
+      if (typeof audioContext.createStereoPanner === 'function') {
+        const panner = audioContext.createStereoPanner();
+        panner.pan.value = hearingTestEar === 'left' ? -1 : 1;
+        gainNode.connect(panner);
+        panner.connect(audioContext.destination);
+      } else {
+        gainNode.connect(audioContext.destination);
+      }
 
       oscillatorRef.current = oscillator;
       oscillator.start();
@@ -200,16 +208,39 @@ export const VisionHearingLab: React.FC = () => {
     setIsPlaying(false);
   };
 
+  const resetVisionTest = () => {
+    setVisionTestAnswers([]);
+    setColorBlindAnswers([]);
+    setCurrentVisionLetter(0);
+    setCurrentColorTest(0);
+  };
+
+  const resetHearingTest = () => {
+    stopHearingTest();
+    setDetectedFrequencies([]);
+    setLeftEarResponses([]);
+    setRightEarResponses([]);
+    setCurrentFreqIndex(0);
+    setHearingTestEar('left');
+    setWaitingForResponse(false);
+  };
+
   const calculateResults = (overrides?: {
     detectedFrequencies?: number[];
     rightEarResponses?: boolean[];
+    colorBlindAnswers?: boolean[];
+    visionAnswers?: boolean[];
+    switchTab?: boolean;
   }) => {
     const finalDetectedFrequencies = overrides?.detectedFrequencies ?? detectedFrequencies;
     const finalRightEarResponses = overrides?.rightEarResponses ?? rightEarResponses;
+    const finalVisionAnswers = overrides?.visionAnswers ?? visionTestAnswers;
+    const finalColorBlindAnswers = overrides?.colorBlindAnswers ?? colorBlindAnswers;
+
     // Validate that we have enough data before calculating
-    if (visionTestAnswers.length === 0 || colorBlindAnswers.length === 0) {
+    if (finalVisionAnswers.length === 0 || finalColorBlindAnswers.length === 0) {
       // Allow calculating just hearing results if vision not done, or vice versa
-      if (detectedFrequencies.length === 0 && leftEarResponses.length === 0) {
+      if (finalDetectedFrequencies.length === 0 && leftEarResponses.length === 0) {
         console.error('Cannot calculate results: insufficient data');
         return;
       }
@@ -221,19 +252,19 @@ export const VisionHearingLab: React.FC = () => {
     const peripheralVision = null;
 
     // Vision results
-    if (visionTestAnswers.length > 0) {
+    if (finalVisionAnswers.length > 0) {
       visualAcuity = calculateVisualAcuity(
-        visionTestAnswers.filter(a => a).length,
-        visionTestAnswers.length
+        finalVisionAnswers.filter(a => a).length,
+        finalVisionAnswers.length
       );
 
       const colorErrorPattern = deriveColorErrorPattern(
-        colorBlindAnswers,
+        finalColorBlindAnswers,
         colorBlindTests.map(test => test.category)
       );
       colorBlindness = analyzeColorBlindness(
-        colorBlindAnswers.filter(a => a).length,
-        colorBlindAnswers.length,
+        finalColorBlindAnswers.filter(a => a).length,
+        finalColorBlindAnswers.length,
         colorErrorPattern
       );
 
@@ -260,7 +291,9 @@ export const VisionHearingLab: React.FC = () => {
     };
 
     setResults(combinedResults);
-    setActiveTab('results');
+    if (overrides?.switchTab !== false) {
+      setActiveTab('results');
+    }
 
     // Save vision test if data exists
     if (visionTestAnswers.length > 0) {
@@ -472,17 +505,36 @@ export const VisionHearingLab: React.FC = () => {
                       </div>
                     </div>
                   ) : (
-                    <div className="text-center py-6 space-y-3">
+                    <div className="text-center py-6 space-y-4">
                       <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/30 rounded-xl flex items-center justify-center mx-auto">
                         <CheckCircle className="w-6 h-6" />
                       </div>
-                      <h3 className="text-lg font-bold text-slate-900 dark:text-white">Vision Assessment Complete</h3>
-                      <Button
-                        onClick={() => setActiveTab('hearing')}
-                        className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl shadow-sm font-semibold px-6"
-                      >
-                        Proceed to Hearing Test →
-                      </Button>
+                      <div>
+                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Vision Assessment Complete</h3>
+                        <p className="text-xs text-slate-500 mt-1">Your visual acuity and color vision responses have been recorded.</p>
+                      </div>
+                      <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
+                        <Button
+                          onClick={() => setActiveTab('results')}
+                          className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-sm font-semibold px-5"
+                        >
+                          View Vision Report 📊
+                        </Button>
+                        <Button
+                          onClick={() => setActiveTab('hearing')}
+                          className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl shadow-sm font-semibold px-5"
+                        >
+                          Proceed to Hearing Test →
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={resetVisionTest}
+                          className="rounded-xl border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/5 font-semibold text-xs text-slate-600 dark:text-slate-300"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
+                          Retake Vision Test
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </CardContent>
@@ -584,16 +636,36 @@ export const VisionHearingLab: React.FC = () => {
             {results ? (
               <Card className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm overflow-hidden">
                 <CardHeader className="bg-slate-50/60 dark:bg-white/[0.02] border-b border-slate-200/80 dark:border-white/5 py-4 px-6">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <div>
                       <CardTitle className="text-xl font-bold text-slate-900 dark:text-white">Vision & Hearing Assessment Results</CardTitle>
                       <CardDescription className="text-slate-600 dark:text-slate-400 text-xs mt-0.5">
                         Generated: {new Date(results.timestamp).toLocaleString()}
                       </CardDescription>
                     </div>
-                    <div className="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/30 px-3 py-1 rounded-full text-xs font-semibold">
-                      <TrendingUp className="w-3.5 h-3.5" />
-                      <span>Analysis Complete</span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={resetVisionTest}
+                        className="rounded-lg border-slate-200 dark:border-white/10 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                        Retake Vision
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={resetHearingTest}
+                        className="rounded-lg border-slate-200 dark:border-white/10 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                        Retake Hearing
+                      </Button>
+                      <div className="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/30 px-3 py-1 rounded-full text-xs font-semibold">
+                        <TrendingUp className="w-3.5 h-3.5" />
+                        <span>Analysis Complete</span>
+                      </div>
                     </div>
                   </div>
                 </CardHeader>

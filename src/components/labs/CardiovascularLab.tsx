@@ -24,7 +24,8 @@ import {
   Radio,
   Plus,
   Minus,
-  User
+  User,
+  RotateCcw
 } from 'lucide-react';
 import { 
   pulseDetector, 
@@ -84,6 +85,7 @@ export const CardiovascularLab: React.FC = () => {
   const testDurationRef = useRef(0);
   const lastBeatTimeRef = useRef<number | null>(null);
   const lastBeatTickRef = useRef<number>(0);
+  const lastUiUpdateRef = useRef<number>(0);
   const isBeatActiveRef = useRef<boolean>(false);
   const beatTimeoutRef = useRef<number | null>(null);
   const [age, setAge] = useState<number | string>(35);
@@ -292,6 +294,10 @@ export const CardiovascularLab: React.FC = () => {
     const renderWave = () => {
       if (waveCanvasRef.current) {
         const cvs = waveCanvasRef.current;
+        if (cvs.clientWidth > 0 && (cvs.width !== cvs.clientWidth || cvs.height !== cvs.clientHeight)) {
+          cvs.width = cvs.clientWidth;
+          cvs.height = cvs.clientHeight;
+        }
         const ctx = cvs.getContext('2d');
         if (ctx) {
           ctx.clearRect(0, 0, cvs.width, cvs.height);
@@ -433,16 +439,24 @@ export const CardiovascularLab: React.FC = () => {
     // Start pulse detection
     pulseDetector.start(
       (bpm, conf, intervals, currentSpo2, fingerActive, isBeat) => {
-        setHeartRate(bpm);
         heartRateRef.current = bpm;
-        setConfidence(conf);
         confidenceRef.current = conf;
         if (currentSpo2 !== undefined && currentSpo2 > 0) {
-          setSpo2(currentSpo2);
           spo2Ref.current = currentSpo2;
         }
-        if (fingerActive !== undefined) {
-          setFingerDetected(fingerActive);
+
+        // Throttle React state updates so we do not re-render at 60 FPS
+        const now = Date.now();
+        if (isBeat || now - lastUiUpdateRef.current >= 250) {
+          lastUiUpdateRef.current = now;
+          setHeartRate(bpm);
+          setConfidence(conf);
+          if (currentSpo2 !== undefined && currentSpo2 > 0) {
+            setSpo2(currentSpo2);
+          }
+          if (fingerActive !== undefined) {
+            setFingerDetected(fingerActive);
+          }
         }
 
         // Real-time physiological beat detected!
@@ -1134,13 +1148,28 @@ export const CardiovascularLab: React.FC = () => {
       {results && (
         <Card className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm overflow-hidden max-w-4xl mx-auto">
           <CardHeader className="bg-slate-50/60 dark:bg-white/[0.02] border-b border-slate-200/80 dark:border-white/5 py-4">
-            <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white text-lg">
-              <TrendingUp className="w-5 h-5 text-teal-600 dark:text-teal-400" />
-              Cardiovascular Assessment Report
-            </CardTitle>
-            <CardDescription className="text-xs text-slate-500 dark:text-slate-400">
-              Generated: {new Date(results.timestamp).toLocaleString()} • Assessment Duration: {results.testDuration}s
-            </CardDescription>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white text-lg">
+                  <TrendingUp className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+                  Cardiovascular Assessment Report
+                </CardTitle>
+                <CardDescription className="text-xs text-slate-500 dark:text-slate-400">
+                  Generated: {new Date(results.timestamp).toLocaleString()} • Assessment Duration: {results.testDuration}s
+                </CardDescription>
+              </div>
+              <Button
+                onClick={() => {
+                  setResults(null);
+                  startTest();
+                }}
+                size="sm"
+                className="bg-teal-600 hover:bg-teal-700 text-white rounded-xl self-start sm:self-auto font-medium text-xs shadow-sm"
+              >
+                <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
+                Retake Assessment
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-6 p-5 sm:p-6">
             {/* 5 Key Metrics: HR, SpO2, HRV, BP, Risk */}

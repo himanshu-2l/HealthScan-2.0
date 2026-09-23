@@ -5,7 +5,7 @@ import { HAND_CONNECTIONS } from "@mediapipe/hands";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Camera as CameraIcon, Play, FileText, Activity } from "lucide-react";
+import { Camera as CameraIcon, Play, FileText, Activity, RotateCcw } from "lucide-react";
 import { saveTestResult, generateTestResultId } from '@/services/healthDataService';
 import { HealthTestResult } from '@/types/health';
 import { robustStatistics } from '@/utils/statisticalAccuracy';
@@ -23,6 +23,8 @@ import {
 
 const WASM_PATH = "/models/mediapipe/wasm";
 const MODEL_PATH = "/models/hand_landmarker.task";
+const CDN_WASM_PATH = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm";
+const CDN_MODEL_PATH = "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task";
 
 let globalHandLandmarker: HandLandmarker | undefined;
 let globalLastVideoTime = -1;
@@ -634,8 +636,6 @@ export const MotorLab: React.FC = () => {
   const [thresholdFraction] = useState(0.05);
   const [handsDetected, setHandsDetected] = useState(0);
   const [lastDistancePx, setLastDistancePx] = useState<number | null>(null);
-  const [, setTapDetectedFrame] = useState(false);
-  const [, setTremorSamples] = useState<TremorSample[]>([]);
   const [analysisResults, setAnalysisResults] = useState<MotorAnalysisResults | null>(null);
 
   // Ref for the report section to enable auto-scroll
@@ -658,6 +658,10 @@ export const MotorLab: React.FC = () => {
   const tapIntervalsRef = useRef<number[]>([]);
   const tremorSamplesRef = useRef<TremorSample[]>([]);
   const lastTapTimeRef = useRef<number | null>(null);
+  const lastHandsDetectedRef = useRef(0);
+  const lastDistanceUpdateRef = useRef(0);
+  const drawingUtilsRef = useRef<DrawingUtils | null>(null);
+  const drawingUtilsCtxRef = useRef<CanvasRenderingContext2D | null>(null);
   const timerRef = useRef<number | null>(null);
   const renderLoopStartedRef = useRef(false);
   const isRecordingRef = useRef(false);
@@ -682,18 +686,30 @@ export const MotorLab: React.FC = () => {
     (async () => {
       try {
         setStatus("Loading ML runtime + model...");
-        const vision = await FilesetResolver.forVisionTasks(WASM_PATH);
-        const landmarker = await HandLandmarker.createFromOptions(vision, {
-          baseOptions: { modelAssetPath: MODEL_PATH },
-          runningMode: "VIDEO",
-          numHands: 2,
-        });
+        let vision;
+        let landmarker;
+        try {
+          vision = await FilesetResolver.forVisionTasks(WASM_PATH);
+          landmarker = await HandLandmarker.createFromOptions(vision, {
+            baseOptions: { modelAssetPath: MODEL_PATH },
+            runningMode: "VIDEO",
+            numHands: 2,
+          });
+        } catch (localErr) {
+          console.warn("Local model loading failed, trying CDN fallback:", localErr);
+          vision = await FilesetResolver.forVisionTasks(CDN_WASM_PATH);
+          landmarker = await HandLandmarker.createFromOptions(vision, {
+            baseOptions: { modelAssetPath: CDN_MODEL_PATH },
+            runningMode: "VIDEO",
+            numHands: 2,
+          });
+        }
         globalHandLandmarker = landmarker;
         if (!mounted) return;
         setStatus('Model loaded. Click "Enable Camera" to begin motor assessment');
       } catch (err) {
         console.error("Model init error:", err);
-        setStatus("Failed to load the local motor-analysis model. Reload the app and try again.");
+        setStatus("Failed to load motor-analysis model. Please check network and reload.");
       }
     })();
     return () => {
@@ -803,14 +819,13 @@ export const MotorLab: React.FC = () => {
       const finalTremorSamples = tremorSamplesRef.current;
 
       const hasSufficientMotorData =
-        finalDuration >= 4.5 &&
-        finalTaps >= 3 &&
-        finalTapIntervals.length >= 2 &&
-        finalTremorSamples.length >= 30;
+        (finalDuration >= 2.5 || finalTaps >= 3) &&
+        finalTaps >= 2 &&
+        finalTapIntervals.length >= 1;
 
       if (!hasSufficientMotorData) {
         setAnalysisResults(null);
-        setStatus('Not enough hand-tracking data for a report. Keep your hand visible and complete at least 3 clear finger taps, then retry.');
+        setStatus('Not enough motor data for a report. Perform at least 2 clear finger taps during the test, then retry.');
         return;
       }
 
@@ -978,8 +993,12 @@ export const MotorLab: React.FC = () => {
       canvas.height = video.videoHeight;
     }
 
-    // 👇 ADD THIS LINE to create an instance of DrawingUtils
-    const drawingUtils = new DrawingUtils(ctx);
+    // Reuse DrawingUtils instance across frames to prevent memory churn
+    if (!drawingUtilsRef.current || drawingUtilsCtxRef.current !== ctx) {
+      drawingUtilsRef.current = new DrawingUtils(ctx);
+      drawingUtilsCtxRef.current = ctx;
+    }
+    const drawingUtils = drawingUtilsRef.current;
 
     try {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -990,7 +1009,10 @@ export const MotorLab: React.FC = () => {
         globalLastVideoTime = video.currentTime;
         const results = globalHandLandmarker.detectForVideo(video, performance.now());
         const landmarksArray = results?.landmarks ?? [];
-        setHandsDetected(landmarksArray.length);
+        if (lastHandsDetectedRef.current !== landmarksArray.length) {
+          lastHandsDetectedRef.current = landmarksArray.length;
+          setHandsDetected(landmarksArray.length);
+        }
 
         if (landmarksArray.length > 0) {
           let minDist = Infinity;
@@ -1027,17 +1049,19 @@ export const MotorLab: React.FC = () => {
 
           // Only process tap detection when recording
           if (isRecordingRef.current) {
-            setTapDetectedFrame(false);
-            setLastDistancePx(null);
-
-            if (tremorSamplesRef.current.length > 300) tremorSamplesRef.current.splice(0, tremorSamplesRef.current.length - 300);
-            setTremorSamples([...tremorSamplesRef.current]);
+            if (tremorSamplesRef.current.length > 300) {
+              tremorSamplesRef.current.splice(0, tremorSamplesRef.current.length - 300);
+            }
 
             if (minDist !== Infinity) {
-              setLastDistancePx(Math.round(minDist));
+              const now = Date.now();
+              if (now - lastDistanceUpdateRef.current >= 150) {
+                lastDistanceUpdateRef.current = now;
+                setLastDistancePx(Math.round(minDist));
+              }
+
               const TAP_THRESHOLD_PX = Math.min(video.videoWidth, video.videoHeight) * thresholdFraction;
               if (minDist < TAP_THRESHOLD_PX) {
-                setTapDetectedFrame(true);
                 registerTap();
               }
             }
@@ -1124,6 +1148,29 @@ export const MotorLab: React.FC = () => {
         </div>
       </div>
 
+      {/* Tap Target Pad when recording */}
+      {isRecording && (
+        <div className="max-w-4xl mx-auto">
+          <div
+            onClick={registerTap}
+            onTouchStart={(e) => { e.preventDefault(); registerTap(); }}
+            className="cursor-pointer select-none bg-gradient-to-r from-teal-500/10 via-emerald-500/10 to-teal-500/10 border-2 border-dashed border-teal-500/50 hover:border-teal-500 active:scale-[0.98] transition-all rounded-2xl p-5 text-center shadow-sm"
+          >
+            <div className="flex items-center justify-center gap-3">
+              <span className="text-2xl animate-bounce">👆</span>
+              <div>
+                <p className="text-sm sm:text-base font-bold text-teal-700 dark:text-teal-300">
+                  Interactive Tap Pad • Click or Touch Rapidly
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Pinch fingers in front of camera OR tap this pad directly ({fingerTaps} taps registered)
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Video + Metrics */}
       <div className="grid lg:grid-cols-2 gap-6 max-w-4xl mx-auto">
         {/* Camera Feed */}
@@ -1195,13 +1242,28 @@ export const MotorLab: React.FC = () => {
         <div className="max-w-4xl mx-auto">
           <Card ref={reportRef} className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm overflow-hidden">
             <CardHeader className="bg-slate-50/60 dark:bg-white/[0.02] border-b border-slate-200/80 dark:border-white/5 py-4">
-              <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white font-semibold text-lg">
-                <FileText className="w-5 h-5 text-teal-600 dark:text-teal-400" />
-                Advanced Motor Function Report
-              </CardTitle>
-              <CardDescription className="text-xs text-slate-500 dark:text-slate-400">
-                Quantitative motor control, frequency spectrum, and tremor evaluation
-              </CardDescription>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white font-semibold text-lg">
+                    <FileText className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+                    Advanced Motor Function Report
+                  </CardTitle>
+                  <CardDescription className="text-xs text-slate-500 dark:text-slate-400">
+                    Quantitative motor control, frequency spectrum, and tremor evaluation
+                  </CardDescription>
+                </div>
+                <Button
+                  onClick={() => {
+                    setAnalysisResults(null);
+                    startTest();
+                  }}
+                  size="sm"
+                  className="bg-teal-600 hover:bg-teal-700 text-white rounded-xl self-start sm:self-auto font-medium text-xs shadow-sm"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
+                  Retake Assessment
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="space-y-6 p-5 sm:p-6">
               <div className="text-xs text-slate-500 dark:text-slate-400">
