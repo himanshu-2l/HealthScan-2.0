@@ -35,17 +35,22 @@ import {
 import { pulseAudio } from '@/utils/pulseAudio';
 import { calculateHRV, estimateBloodPressure, calculateCardiovascularRisk } from '@/utils/hrvAnalysis';
 import { saveTestResult, generateTestResultId } from '@/services/healthDataService';
-import { HealthTestResult } from '@/types/health';
+import { HealthTestResult, ClinicalDataProvenance } from '@/types/health';
 
 interface CardiovascularResults {
   timestamp: string;
   heartRate: number;
-  spo2?: number;
+  spo2?: number | null;
   hrvMetrics: ReturnType<typeof calculateHRV>;
   estimatedBP: { systolic: number; diastolic: number; confidence: number };
   riskAssessment: ReturnType<typeof calculateCardiovascularRisk>;
   testDuration: number;
   confidence: number;
+  provenance?: {
+    heartRate: ClinicalDataProvenance;
+    spo2: ClinicalDataProvenance;
+    hrv: ClinicalDataProvenance;
+  };
 }
 
 export const CardiovascularLab: React.FC = () => {
@@ -112,14 +117,14 @@ export const CardiovascularLab: React.FC = () => {
   };
 
   // Trigger pulse sound ("brap/bip" medical audio) and visual systolic pulsation
-  const triggerPulseBeat = useCallback((currentSpo2?: number) => {
+  const triggerPulseBeat = useCallback((currentSpo2?: number | null) => {
     const now = Date.now();
     // Guard against firing faster than physiological maximum (<= 220 BPM = 270ms)
     if (now - lastBeatTickRef.current < 270) return;
     lastBeatTickRef.current = now;
 
-    // 1. Play clinical "bip/brap" pulse audio tone
-    pulseAudio.playBeat(currentSpo2 || spo2 || 98);
+    // 1. Play clinical "bip/brap" pulse audio tone (null defaults to neutral tone without fake SpO2 pitch)
+    pulseAudio.playBeat(currentSpo2 !== undefined && currentSpo2 !== null ? currentSpo2 : (spo2 ?? null));
 
     // 2. Set visual pulse active state
     setIsBeatActive(true);
@@ -457,7 +462,7 @@ export const CardiovascularLab: React.FC = () => {
       if (currentBpm) {
         const beatIntervalMs = 60000 / currentBpm;
         if (Date.now() - lastBeatTickRef.current >= beatIntervalMs) {
-          triggerPulseBeat(spo2 || 98);
+          triggerPulseBeat(spo2 ?? null);
         }
       }
 
@@ -509,20 +514,25 @@ export const CardiovascularLab: React.FC = () => {
       return;
     }
 
-    const finalSpo2 = spo2 || pulseDetector.getLatestSpo2() || 98;
-
-    // Ensure we have sufficient physiological RR intervals for HRV metrics
+    // Clinical Safety: Insufficient genuine cardiac beats must NEVER be supplemented with synthetic data
     if (rrIntervalsRef.current.length < 10) {
-      const baseRR = 60000 / finalBpm;
-      const targetCount = 35;
-      for (let i = rrIntervalsRef.current.length; i < targetCount; i++) {
-        // Natural physiological sinus arrhythmia variation (±3-5%)
-        const naturalJitter = (Math.sin(i * 0.4) * 0.04 + (Math.random() - 0.5) * 0.02) * baseRR;
-        rrIntervalsRef.current.push(Math.round(baseRR + naturalJitter));
-      }
+      setStatus(
+        'Insufficient cardiac beat signals detected (fewer than 10 valid beats recorded). ' +
+        'Cannot compute clinical HRV or cardiovascular risk from insufficient data. ' +
+        'Please ensure steady sensor contact and repeat the measurement.'
+      );
+      setResults(null);
+      setIsRecording(false);
+      return;
     }
 
-    // Calculate HRV metrics
+    // SpO2: Use genuine optical estimate or explicit null (never fabricate a fake normal 98% fallback)
+    const detectedSpo2 = spo2 ?? pulseDetector.getLatestSpo2();
+    const finalSpo2 = (typeof detectedSpo2 === 'number' && !isNaN(detectedSpo2) && detectedSpo2 >= 50 && detectedSpo2 <= 100)
+      ? detectedSpo2
+      : null;
+
+    // Calculate HRV metrics strictly from genuine detected cardiac intervals
     const hrvMetrics = calculateHRV(rrIntervalsRef.current);
 
     // Estimate blood pressure
@@ -549,7 +559,12 @@ export const CardiovascularLab: React.FC = () => {
       estimatedBP,
       riskAssessment,
       testDuration: Math.round(testDuration),
-      confidence
+      confidence,
+      provenance: {
+        heartRate: 'MEASURED',
+        spo2: finalSpo2 !== null ? 'ESTIMATED' : 'UNAVAILABLE',
+        hrv: 'MEASURED'
+      }
     };
 
     setResults(cardiovascularResults);
@@ -568,6 +583,7 @@ export const CardiovascularLab: React.FC = () => {
           heartRate: finalBpm,
           spo2: finalSpo2,
           hrv: hrvMetrics.rmssd || hrvMetrics.sdnn,
+          provenance: cardiovascularResults.provenance
         },
         score: 100 - riskAssessment.riskScore,
         maxScore: 100,
@@ -575,7 +591,7 @@ export const CardiovascularLab: React.FC = () => {
         riskLevel: riskAssessment.riskLevel === 'low' ? 'low' :
           riskAssessment.riskLevel === 'moderate' ? 'medium' :
             riskAssessment.riskLevel === 'high' ? 'high' : 'critical',
-        interpretation: `Heart Rate: ${finalBpm} BPM | SpO2: ${finalSpo2}% | HRV Score: ${hrvMetrics.hrvScore}/100 | Risk Level: ${riskAssessment.riskLevel}`,
+        interpretation: `Heart Rate: ${finalBpm} BPM | SpO2: ${finalSpo2 !== null ? `${finalSpo2}% (Optical Estimate)` : 'Unavailable'} | HRV Score: ${hrvMetrics.hrvScore}/100 | Risk Level: ${riskAssessment.riskLevel}`,
         recommendations: riskAssessment.recommendations,
         duration: testDuration * 1000,
         status: 'final',
@@ -964,7 +980,7 @@ export const CardiovascularLab: React.FC = () => {
                 </div>
                 <div className="bg-slate-50 dark:bg-white/[0.03] p-2.5 rounded-xl border border-slate-200/60 dark:border-white/5">
                   <div className="text-xs text-slate-500 dark:text-slate-400">Estimated SpO2</div>
-                  <span className="text-teal-600 dark:text-teal-400 font-bold text-lg">{spo2 || 98}%</span>
+                  <span className="text-teal-600 dark:text-teal-400 font-bold text-lg">{spo2 !== null && spo2 !== undefined ? `${spo2}%` : '--'}</span>
                 </div>
                 <div className="col-span-2 text-xs text-slate-500 dark:text-slate-400">
                   Elapsed: <span className="font-semibold text-slate-700 dark:text-slate-300">{testDuration.toFixed(1)}s</span> (Recommended: 30s-60s)
@@ -1028,8 +1044,8 @@ export const CardiovascularLab: React.FC = () => {
                     {/* SpO2 Blood Oxygen Card */}
                     <div className="text-center p-4 bg-teal-50 dark:bg-teal-950/20 rounded-xl border border-teal-200/60 dark:border-teal-800/30">
                       <div className="text-xs font-semibold text-teal-700 dark:text-teal-300 uppercase tracking-wider mb-1">Blood Oxygen</div>
-                      <div className="text-4xl font-extrabold text-teal-600 dark:text-teal-400 font-mono">{spo2 || 98}%</div>
-                      <div className="text-[11px] text-teal-600/70 dark:text-teal-300/70">SpO2 Saturation</div>
+                      <div className="text-4xl font-extrabold text-teal-600 dark:text-teal-400 font-mono">{spo2 !== null && spo2 !== undefined ? `${spo2}%` : '--'}</div>
+                      <div className="text-[11px] text-teal-600/70 dark:text-teal-300/70">{spo2 !== null && spo2 !== undefined ? 'SpO2 (Optical Est.)' : 'SpO2 Unavailable'}</div>
                     </div>
                   </div>
 
@@ -1119,7 +1135,8 @@ export const CardiovascularLab: React.FC = () => {
 
               <div className="text-center p-3.5 rounded-xl bg-teal-50 dark:bg-teal-950/20 border border-teal-200/60 dark:border-teal-800/30">
                 <div className="text-[11px] font-semibold text-teal-700 dark:text-teal-300 uppercase tracking-wider mb-1">Blood Oxygen</div>
-                <div className="text-xl font-bold text-teal-700 dark:text-teal-300 font-mono">{results.spo2 || 98}% SpO2</div>
+                <div className="text-xl font-bold text-teal-700 dark:text-teal-300 font-mono">{results.spo2 !== null && results.spo2 !== undefined ? `${results.spo2}% SpO2` : 'Unavailable'}</div>
+                <div className="text-[10px] text-teal-600/70 dark:text-teal-300/70">{results.spo2 !== null && results.spo2 !== undefined ? 'Optical Estimate' : 'Not Recorded'}</div>
               </div>
 
               <div className="text-center p-3.5 rounded-xl bg-blue-50 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-800/30">
