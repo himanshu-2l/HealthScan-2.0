@@ -671,7 +671,7 @@ export const QuickScanModal: React.FC<QuickScanModalProps> = ({
           hrv: heartHrv !== null ? 'MEASURED' : 'UNAVAILABLE',
           voice: 'MEASURED',
           motor: 'MEASURED'
-        }
+        } as Record<string, ClinicalDataProvenance>
       },
       recommendations: [
         heartHrv !== null
@@ -966,16 +966,16 @@ export const QuickScanModal: React.FC<QuickScanModalProps> = ({
                     {heartHrv !== null ? `${heartHrv} ms` : '--'}
                   </div>
                   <div className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5">
-                    {heartHrv !== null ? '● Parasympathetic Tone Recorded' : '○ Acquiring Cardiac Peaks'}
+                    {heartHrv !== null ? '● RMSSD Calculated from Peaks' : '○ Acquiring Cardiac Peaks'}
                   </div>
                 </div>
                 <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.06] shadow-sm">
-                  <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-medium">Cardiac Rhythm</div>
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-medium">Pulse Tracking</div>
                   <div className="text-base font-bold text-slate-900 dark:text-white mt-0.5">
-                    {heartBpm !== null ? 'Normal Sinus' : 'Awaiting Signal'}
+                    {heartBpm !== null ? 'Optical Pulse Detected' : 'Awaiting Signal'}
                   </div>
                   <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                    {heartBpm !== null ? 'Capillary pulsatile inflow verified' : 'No optical peaks registered'}
+                    {heartBpm !== null ? 'Periodic PPG waveform tracked' : 'No optical peaks registered'}
                   </div>
                 </div>
               </div>
@@ -1156,7 +1156,7 @@ export const QuickScanModal: React.FC<QuickScanModalProps> = ({
                         <div className="text-xs font-bold text-slate-900 dark:text-white">Cardiovascular Vitals</div>
                         <div className="text-[11px] text-slate-500 dark:text-slate-400">
                           {heartBpm !== null
-                            ? `Pulse ${heartBpm} bpm • ${heartHrv !== null ? `RMSSD ${heartHrv} ms` : 'HRV Unavailable'} • Sinus Rhythm`
+                            ? `Pulse ${heartBpm} bpm • ${heartHrv !== null ? `RMSSD ${heartHrv} ms` : 'HRV Unavailable'} • Optical PPG`
                             : 'Pulse Unavailable • Sensor signal insufficient'}
                         </div>
                       </div>

@@ -89,7 +89,7 @@ function calculateHRV(rrIntervals) {
     sdnn: Math.round(sdnn),
     pnn50: Math.round(pnn50),
     isValid: true,
-    interpretation: 'Valid sinus rhythm HRV'
+    interpretation: 'Valid beat-to-beat HRV'
   };
 }
 
@@ -177,7 +177,7 @@ runTest('TEST 5: Genuine physiological RR intervals compute authentic HRV metric
   assert.strictEqual(hrv.isValid, true);
   assert.ok(hrv.rmssd >= 15 && hrv.rmssd <= 60, `RMSSD ${hrv.rmssd}ms should be in physiological range`);
   assert.ok(hrv.sdnn >= 10 && hrv.sdnn <= 50, `SDNN ${hrv.sdnn}ms should be in physiological range`);
-  assert.strictEqual(hrv.interpretation, 'Valid sinus rhythm HRV');
+  assert.strictEqual(hrv.interpretation, 'Valid beat-to-beat HRV');
 });
 
 // ---------------------------------------------------------
