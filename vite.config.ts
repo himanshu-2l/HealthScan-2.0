@@ -39,7 +39,7 @@ export default defineConfig({
           'vendor-pdf': ['jspdf', 'jspdf-autotable'],
           'vendor-query': ['@tanstack/react-query'],
           'vendor-ml': ['@tensorflow/tfjs', '@tensorflow/tfjs-backend-webgl', '@tensorflow-models/pose-detection'],
-          'vendor-mediapipe': ['@mediapipe/tasks-vision', '@mediapipe/hands'],
+          'vendor-mediapipe': ['@mediapipe/tasks-vision'],
         },
       },
     },

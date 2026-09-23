@@ -1,7 +1,6 @@
 // MotorLabWithReport_Fixed.tsx
 import React, { useEffect, useRef, useState } from "react";
 import { HandLandmarker, FilesetResolver, DrawingUtils } from "@mediapipe/tasks-vision";
-import { HAND_CONNECTIONS } from "@mediapipe/hands";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -1024,10 +1023,7 @@ export const MotorLab: React.FC = () => {
               lineWidth: 2,
               radius: 5,
             });
-            const connections: { start: number; end: number }[] =
-              HAND_CONNECTIONS.map(([start, end]) => ({ start, end }));
-
-            drawingUtils.drawConnectors(lm, connections, {
+            drawingUtils.drawConnectors(lm, HandLandmarker.HAND_CONNECTIONS, {
               color: "#00FF00",
               lineWidth: 5,
             });
