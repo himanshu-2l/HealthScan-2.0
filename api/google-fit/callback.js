@@ -47,7 +47,7 @@ export default async function handler(req, res) {
       google = googleapisModule.google || googleapisModule.default?.google || googleapisModule.default || googleapisModule;
     } catch (importError) {
       console.error('Failed to import googleapis:', importError.message);
-      return res.redirect(`${frontendUrl}/dashboard?error=server_error&message=${encodeURIComponent('googleapis library not available')}`);
+      return res.redirect(`${frontendUrl}/dashboard?error=server_error`);
     }
 
     const baseUrl = frontendUrl;
@@ -66,6 +66,6 @@ export default async function handler(req, res) {
     return res.redirect(`${frontendUrl}/dashboard?google_fit=connected`);
   } catch (error) {
     console.error('Google OAuth callback error:', error);
-    return res.redirect(`${frontendUrl}/dashboard?error=auth_failed&message=${encodeURIComponent(error.message || 'Unknown error')}`);
+    return res.redirect(`${frontendUrl}/dashboard?error=auth_failed`);
   }
 }

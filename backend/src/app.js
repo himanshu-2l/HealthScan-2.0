@@ -187,9 +187,7 @@ app.use('/api/google-fit', googleFitRoutes);
 // Google OAuth callback endpoint with CSRF state verification
 app.get('/auth/google/callback', async (req, res) => {
   const { code, state } = req.query;
-  const referer = req.get('referer') || '';
-  const frontendPort = referer.includes('5173') ? '5173' : '5174';
-  const baseUrl = `http://localhost:${frontendPort}`;
+  const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 
   if (!code) {
     return res.redirect(`${baseUrl}/dashboard?error=no_code`);
@@ -226,7 +224,7 @@ app.get('/auth/google/callback', async (req, res) => {
     return res.redirect(`${baseUrl}/dashboard?google_fit=connected`);
   } catch (error) {
     console.error('OAuth callback error:', error);
-    return res.redirect(`${baseUrl}/dashboard?error=auth_failed&message=${encodeURIComponent(error.message || 'OAuth failed')}`);
+    return res.redirect(`${baseUrl}/dashboard?error=auth_failed`);
   }
 });
 

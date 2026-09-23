@@ -15,6 +15,10 @@ Create a `.env` file in the project root with the following variables:
 ```env
 # Server-Side Gemini AI API Key
 GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_MODEL=gemini-2.5-flash
+
+# Frontend & OAuth URL Configuration
+FRONTEND_URL=http://localhost:5173
 
 # ABDM (Ayushman Bharat Digital Mission) Configuration
 VITE_ABDM_BASE_URL=https://dev.abdm.gov.in/gateway
