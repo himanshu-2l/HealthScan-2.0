@@ -1,62 +1,72 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
+import { z } from 'zod';
+import mongoose from 'mongoose';
 import User from '../models/User.js';
 import { generateToken, requireAuth } from '../middleware/auth.js';
 import { authLimiter } from '../middleware/rateLimiter.js';
-import mongoose from 'mongoose';
 
 const router = express.Router();
 
-// Resilient in-memory fallback for local development or when MongoDB is disconnected
-const inMemoryUsers = new Map([
-  [
-    'alex.mercer@healthscan.io',
-    {
-      uid: 'demo-user-healthscan',
-      email: 'alex.mercer@healthscan.io',
-      name: 'Dr. Alex Mercer',
-      role: 'doctor',
-      passwordHash: bcrypt.hashSync('Password123!', 10),
-      createdAt: new Date().toISOString()
-    }
-  ],
-  [
-    'alex.rivera@abdm',
-    {
-      uid: 'demo-patient-healthscan',
-      email: 'alex.rivera@abdm',
-      name: 'Alex Rivera',
-      role: 'patient',
-      passwordHash: bcrypt.hashSync('Password123!', 10),
-      createdAt: new Date().toISOString()
-    }
-  ]
-]);
+const isDemoAuthEnabled = () => process.env.NODE_ENV !== 'production' && process.env.ENABLE_DEMO_AUTH === 'true';
+
+// Seed demo users only when non-production and explicit ENABLE_DEMO_AUTH=true
+const createDemoUsersMap = () => {
+  if (!isDemoAuthEnabled()) {
+    return new Map();
+  }
+  return new Map([
+    [
+      'alex.mercer@healthscan.io',
+      {
+        uid: 'demo-user-healthscan',
+        email: 'alex.mercer@healthscan.io',
+        name: 'Dr. Alex Mercer',
+        role: 'doctor',
+        passwordHash: bcrypt.hashSync('Password123!', 10),
+        createdAt: new Date().toISOString()
+      }
+    ],
+    [
+      'alex.rivera@abdm',
+      {
+        uid: 'demo-patient-healthscan',
+        email: 'alex.rivera@abdm',
+        name: 'Alex Rivera',
+        role: 'patient',
+        passwordHash: bcrypt.hashSync('Password123!', 10),
+        createdAt: new Date().toISOString()
+      }
+    ]
+  ]);
+};
+
+const inMemoryUsers = createDemoUsersMap();
 
 const isMongoConnected = () => mongoose.connection.readyState === 1;
 
+const registerSchema = z.object({
+  name: z.string().trim().min(2, { message: 'Name must be at least 2 characters long' }),
+  email: z.string().trim().email({ message: 'A valid email address is required' }),
+  password: z.string().min(8, { message: 'Password must be at least 8 characters long' })
+});
+
 /**
  * POST /api/auth/register
- * Register a new user with name, email, password, and role
+ * Register a new user with name, email, password (role is always assigned as 'patient')
  */
 router.post('/register', authLimiter, async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
-
-    if (!name || typeof name !== 'string' || name.trim().length < 2) {
-      return res.status(400).json({ error: 'Name must be at least 2 characters long' });
+    const parseResult = registerSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      const firstError = parseResult.error.errors[0]?.message || 'Invalid registration details';
+      return res.status(400).json({ error: firstError });
     }
 
-    if (!email || typeof email !== 'string' || !email.includes('@')) {
-      return res.status(400).json({ error: 'A valid email address is required' });
-    }
-
-    if (!password || typeof password !== 'string' || password.length < 6) {
-      return res.status(400).json({ error: 'Password must be at least 6 characters long' });
-    }
-
-    const normalizedEmail = email.trim().toLowerCase();
-    const userRole = ['user', 'patient', 'doctor'].includes(role) ? role : 'patient';
+    const { name, email, password } = parseResult.data;
+    const normalizedEmail = email.toLowerCase();
+    // Ignore role from the request body. Always assign patient.
+    const userRole = 'patient';
 
     // 1. If MongoDB is connected, use Mongoose model
     if (isMongoConnected()) {
@@ -93,7 +103,15 @@ router.post('/register', authLimiter, async (req, res) => {
       });
     }
 
-    // 2. In-memory fallback
+    // In production, return 503 when MongoDB is disconnected instead of using in-memory store
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(503).json({
+        error: 'Service Unavailable',
+        message: 'Database service is unavailable'
+      });
+    }
+
+    // 2. In-memory fallback (development/testing only)
     if (inMemoryUsers.has(normalizedEmail)) {
       return res.status(409).json({ error: 'An account with this email already exists' });
     }
@@ -175,7 +193,15 @@ router.post('/login', authLimiter, async (req, res) => {
       });
     }
 
-    // 2. In-memory fallback
+    // In production, return 503 when MongoDB is disconnected instead of using in-memory store
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(503).json({
+        error: 'Service Unavailable',
+        message: 'Database service is unavailable'
+      });
+    }
+
+    // 2. In-memory fallback (development/testing only)
     const user = inMemoryUsers.get(normalizedEmail);
     if (!user) {
       return res.status(401).json({ error: 'Invalid email or password' });

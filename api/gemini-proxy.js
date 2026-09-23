@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import jwt from 'jsonwebtoken';
+import { getJwtSecret } from '../backend/src/config/jwt.js';
 
 /**
  * Gemini AI Proxy — Server-side only.
@@ -56,7 +57,7 @@ function authenticateRequest(req) {
   }
 
   const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : authHeader;
-  const jwtSecret = process.env.JWT_SECRET || 'healthscan-jwt-dev-secret-do-not-use-in-production';
+  const jwtSecret = getJwtSecret();
 
   try {
     const decoded = jwt.verify(token, jwtSecret);
@@ -67,6 +68,9 @@ function authenticateRequest(req) {
 }
 
 export default async function handler(req, res) {
+  // Fail closed if JWT_SECRET is missing in any environment (including Vercel)
+  getJwtSecret();
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }

@@ -13,6 +13,7 @@ import jwt from 'jsonwebtoken';
 import googleFitRoutes, { setUserGoogleTokens } from './routes/googleFitRoutes.js';
 import googleFitService from '../googleFitService.js';
 import geminiProxyHandler from '../../api/gemini-proxy.js';
+import { getJwtSecret } from './config/jwt.js';
 
 dotenv.config();
 
@@ -125,16 +126,18 @@ app.use(morgan(':method :url :status :response-time ms - :request-id'));
 app.use('/api/auth', authRoutes);
 
 // Demo session token endpoint for development/demo testing
-app.post('/api/auth/demo-token', authLimiter, (req, res) => {
-  const demoUser = {
-    uid: 'demo-user-healthscan',
-    name: 'Dr. Alex Mercer',
-    email: 'alex.mercer@healthscan.io',
-    role: 'user'
-  };
-  const token = generateToken(demoUser, '24h');
-  res.json({ token, user: demoUser });
-});
+if (process.env.NODE_ENV !== 'production' && process.env.ENABLE_DEMO_AUTH === 'true') {
+  app.post('/api/auth/demo-token', authLimiter, (req, res) => {
+    const demoUser = {
+      uid: 'demo-user-healthscan',
+      name: 'Dr. Alex Mercer',
+      email: 'alex.mercer@healthscan.io',
+      role: 'user'
+    };
+    const token = generateToken(demoUser, '24h');
+    res.json({ token, user: demoUser });
+  });
+}
 
 // Health check endpoint (no rate limiting)
 app.get('/api/health', (req, res) => {
@@ -195,7 +198,7 @@ app.get('/auth/google/callback', async (req, res) => {
 
   let decodedState;
   try {
-    const jwtSecret = process.env.JWT_SECRET || 'healthscan-jwt-dev-secret-do-not-use-in-production';
+    const jwtSecret = getJwtSecret();
     decodedState = jwt.verify(state, jwtSecret);
   } catch (stateErr) {
     console.error('OAuth state verification failed:', stateErr.message);

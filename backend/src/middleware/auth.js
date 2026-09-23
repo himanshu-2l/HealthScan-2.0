@@ -1,17 +1,5 @@
 import jwt from 'jsonwebtoken';
-
-const isProduction = process.env.NODE_ENV === 'production';
-
-if (isProduction && !process.env.JWT_SECRET) {
-  console.error('FATAL: JWT_SECRET environment variable is required in production.');
-  process.exit(1);
-}
-
-if (!process.env.JWT_SECRET) {
-  console.warn('SECURITY WARNING: JWT_SECRET is not set. Using insecure development fallback secret. Set JWT_SECRET in production.');
-}
-
-const JWT_SECRET = process.env.JWT_SECRET || 'healthscan-jwt-dev-secret-do-not-use-in-production';
+import { getJwtSecret, JWT_SECRET } from '../config/jwt.js';
 
 /**
  * Extract token from Authorization header
@@ -202,7 +190,15 @@ export const requireOwnership = (paramName = 'userId') => {
       return next();
     }
     
-    if (resourceUserId && resourceUserId !== req.user.uid) {
+    if (!resourceUserId) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: `Resource ${paramName} is required`,
+        code: 'MISSING_RESOURCE_USER_ID'
+      });
+    }
+    
+    if (resourceUserId !== req.user.uid) {
       return res.status(403).json({
         error: 'Forbidden',
         message: 'You can only access your own data',

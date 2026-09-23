@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import googleFitService from '../../googleFitService.js';
 import { requireAuth } from '../middleware/auth.js';
+import { getJwtSecret } from '../config/jwt.js';
 
 dotenv.config();
 
@@ -112,7 +113,7 @@ router.get('/auth', requireAuth, (req, res) => {
     }
 
     const userId = req.user.userId || req.user.uid;
-    const jwtSecret = process.env.JWT_SECRET || 'healthscan-jwt-dev-secret-do-not-use-in-production';
+    const jwtSecret = getJwtSecret();
 
     // Generate cryptographic CSRF state token bound to the authenticated user
     const state = jwt.sign(
