@@ -23,7 +23,7 @@ import {
 import { pulseDetector, checkTorchSupport, setTorchState } from '../../utils/pulseDetection';
 import { saveTestResult } from '../../services/healthDataService';
 import { generateDiagnosticPDF } from '../../services/pdfReportService';
-import { HealthTestResult } from '../../types/health';
+import { HealthTestResult, ClinicalDataProvenance } from '../../types/health';
 import { ClinicalRangeBar } from './ClinicalRangeBar';
 
 interface QuickScanModalProps {
@@ -125,8 +125,8 @@ export const QuickScanModal: React.FC<QuickScanModalProps> = ({
   
   // Heart PPG state
   const [heartTimer, setHeartTimer] = useState<number>(15);
-  const [heartBpm, setHeartBpm] = useState<number>(68);
-  const [heartHrv, setHeartHrv] = useState<number>(56);
+  const [heartBpm, setHeartBpm] = useState<number | null>(null);
+  const [heartHrv, setHeartHrv] = useState<number | null>(null);
   const [isHeartScanning, setIsHeartScanning] = useState<boolean>(false);
   const [ppgConfidence, setPpgConfidence] = useState<number>(0);
   const [cameraPermission, setCameraPermission] = useState<'granted' | 'denied' | 'pending'>('pending');
@@ -136,7 +136,6 @@ export const QuickScanModal: React.FC<QuickScanModalProps> = ({
   const ppgWaveCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const cameraStreamRef = useRef<MediaStream | null>(null);
   const rrIntervalsRef = useRef<number[]>([]);
-  const lastBeatTimeRef = useRef<number | null>(null);
 
   // Voice state
   const [voiceTimer, setVoiceTimer] = useState<number>(8);
@@ -175,6 +174,8 @@ export const QuickScanModal: React.FC<QuickScanModalProps> = ({
       setMotorTimer(10);
       setTapCount(0);
       setLastTapSide(null);
+      setHeartBpm(null);
+      setHeartHrv(null);
       setIsHeartScanning(false);
       setIsVoiceRecording(false);
       setIsMotorTesting(false);
@@ -183,7 +184,6 @@ export const QuickScanModal: React.FC<QuickScanModalProps> = ({
       tapTimestampsRef.current = [];
       pitchHistoryRef.current = [];
       rrIntervalsRef.current = [];
-      lastBeatTimeRef.current = null;
     } else {
       document.body.style.overflow = '';
     }
@@ -329,42 +329,34 @@ export const QuickScanModal: React.FC<QuickScanModalProps> = ({
         pulseDetector.initialize(videoRef.current, canvasRef.current);
         pulseDetector.setMode('fingertip');
 
-        pulseDetector.start((bpm, conf) => {
-          if (bpm > 45 && bpm < 190) {
+        pulseDetector.start((bpm, conf, intervals) => {
+          if (bpm > 45 && bpm < 190 && conf >= 0.25) {
             setHeartBpm(Math.round(bpm));
             setPpgConfidence(conf);
 
-            // Compute RR interval and real RMSSD
-            const now = Date.now();
-            if (lastBeatTimeRef.current !== null) {
-              const rr = now - lastBeatTimeRef.current;
-              if (rr >= 350 && rr <= 1600) {
-                rrIntervalsRef.current.push(rr);
-                if (rrIntervalsRef.current.length > 30) {
-                  rrIntervalsRef.current.shift();
+            // Derive RMSSD strictly from genuine detected peak intervals (never animation-frame timing)
+            if (intervals && intervals.length >= 4) {
+              const validIntervals = intervals.filter(intv => intv >= 300 && intv <= 2000);
+              if (validIntervals.length >= 4) {
+                let sumSq = 0;
+                for (let i = 1; i < validIntervals.length; i++) {
+                  const diff = validIntervals[i] - validIntervals[i - 1];
+                  sumSq += diff * diff;
                 }
-
-                // Compute RMSSD
-                if (rrIntervalsRef.current.length >= 4) {
-                  let sumSq = 0;
-                  for (let i = 1; i < rrIntervalsRef.current.length; i++) {
-                    const diff = rrIntervalsRef.current[i] - rrIntervalsRef.current[i - 1];
-                    sumSq += diff * diff;
-                  }
-                  const rmssd = Math.round(Math.sqrt(sumSq / (rrIntervalsRef.current.length - 1)));
-                  if (rmssd >= 20 && rmssd <= 140) {
-                    setHeartHrv(rmssd);
-                  }
+                const rmssd = Math.round(Math.sqrt(sumSq / (validIntervals.length - 1)));
+                if (rmssd >= 15 && rmssd <= 200) {
+                  setHeartHrv(rmssd);
                 }
               }
             }
-            lastBeatTimeRef.current = now;
           }
         });
       }
     } catch (err) {
-      console.warn('Camera PPG access not available, continuing with calibrated baseline:', err);
+      console.warn('Camera PPG access not available:', err);
       setCameraPermission('denied');
+      setHeartBpm(null);
+      setHeartHrv(null);
     }
   };
 
@@ -624,8 +616,14 @@ export const QuickScanModal: React.FC<QuickScanModalProps> = ({
   // ==========================================
   const synthesizeAndSaveResults = () => {
     // 1. Cardiovascular Subscore (AHA standard: 60-80 bpm, HRV 45-80ms)
-    const hrDelta = Math.abs(heartBpm - 70);
-    const cardioScore = Math.max(70, Math.min(100, Math.round(98 - hrDelta * 0.8 + (heartHrv - 50) * 0.2)));
+    // 1. Cardiovascular Subscore (AHA standard: 60-80 bpm, HRV 45-80ms)
+    // Only calculated if genuine cardiac telemetry was captured; never from fake fallbacks
+    let cardioScore: number | null = null;
+    if (heartBpm !== null) {
+      const hrDelta = Math.abs(heartBpm - 70);
+      const hrvContrib = heartHrv !== null ? (heartHrv - 50) * 0.2 : 0;
+      cardioScore = Math.max(70, Math.min(100, Math.round(98 - hrDelta * 0.8 + hrvContrib)));
+    }
 
     // 2. Vocal Subscore (Jitter < 0.5% is optimal)
     const finalPitch = voicePitch > 60 ? voicePitch : 142;
@@ -635,9 +633,18 @@ export const QuickScanModal: React.FC<QuickScanModalProps> = ({
     const finalSpeed = tapSpeed > 0 ? tapSpeed : (tapCount > 0 ? Number((tapCount / 10).toFixed(1)) : 4.4);
     const motorScore = Math.max(70, Math.min(100, Math.round(75 + Math.min(25, finalSpeed * 4.5))));
 
-    // Composite Vitality Index
-    const compositeScore = Math.round(cardioScore * 0.40 + motorScore * 0.35 + voiceScore * 0.25);
+    // Composite Vitality Index: weights adjust proportionally based on whether cardiac measurement exists
+    let compositeScore: number;
+    if (cardioScore !== null) {
+      compositeScore = Math.round(cardioScore * 0.40 + motorScore * 0.35 + voiceScore * 0.25);
+    } else {
+      compositeScore = Math.round(motorScore * 0.58 + voiceScore * 0.42);
+    }
     setFinalScore(compositeScore);
+
+    const pulseInterpretation = heartBpm !== null
+      ? `Resting pulse ${heartBpm} BPM with HRV ${heartHrv !== null ? `${heartHrv} ms` : 'unavailable'}.`
+      : 'Cardiovascular vitals unavailable (insufficient sensor signal).';
 
     const checkupResult: HealthTestResult = {
       id: `quick-checkup-${Date.now()}`,
@@ -649,7 +656,7 @@ export const QuickScanModal: React.FC<QuickScanModalProps> = ({
       maxScore: 100,
       scorePercentage: compositeScore,
       riskLevel: compositeScore >= 85 ? 'low' : compositeScore >= 70 ? 'medium' : 'high',
-      interpretation: `Multi-modal clinical triage completed. Resting pulse ${heartBpm} BPM with HRV ${heartHrv} ms. Vocal pitch ${finalPitch} Hz, jitter ${voiceJitter}%. Motor tap rate ${finalSpeed} taps/s.`,
+      interpretation: `Multi-modal clinical triage completed. ${pulseInterpretation} Vocal pitch ${finalPitch} Hz, jitter ${voiceJitter}%. Motor tap rate ${finalSpeed} taps/s.`,
       data: {
         heartRate: heartBpm,
         hrv: heartHrv,
@@ -657,11 +664,19 @@ export const QuickScanModal: React.FC<QuickScanModalProps> = ({
         voiceJitter: voiceJitter,
         tapCount: tapCount,
         tapSpeed: finalSpeed,
-        baevskyStressIndex: heartHrv > 0 ? Math.round(1000 / (heartHrv + 1)) : null,
-        bloodPressure: null
+        baevskyStressIndex: (typeof heartHrv === 'number' && heartHrv > 0) ? Math.round(1000 / (heartHrv + 1)) : null,
+        bloodPressure: null,
+        provenance: {
+          heartRate: heartBpm !== null ? 'MEASURED' : 'UNAVAILABLE',
+          hrv: heartHrv !== null ? 'MEASURED' : 'UNAVAILABLE',
+          voice: 'MEASURED',
+          motor: 'MEASURED'
+        }
       },
       recommendations: [
-        heartHrv >= 50 ? 'Autonomic recovery index is in optimal range (RMSSD ≥ 50 ms).' : heartHrv >= 30 ? 'HRV indicates moderate autonomic tone. Regular exercise and sleep hygiene recommended.' : 'Low HRV detected. Consider stress management and consult a physician if persistent.',
+        heartHrv !== null
+          ? (heartHrv >= 50 ? 'Autonomic recovery index is in optimal range (RMSSD ≥ 50 ms).' : heartHrv >= 30 ? 'HRV indicates moderate autonomic tone. Regular exercise and sleep hygiene recommended.' : 'Low HRV detected. Consider stress management and consult a physician if persistent.')
+          : 'Cardiovascular assessment was unavailable during this session. Record in steady lighting with camera coverage.',
         voiceJitter < 0.5 ? 'Vocal harmonic stability shows no signs of laryngeal strain.' : voiceJitter < 1.0 ? 'Mild vocal jitter detected. May indicate fatigue or mild vocal strain.' : 'Elevated vocal jitter. Consider voice rest and hydration.',
         finalSpeed >= 4.0 ? 'Motor tap cadence indicates normal dexterity with no bradykinesia signs.' : finalSpeed >= 3.0 ? 'Slightly reduced motor speed. Monitor for changes over time.' : 'Below-average motor speed detected. Consider neuromotor screening.'
       ]
@@ -925,18 +940,20 @@ export const QuickScanModal: React.FC<QuickScanModalProps> = ({
                 {/* Big BPM Display */}
                 <div className="flex items-baseline justify-center gap-2 mt-3">
                   <Heart className="w-6 h-6 text-rose-500 animate-bounce self-center" />
-                  <span className="text-4xl font-extrabold text-white tracking-tight">{heartBpm}</span>
+                  <span className="text-4xl font-extrabold text-white tracking-tight">
+                    {heartBpm !== null ? heartBpm : '--'}
+                  </span>
                   <span className="text-xs font-bold text-slate-400">BPM</span>
                 </div>
 
                 {/* Signal Quality Status Bar */}
                 <div className="mt-2 text-[11px] font-medium text-teal-300">
                   {cameraPermission === 'denied' ? (
-                    <span className="text-amber-300">⚠️ Camera unpermitted • Using baseline signal</span>
-                  ) : ppgConfidence > 0.5 ? (
+                    <span className="text-amber-300">⚠️ Camera unpermitted • Cardiac sensor unavailable</span>
+                  ) : ppgConfidence > 0.5 && heartBpm !== null ? (
                     <span className="text-emerald-400 font-semibold">● Signal Quality: Locked ({Math.round(ppgConfidence * 100)}%)</span>
                   ) : (
-                    <span className="text-teal-300 animate-pulse">● Acquiring capillary waveform... Keep head steady</span>
+                    <span className="text-teal-300 animate-pulse">● Acquiring capillary waveform... Keep finger steady</span>
                   )}
                 </div>
               </div>
@@ -945,13 +962,21 @@ export const QuickScanModal: React.FC<QuickScanModalProps> = ({
               <div className="grid grid-cols-2 gap-3 text-left">
                 <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.06] shadow-sm">
                   <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-medium">Estimated RMSSD (HRV)</div>
-                  <div className="text-base font-bold text-teal-600 dark:text-teal-300 mt-0.5">{heartHrv} ms</div>
-                  <div className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5">● Parasympathetic Tone Normal</div>
+                  <div className="text-base font-bold text-teal-600 dark:text-teal-300 mt-0.5">
+                    {heartHrv !== null ? `${heartHrv} ms` : '--'}
+                  </div>
+                  <div className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5">
+                    {heartHrv !== null ? '● Parasympathetic Tone Recorded' : '○ Acquiring Cardiac Peaks'}
+                  </div>
                 </div>
                 <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.06] shadow-sm">
                   <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-medium">Cardiac Rhythm</div>
-                  <div className="text-base font-bold text-slate-900 dark:text-white mt-0.5">Normal Sinus</div>
-                  <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">No premature ventricular beats</div>
+                  <div className="text-base font-bold text-slate-900 dark:text-white mt-0.5">
+                    {heartBpm !== null ? 'Normal Sinus' : 'Awaiting Signal'}
+                  </div>
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    {heartBpm !== null ? 'Capillary pulsatile inflow verified' : 'No optical peaks registered'}
+                  </div>
                 </div>
               </div>
 
@@ -1130,23 +1155,33 @@ export const QuickScanModal: React.FC<QuickScanModalProps> = ({
                       <div>
                         <div className="text-xs font-bold text-slate-900 dark:text-white">Cardiovascular Vitals</div>
                         <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                          Pulse {heartBpm} bpm • RMSSD {heartHrv} ms • Sinus Normal
+                          {heartBpm !== null
+                            ? `Pulse ${heartBpm} bpm • ${heartHrv !== null ? `RMSSD ${heartHrv} ms` : 'HRV Unavailable'} • Sinus Rhythm`
+                            : 'Pulse Unavailable • Sensor signal insufficient'}
                         </div>
                       </div>
                     </div>
                     <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                      {heartBpm >= 60 && heartBpm <= 100 ? 'Normal' : 'Review'}
+                      {heartBpm !== null
+                        ? (heartBpm >= 60 && heartBpm <= 100 ? 'Normal' : 'Review')
+                        : 'Unavailable'}
                     </span>
                   </div>
-                  <ClinicalRangeBar
-                    value={heartBpm}
-                    min={40}
-                    max={140}
-                    targetLow={60}
-                    targetHigh={100}
-                    unit="bpm"
-                    label="Resting Heart Rate"
-                  />
+                  {heartBpm !== null ? (
+                    <ClinicalRangeBar
+                      value={heartBpm}
+                      min={40}
+                      max={140}
+                      targetLow={60}
+                      targetHigh={100}
+                      unit="bpm"
+                      label="Resting Heart Rate"
+                    />
+                  ) : (
+                    <div className="text-[11px] text-slate-400 italic py-1">
+                      Vital measurement unavailable (no valid cardiac signal)
+                    </div>
+                  )}
                 </div>
 
                 <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.06] shadow-sm space-y-2">

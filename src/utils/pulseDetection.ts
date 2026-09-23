@@ -48,7 +48,7 @@ export type PulseUpdateCallback = (
   bpm: number,
   confidence: number,
   rrIntervals?: number[],
-  spo2?: number,
+  spo2?: number | null,
   fingerDetected?: boolean,
   isBeat?: boolean
 ) => void;
@@ -198,11 +198,11 @@ class PulseDetector {
   // PPG mode and contact status
   private mode: PPGMode = 'fingertip';
   private fingerDetected: boolean = false;
-  private latestSpo2: number = 98;
+  private latestSpo2: number | null = null;
 
   // Face or finger detection region
   private detectionRegion: { x: number; y: number; width: number; height: number } | null = null;
-  
+
   // Callbacks
   private onPulseUpdate: PulseUpdateCallback | null = null;
   private onError: ((error: string) => void) | null = null;
@@ -225,7 +225,7 @@ class PulseDetector {
     return this.fingerDetected;
   }
 
-  getLatestSpo2(): number {
+  getLatestSpo2(): number | null {
     return this.latestSpo2;
   }
 
@@ -645,24 +645,29 @@ class PulseDetector {
   /**
    * Estimate SpO2 blood oxygen saturation from optical Red vs Green AC/DC ratio of ratios
    * Reference: Ding et al. (2018), Karlen et al. (2012)
+   * Returns null if signal is insufficient, invalid, or outside plausible physiological limits.
    */
-  private calculateSpO2(reds: number[], greens: number[]): number {
-    if (reds.length < 30 || greens.length < 30) return 98;
+  private calculateSpO2(reds: number[], greens: number[]): number | null {
+    if (reds.length < 30 || greens.length < 30) return null;
     const meanRed = reds.reduce((a, b) => a + b, 0) / reds.length;
     const meanGreen = greens.reduce((a, b) => a + b, 0) / greens.length;
-    if (meanRed <= 0 || meanGreen <= 0) return 98;
+    if (meanRed <= 0 || meanGreen <= 0) return null;
 
     const stdRed = Math.sqrt(reds.reduce((sum, v) => sum + Math.pow(v - meanRed, 2), 0) / reds.length);
     const stdGreen = Math.sqrt(greens.reduce((sum, v) => sum + Math.pow(v - meanGreen, 2), 0) / greens.length);
 
     const acdcRed = stdRed / meanRed;
     const acdcGreen = stdGreen / meanGreen;
-    if (acdcGreen <= 0.0001) return 98;
+    if (acdcGreen <= 0.0001) return null;
 
     const rRatio = acdcRed / acdcGreen;
     // Standard empirical ratio-of-ratios pulse oximetry equation: SpO2 = 110 - 25 * R
     const rawSpo2 = Math.round(110 - 25 * rRatio);
-    return Math.max(90, Math.min(100, isNaN(rawSpo2) ? 98 : rawSpo2));
+    // Reject non-numbers and physiologically implausible or extreme artifact estimates
+    if (isNaN(rawSpo2) || rawSpo2 < 50 || rawSpo2 > 100) {
+      return null;
+    }
+    return rawSpo2;
   }
 
   /**
@@ -677,7 +682,7 @@ class PulseDetector {
     this.lastRRIntervals = [];
     this.detectionRegion = null;
     this.fingerDetected = false;
-    this.latestSpo2 = 98;
+    this.latestSpo2 = null;
     this.lastBeatTimestamp = 0;
   }
 }

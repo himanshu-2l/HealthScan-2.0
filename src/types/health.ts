@@ -44,6 +44,9 @@ export type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
 // Health trend direction
 export type TrendDirection = 'improving' | 'stable' | 'declining' | 'fluctuating';
 
+// Clinical data provenance classification
+export type ClinicalDataProvenance = 'MEASURED' | 'ESTIMATED' | 'SIMULATED' | 'UNAVAILABLE';
+
 // Unified Health Test Result Interface
 export interface HealthTestResult {
   id: string;
