@@ -226,6 +226,7 @@ export const DoctorReport: React.FC = () => {
     setIsGeneratingAI(true);
     setAiError('');
 
+    try {
       const payload = {
         patientProfile: {
           name: patientProfile?.name || undefined,
