@@ -4,7 +4,7 @@ import { HandLandmarker, FilesetResolver, DrawingUtils } from "@mediapipe/tasks-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Camera as CameraIcon, Play, FileText, Activity, RotateCcw } from "lucide-react";
+import { Camera as CameraIcon, Play, Square, FileText, Activity, RotateCcw } from "lucide-react";
 import { saveTestResult, generateTestResultId } from '@/services/healthDataService';
 import { HealthTestResult } from '@/types/health';
 import { robustStatistics } from '@/utils/statisticalAccuracy';
@@ -779,7 +779,6 @@ export const MotorLab: React.FC = () => {
     setTapIntervals([]);
     tapIntervalsRef.current = [];
     tremorSamplesRef.current = [];
-    setTremorSamples([]);
     setAnalysisResults(null);
     lastTapTimeRef.current = null;
     setStatus("Test running — tap index & thumb rapidly for 5s");
@@ -1135,14 +1134,35 @@ export const MotorLab: React.FC = () => {
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 max-w-4xl mx-auto">
         <div className="flex-1 text-center sm:text-left"><p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">{status}</p></div>
         <div className="flex items-center gap-2.5">
-          <Button onClick={initCamera} variant="outline" className="border-slate-200/80 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-800 dark:text-slate-200 rounded-xl">
+          <Button onClick={initCamera} variant="outline" disabled={isRecording} className="border-slate-200/80 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-800 dark:text-slate-200 rounded-xl">
             <CameraIcon className="w-4 h-4 mr-2" /> Enable Camera
           </Button>
-          <Button onClick={startTest} disabled={permission !== "granted" || isRecording} className="bg-teal-600 hover:bg-teal-700 text-white rounded-xl shadow-sm">
-            {isRecording ? `Testing... ${testDuration.toFixed(1)}s` : <><Play className="w-4 h-4 mr-2" /> Start 5s Tap Test</>}
-          </Button>
+          {isRecording ? (
+            <Button onClick={stopTest} className="bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-sm">
+              <Square className="w-4 h-4 mr-2" /> Stop &amp; Get Results ({(5 - testDuration).toFixed(1)}s left)
+            </Button>
+          ) : (
+            <Button onClick={startTest} disabled={permission !== "granted"} className="bg-teal-600 hover:bg-teal-700 text-white rounded-xl shadow-sm">
+              <Play className="w-4 h-4 mr-2" /> Start 5s Tap Test
+            </Button>
+          )}
         </div>
       </div>
+
+      {/* Progress bar while recording */}
+      {isRecording && (
+        <div className="max-w-4xl mx-auto">
+          <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5 overflow-hidden">
+            <div
+              className="bg-teal-500 h-2.5 rounded-full transition-all duration-100"
+              style={{ width: `${Math.min(100, (testDuration / 5) * 100)}%` }}
+            />
+          </div>
+          <p className="text-center text-xs text-slate-500 dark:text-slate-400 mt-1">
+            {testDuration.toFixed(1)}s / 5.0s — Tap your index finger &amp; thumb rapidly!
+          </p>
+        </div>
+      )}
 
       {/* Tap Target Pad when recording */}
       {isRecording && (
