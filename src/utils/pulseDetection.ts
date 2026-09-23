@@ -498,7 +498,7 @@ class PulseDetector {
    * Calculate BPM from signal using peak detection with noise filtering
    * Uses adaptive thresholding and validates peak intervals
    */
-  private calculateBPM(signal: number[], timestamps: number[]): { bpm: number; isBeat: boolean } {
+  public calculateBPM(signal: number[], timestamps: number[]): { bpm: number; isBeat: boolean } {
     if (signal.length < 60) return { bpm: 0, isBeat: false };
 
     // Apply bandpass-like filtering by removing DC component and high-frequency noise
@@ -772,4 +772,8 @@ class PulseDetector {
 }
 
 export const pulseDetector = new PulseDetector();
+
+export function calculateBPMFromSignal(signal: number[], timestamps: number[]): { bpm: number; isBeat: boolean } {
+  return pulseDetector.calculateBPM(signal, timestamps);
+}
 

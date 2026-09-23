@@ -44,8 +44,13 @@ export const createRateLimiter = (options = {}) => {
     headers = true
   } = options;
 
+  if (!globalThis.__RATE_LIMIT_STORES__) {
+    globalThis.__RATE_LIMIT_STORES__ = [];
+  }
+
   // Store for tracking requests: Map<clientKey, { count: number, resetTime: number, timestamps: number[] }>
   const requestStore = new Map();
+  globalThis.__RATE_LIMIT_STORES__.push(requestStore);
 
   // Cleanup old entries periodically
   const cleanupInterval = setInterval(() => {
@@ -133,6 +138,12 @@ export const createRateLimiter = (options = {}) => {
 
     next();
   };
+
+  limiter.reset = () => {
+    requestStore.clear();
+  };
+
+  return limiter;
 };
 
 /**
@@ -181,6 +192,12 @@ export const aiProxyLimiter = createRateLimiter({
   message: 'Too many AI requests. Please wait a moment before trying again.'
 });
 
+export const resetAllLimiters = () => {
+  if (globalThis.__RATE_LIMIT_STORES__) {
+    globalThis.__RATE_LIMIT_STORES__.forEach(s => s.clear());
+  }
+};
+
 export default {
   createRateLimiter,
   apiLimiter,
@@ -188,5 +205,6 @@ export default {
   authLimiter,
   assessmentLimiter,
   reportLimiter,
-  aiProxyLimiter
+  aiProxyLimiter,
+  resetAllLimiters
 };
