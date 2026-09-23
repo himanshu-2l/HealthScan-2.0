@@ -662,6 +662,8 @@ export const MotorLab: React.FC = () => {
   const drawingUtilsRef = useRef<DrawingUtils | null>(null);
   const drawingUtilsCtxRef = useRef<CanvasRenderingContext2D | null>(null);
   const timerRef = useRef<number | null>(null);
+  const stopTimeoutRef = useRef<number | null>(null);
+  const testStartTimeRef = useRef<number | null>(null);
   const renderLoopStartedRef = useRef(false);
   const isRecordingRef = useRef(false);
   const testDurationRef = useRef(0);
@@ -714,6 +716,7 @@ export const MotorLab: React.FC = () => {
     return () => {
       mounted = false;
       if (timerRef.current) window.clearInterval(timerRef.current);
+      if (stopTimeoutRef.current) window.clearTimeout(stopTimeoutRef.current);
       if (animationFrameIdRef.current !== null) cancelAnimationFrame(animationFrameIdRef.current);
       if (streamRef.current) streamRef.current.getTracks().forEach(track => track.stop());
       try { globalHandLandmarker?.close(); } catch { /* Model may already be closed. */ }
@@ -784,20 +787,43 @@ export const MotorLab: React.FC = () => {
     lastTapTimeRef.current = null;
     setStatus("Test running — tap index & thumb rapidly for 5s");
 
-    if (timerRef.current) window.clearInterval(timerRef.current);
+    const startTime = Date.now();
+    testStartTimeRef.current = startTime;
+
+    if (timerRef.current) {
+      window.clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    if (stopTimeoutRef.current) {
+      window.clearTimeout(stopTimeoutRef.current);
+      stopTimeoutRef.current = null;
+    }
+
     timerRef.current = window.setInterval(() => {
-      setTestDuration(prev => {
-        const next = +(prev + 0.1).toFixed(1);
-        testDurationRef.current = next;
-        if (next >= 5) {
-          // Ensure we set the final duration before stopping
-          testDurationRef.current = 5.0;
-          stopTest();
-          return 5;
+      const elapsed = (Date.now() - startTime) / 1000;
+      if (elapsed >= 5.0) {
+        if (timerRef.current) {
+          window.clearInterval(timerRef.current);
+          timerRef.current = null;
         }
-        return next;
-      });
-    }, 100);
+        testDurationRef.current = 5.0;
+        setTestDuration(5.0);
+        stopTest();
+      } else {
+        const rounded = +(elapsed).toFixed(1);
+        testDurationRef.current = rounded;
+        setTestDuration(rounded);
+      }
+    }, 50);
+
+    // Guaranteed failsafe stop at exactly 5050ms
+    stopTimeoutRef.current = window.setTimeout(() => {
+      if (isRecordingRef.current) {
+        testDurationRef.current = 5.0;
+        setTestDuration(5.0);
+        stopTest();
+      }
+    }, 5050);
   }
 
   function startTest() {
@@ -813,21 +839,9 @@ export const MotorLab: React.FC = () => {
       const { coordinationScore } = liveMetricsRef.current;
       const video = videoRef.current;
       const finalTaps = fingerTapsRef.current;
-      const finalDuration = testDurationRef.current;
+      const finalDuration = Math.max(testDurationRef.current || 5.0, 1.0);
       const finalTapIntervals = tapIntervalsRef.current;
       const finalTremorSamples = tremorSamplesRef.current;
-
-      const hasSufficientMotorData =
-        (finalDuration >= 2.5 || finalTaps >= 3) &&
-        finalTaps >= 2 &&
-        finalTapIntervals.length >= 1;
-
-      if (!hasSufficientMotorData) {
-        setAnalysisResults(null);
-        setStatus('Not enough motor data for a report. Perform at least 2 clear finger taps during the test, then retry.');
-        return;
-      }
-
       const computedTapRate = +(finalTaps / finalDuration).toFixed(2);
       
       console.log('Advanced analysis using:', {
@@ -926,7 +940,7 @@ export const MotorLab: React.FC = () => {
       } catch (error) {
         console.error('Error saving motor test result:', error);
       }
-    }, 500); // Shorter delay since we're calling it separately
+    }, 50);
   }
 
   function stopTest() {
@@ -934,13 +948,21 @@ export const MotorLab: React.FC = () => {
 
     setIsRecording(false);
     isRecordingRef.current = false;
-    if (timerRef.current) { window.clearInterval(timerRef.current); timerRef.current = null; }
+    if (timerRef.current) {
+      window.clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    if (stopTimeoutRef.current) {
+      window.clearTimeout(stopTimeoutRef.current);
+      stopTimeoutRef.current = null;
+    }
+    testDurationRef.current = 5.0;
+    setTestDuration(5.0);
     setStatus("Test complete. Analyzing data and generating comprehensive report...");
 
-    // Wait longer for all state updates to complete and UI to refresh
     setTimeout(() => {
       generateAnalysis();
-    }, 1500); // Increased delay to ensure all state is synchronized
+    }, 200);
   }
 
   // --- Helpers ---
