@@ -29,7 +29,14 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      setUrl(customUrl || window.location.origin);
+      const activeTunnel = 'https://dc020235d76486.lhr.life';
+      if (customUrl) {
+        setUrl(customUrl);
+      } else if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        setUrl(activeTunnel);
+      } else {
+        setUrl(window.location.origin);
+      }
     }
   }, [customUrl, isOpen]);
 
