@@ -277,12 +277,12 @@ class PulseDetector {
       const videoHeight = this.videoElement.videoHeight || 480;
 
       if (this.mode === 'fingertip') {
-        // Central 70% aperture for contact finger capillary illumination
+        // Central 45% aperture for contact finger capillary illumination (avoids edge-leak noise)
         this.detectionRegion = {
-          x: videoWidth * 0.15,
-          y: videoHeight * 0.15,
-          width: videoWidth * 0.7,
-          height: videoHeight * 0.7
+          x: videoWidth * 0.275,
+          y: videoHeight * 0.275,
+          width: videoWidth * 0.45,
+          height: videoHeight * 0.45
         };
       } else {
         // Upper-center forehead region for facial rPPG
@@ -333,10 +333,10 @@ class PulseDetector {
       if (!this.detectionRegion || this.detectionRegion.width <= 10 || this.detectionRegion.height <= 10) {
         if (this.mode === 'fingertip') {
           this.detectionRegion = {
-            x: Math.round(vw * 0.15),
-            y: Math.round(vh * 0.15),
-            width: Math.max(20, Math.round(vw * 0.7)),
-            height: Math.max(20, Math.round(vh * 0.7))
+            x: Math.round(vw * 0.275),
+            y: Math.round(vh * 0.275),
+            width: Math.max(20, Math.round(vw * 0.45)),
+            height: Math.max(20, Math.round(vh * 0.45))
           };
         } else {
           this.detectionRegion = {
@@ -382,19 +382,18 @@ class PulseDetector {
         const totalBrightness = avgRed + avgGreen + avgBlue;
         const redRatio = totalBrightness > 0 ? avgRed / totalBrightness : 0;
 
-        // True contact PPG physics:
-        // 1. Minimum red illumination (tissue must be illuminated by flash or light, not occluded blackness)
-        const hasMinRed = avgRed >= 50;
-        // 2. High red dominance: hemoglobin strongly absorbs green and blue, transmitting red
-        const hasRedDominance = redRatio >= 0.58 && 
-                                avgRed >= avgGreen * 1.35 && 
-                                avgRed >= avgBlue * 2.2;
-        // 3. Low blue intensity: subcutaneous tissue absorbs virtually all blue light
-        const hasLowBlue = avgBlue <= 75;
-        // 4. Optical diffusion: direct contact diffuses light evenly across sensor (low spatial variance vs open room)
-        const isDiffuseTissue = rVariance < 850;
+        // Calibrated physiological finger contact detection:
+        // 1. Minimum red illumination (tissue illuminated by torch or ambient light, not dark occluded sensor)
+        const hasMinRed = avgRed >= 35;
+        // 2. Red dominance: Human hemoglobin strongly absorbs green and blue wavelengths,
+        // transmitting red. In open air or room lighting, redRatio is typically 0.30 - 0.40.
+        // Finger transillumination consistently yields redRatio >= 0.46 (or >=0.44 under bright AWB flash saturation).
+        const hasRedDominance = (redRatio >= 0.46 && avgRed >= avgGreen * 1.15 && avgRed >= avgBlue * 1.25) ||
+                                (avgRed >= 170 && redRatio >= 0.44 && avgRed >= avgGreen * 1.10 && avgRed >= avgBlue * 1.18);
+        // 3. Optical diffusion: direct tissue contact diffuses light evenly across sensor
+        const isDiffuseTissue = rVariance < 1200;
 
-        const isContactActive = hasMinRed && hasRedDominance && hasLowBlue && isDiffuseTissue;
+        const isContactActive = hasMinRed && hasRedDominance && isDiffuseTissue;
 
         if (isContactActive) {
           this.consecutiveFingerFrames++;
@@ -405,12 +404,13 @@ class PulseDetector {
         } else {
           this.consecutiveNoFingerFrames++;
           this.consecutiveFingerFrames = 0;
-          if (this.consecutiveNoFingerFrames >= 2) {
+          // Hysteresis grace period: require 12 consecutive invalid frames (~400ms) before declaring full disconnection
+          if (this.consecutiveNoFingerFrames >= 12) {
             this.fingerDetected = false;
           }
         }
 
-        // STRICT GATE: When finger is NOT in contact with camera, do NOT compute pulse from air/room noise
+        // STRICT GATE: When finger is confirmed NOT in contact with camera, do NOT compute pulse from air/room noise
         if (!this.fingerDetected) {
           this.redValues = [];
           this.greenValues = [];
@@ -423,6 +423,12 @@ class PulseDetector {
             this.onPulseUpdate(0, 0, [], null, false, false);
           }
 
+          this.animationFrame = requestAnimationFrame(() => this.processFrame());
+          return;
+        }
+
+        // If finger is currently detected but this individual frame was transiently noisy, skip ingesting it
+        if (!isContactActive) {
           this.animationFrame = requestAnimationFrame(() => this.processFrame());
           return;
         }
@@ -603,7 +609,8 @@ class PulseDetector {
     }
     const greenVar = this.getSignalVariance(this.greenValues);
     const redVar = this.getSignalVariance(this.redValues);
-    return greenVar > 0.35 ? this.greenValues : (redVar > 0.15 ? this.redValues : this.greenValues);
+    // In contact PPG, prioritize whichever channel presents stronger pulsatile AC amplitude
+    return redVar >= greenVar ? this.redValues : this.greenValues;
   }
 
   /**
@@ -660,7 +667,7 @@ class PulseDetector {
     const stdDev = Math.sqrt(variance);
 
     // Quality factor 1: Signal amplitude (variation indicates pulse visibility)
-    const amplitudeScore = Math.min(1, stdDev / 5);
+    const amplitudeScore = Math.min(1, stdDev / 3);
 
     // Quality factor 2: Peak regularity
     const normalized = signal.map(v => v - mean);

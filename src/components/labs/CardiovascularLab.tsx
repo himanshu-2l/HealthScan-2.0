@@ -456,7 +456,7 @@ export const CardiovascularLab: React.FC = () => {
         }
 
         // Only process pulse when verified contact is active
-        if (bpm > 40 && bpm < 200 && conf >= 0.25) {
+        if (bpm > 40 && bpm < 200 && conf >= 0.18) {
           heartRateRef.current = bpm;
           confidenceRef.current = conf;
           if (currentSpo2 !== undefined && currentSpo2 > 0) {

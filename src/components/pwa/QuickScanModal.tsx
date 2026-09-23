@@ -338,7 +338,7 @@ export const QuickScanModal: React.FC<QuickScanModalProps> = ({
             return;
           }
 
-          if (bpm > 45 && bpm < 190 && conf >= 0.25) {
+          if (bpm > 45 && bpm < 190 && conf >= 0.18) {
             setHeartBpm(Math.round(bpm));
             setPpgConfidence(conf);
 

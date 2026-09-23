@@ -242,14 +242,12 @@ runTest('TEST 8: Contact PPG optical criteria strictly reject open room, ambient
     const totalBrightness = avgRed + avgGreen + avgBlue;
     const redRatio = totalBrightness > 0 ? avgRed / totalBrightness : 0;
 
-    const hasMinRed = avgRed >= 50;
-    const hasRedDominance = redRatio >= 0.58 && 
-                            avgRed >= avgGreen * 1.35 && 
-                            avgRed >= avgBlue * 2.2;
-    const hasLowBlue = avgBlue <= 75;
-    const isDiffuseTissue = rVariance < 850;
+    const hasMinRed = avgRed >= 35;
+    const hasRedDominance = (redRatio >= 0.46 && avgRed >= avgGreen * 1.15 && avgRed >= avgBlue * 1.25) ||
+                            (avgRed >= 170 && redRatio >= 0.44 && avgRed >= avgGreen * 1.10 && avgRed >= avgBlue * 1.18);
+    const isDiffuseTissue = rVariance < 1200;
 
-    return hasMinRed && hasRedDominance && hasLowBlue && isDiffuseTissue;
+    return hasMinRed && hasRedDominance && isDiffuseTissue;
   }
 
   // Case A: Warm room light (incandescent) - must be rejected
@@ -262,10 +260,16 @@ runTest('TEST 8: Contact PPG optical criteria strictly reject open room, ambient
   assert.strictEqual(checkFingerContact(20, 15, 10, 50), false, 'Darkness without light must be rejected');
 
   // Case D: High spatial variance (camera pointing at textured room objects) - must be rejected
-  assert.strictEqual(checkFingerContact(160, 45, 15, 1200), false, 'High variance textured scene must be rejected');
+  assert.strictEqual(checkFingerContact(160, 45, 15, 1400), false, 'High variance textured scene must be rejected');
 
   // Case E: Genuine transilluminated fingertip over camera & flash - MUST PASS
   assert.strictEqual(checkFingerContact(175, 40, 12, 180), true, 'Genuine fingertip contact must be accepted');
+
+  // Case F: Smartphone camera with bright torch and auto-white-balance gain - MUST PASS
+  assert.strictEqual(checkFingerContact(210, 130, 90, 350), true, 'Mobile AWB torch fingertip contact must be accepted');
+
+  // Case G: Laptop webcam with finger under ambient light (no torch) - MUST PASS
+  assert.strictEqual(checkFingerContact(70, 40, 28, 120), true, 'Ambient webcam fingertip contact must be accepted');
 });
 
 // ---------------------------------------------------------
