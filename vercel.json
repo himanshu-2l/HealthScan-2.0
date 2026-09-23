@@ -5,6 +5,10 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/auth/google/callback",
+      "destination": "/api/google-fit/callback"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api/$1"
     },
