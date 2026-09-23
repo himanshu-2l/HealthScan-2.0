@@ -119,7 +119,7 @@ export function parseAIJsonResponse(rawText, schema) {
 }
 
 export function getGeminiModelName() {
-  return process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+  return process.env.GEMINI_MODEL || 'gemini-3.8-flash';
 }
 
 const MEDICINE_VISION_PROMPT = `You are a clinical OCR and pharmaceutical vision extraction engine.

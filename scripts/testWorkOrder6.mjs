@@ -5,8 +5,8 @@ console.log('🧪 Starting Work Order 6 Verification Suite...\n');
 
 // Test 1: Default model name
 delete process.env.GEMINI_MODEL;
-assert.strictEqual(getGeminiModelName(), 'gemini-2.5-flash', 'Default model should be gemini-2.5-flash');
-console.log('✅ Default model is gemini-2.5-flash');
+assert.strictEqual(getGeminiModelName(), 'gemini-3.8-flash', 'Default model should be gemini-3.8-flash');
+console.log('✅ Default model is gemini-3.8-flash');
 
 // Test 2: Configurable model name
 process.env.GEMINI_MODEL = 'gemini-2.0-flash';
