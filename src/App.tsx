@@ -13,6 +13,8 @@ import ComingSoon from "./components/ComingSoon";
 import { MobileAppView } from "./pages/MobileAppView";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
+import { SplashOpeningAnimation } from "./components/SplashOpeningAnimation";
+import { HealthScanLogo } from "./components/HealthScanLogo";
 
 // Lazy-loaded pages and heavy lab modules for fast PWA initial paint
 const Index = lazy(() => import("./pages/Index"));
@@ -60,10 +62,10 @@ const queryClient = new QueryClient({
 const PageLoadingFallback = () => (
   <div className="min-h-screen bg-slate-50 dark:bg-[#070A11] flex items-center justify-center transition-colors duration-200">
     <div className="flex flex-col items-center gap-3">
-      <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center text-slate-950 font-black text-xs animate-pulse">
-        HS
-      </div>
-      <span className="text-xs text-slate-500 dark:text-slate-400 font-medium tracking-wide">Loading module...</span>
+      <HealthScanLogo size="md" glow={true} />
+      <span className="text-xs text-slate-500 dark:text-slate-400 font-medium tracking-wide animate-pulse">
+        Loading module...
+      </span>
     </div>
   </div>
 );
@@ -216,6 +218,7 @@ const App = () => {
                 <AuthProvider>
                   <TooltipProvider>
                     <Toaster />
+                    <SplashOpeningAnimation />
                     <AppContent />
                   </TooltipProvider>
                 </AuthProvider>

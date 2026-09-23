@@ -17,6 +17,7 @@ import {
   ArrowRight,
   HeartPulse
 } from 'lucide-react';
+import { HealthScanLogo } from '@/components/HealthScanLogo';
 
 const Login: React.FC = () => {
   const { 
@@ -107,9 +108,7 @@ const Login: React.FC = () => {
           
           {/* Brand Header */}
           <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-teal-500 to-emerald-500 text-white font-black text-xl shadow-lg shadow-teal-500/20 mb-3">
-              HS
-            </div>
+            <HealthScanLogo size="lg" glow={true} className="mb-3" />
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
               Health<span className="text-teal-400">Scan</span>
             </h1>

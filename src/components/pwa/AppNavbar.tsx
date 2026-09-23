@@ -28,6 +28,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { QRCodeModal } from './QRCodeModal';
 import { SettingsModal } from '../SettingsModal';
 import { NAV_CATEGORIES } from '../../config/navRoutes';
+import { HealthScanLogo } from '../HealthScanLogo';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -82,9 +83,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             className="flex items-center gap-2.5 sm:gap-3 cursor-pointer select-none shrink-0"
             title="HealthScan Home"
           >
-            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-tr from-teal-600 to-emerald-500 text-white font-black text-sm shadow-sm transition-transform active:scale-95">
-              HS
-            </div>
+            <HealthScanLogo size="sm" showText={false} glow={true} className="transition-transform active:scale-95" />
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-base font-bold text-slate-900 dark:text-white tracking-tight">HealthScan</span>
