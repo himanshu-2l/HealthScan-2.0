@@ -1,10 +1,11 @@
 // HealthScan Clinical PWA Service Worker
-const CACHE_NAME = 'healthscan-v2';
+const CACHE_NAME = 'healthscan-v3';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
   '/pwa-icon.svg',
+  '/favicon.svg',
   '/models/hand_landmarker.task',
   '/models/mediapipe/wasm/vision_wasm_internal.js',
   '/models/mediapipe/wasm/vision_wasm_internal.wasm',
@@ -40,10 +41,27 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
-  const url = new URL(event.request.url);
 
-  // Don't intercept API or authentication calls
-  if (url.pathname.startsWith('/api') || url.pathname.startsWith('/auth')) {
+  let url;
+  try {
+    url = new URL(event.request.url);
+  } catch {
+    return;
+  }
+
+  // Strictly ignore unsupported schemes (e.g. chrome-extension://, moz-extension://, blob:, data:)
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    return;
+  }
+
+  // Don't intercept API, Firebase, or external authentication calls
+  if (
+    url.pathname.startsWith('/api') ||
+    url.pathname.startsWith('/auth') ||
+    url.hostname.includes('firebase') ||
+    url.hostname.includes('googleapis.com') ||
+    url.hostname.includes('google.com')
+  ) {
     return;
   }
 
@@ -54,7 +72,9 @@ self.addEventListener('fetch', (event) => {
         if (response && response.status === 200 && response.type === 'basic') {
           const responseClone = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
+            if (event.request.url.startsWith('http://') || event.request.url.startsWith('https://')) {
+              cache.put(event.request, responseClone).catch(() => {});
+            }
           });
         }
         return response;
@@ -62,8 +82,8 @@ self.addEventListener('fetch', (event) => {
       .catch(() => {
         return caches.match(event.request).then((cachedResponse) => {
           if (cachedResponse) return cachedResponse;
-          if (event.request.headers.get('accept')?.includes('text/html')) {
-            return caches.match('/');
+          if (event.request.mode === 'navigate' || event.request.headers.get('accept')?.includes('text/html')) {
+            return caches.match('/index.html') || caches.match('/');
           }
         });
       })
