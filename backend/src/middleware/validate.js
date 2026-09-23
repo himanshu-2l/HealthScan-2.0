@@ -216,7 +216,9 @@ export const validateGenericAssessment = (req, res, next) => {
     'RESPONSE_TIME',
     'SPEECH_PATTERN',
     'FINGER_TAPPING',
-    'HYPERVENTILATION_TEST'
+    'HYPERVENTILATION_TEST',
+    'CARDIOVASCULAR_ASSESSMENT',
+    'MENTAL_HEALTH_SCREENING'
   ];
 
   if (!type) {
@@ -342,10 +344,58 @@ export const sanitizeBody = (allowedFields) => {
   };
 };
 
+/**
+ * Validate Cardiovascular Assessment
+ */
+export const validateCardiovascularAssessment = (req, res, next) => {
+  const { userId, metrics, data } = req.body;
+  const errors = [];
+
+  if (!userId) {
+    errors.push('userId is required');
+  } else if (!isNonEmptyString(userId)) {
+    errors.push('userId must be a non-empty string');
+  }
+
+  if (!metrics || !isValidObject(metrics)) {
+    errors.push('metrics must be a valid object');
+  } else {
+    // heartRate validation
+    const hr = metrics.heartRate?.value !== undefined ? metrics.heartRate.value : metrics.heartRate;
+    if (hr === undefined || hr === null) {
+      errors.push('metrics.heartRate is required');
+    } else if (!isNumber(hr) || hr < 30 || hr > 220) {
+      errors.push('metrics.heartRate must be a physiologically plausible number between 30 and 220 BPM');
+    }
+
+    // SpO2 validation if present
+    const spo2 = metrics.spo2?.value !== undefined ? metrics.spo2.value : metrics.spo2;
+    if (spo2 !== undefined && spo2 !== null) {
+      if (!isNumber(spo2) || spo2 < 50 || spo2 > 100) {
+        errors.push('metrics.spo2 must be a percentage between 50 and 100%');
+      }
+    }
+  }
+
+  // Sensor contact integrity validation
+  if (data && isValidObject(data)) {
+    if (data.fingerDetected === false && (!data.mode || data.mode === 'fingertip')) {
+      errors.push('Sensor contact validation failed: fingertip was not detected on camera lens');
+    }
+  }
+
+  if (errors.length > 0) {
+    return sendValidationError(res, errors);
+  }
+
+  next();
+};
+
 export default {
   validateGaitAssessment,
   validateTremorAssessment,
   validateHyperventilationAssessment,
+  validateCardiovascularAssessment,
   validateGenericAssessment,
   validateUserId,
   validatePagination,

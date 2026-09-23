@@ -8,6 +8,7 @@ import {
   validateGaitAssessment,
   validateTremorAssessment,
   validateHyperventilationAssessment,
+  validateCardiovascularAssessment,
   validateGenericAssessment,
   validateUserId,
   validatePagination
@@ -265,6 +266,79 @@ router.get('/hyperventilation/history/:userId',
         .limit(limit)
         .lean(),
       HyperventilationAssessment.countDocuments({ userId })
+    ]);
+
+    return successResponse(res, history, 200, {
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + history.length < total
+      }
+    });
+  })
+);
+
+// ===========================================
+// CARDIOVASCULAR ASSESSMENT ROUTES
+// ===========================================
+
+/**
+ * Save Cardiovascular Assessment
+ * POST /api/labs/cardiovascular/save
+ */
+router.post('/cardiovascular/save',
+  requireAuth,
+  assessmentLimiter,
+  validateCardiovascularAssessment,
+  asyncHandler(async (req, res) => {
+    const { userId, metrics, data } = req.body;
+
+    // Verify user access
+    if (!verifyUserAccess(req, userId)) {
+      return errorResponse(res, 'Forbidden', 'You can only save assessments for yourself', 403);
+    }
+
+    const assessment = new Assessment({
+      userId,
+      type: 'CARDIOVASCULAR_ASSESSMENT',
+      metrics,
+      data,
+      status: 'COMPLETED'
+    });
+
+    await assessment.save();
+    
+    return successResponse(res, assessment, 201, {
+      message: 'Cardiovascular assessment saved successfully'
+    });
+  })
+);
+
+/**
+ * Get Cardiovascular Assessment History
+ * GET /api/labs/cardiovascular/history/:userId
+ */
+router.get('/cardiovascular/history/:userId',
+  requireAuth,
+  validateUserId,
+  validatePagination,
+  asyncHandler(async (req, res) => {
+    const { userId } = req.params;
+    const { limit = 20, offset = 0 } = req.pagination || {};
+
+    // Verify user access
+    if (!verifyUserAccess(req, userId)) {
+      return errorResponse(res, 'Forbidden', 'You can only access your own assessments', 403);
+    }
+
+    const [history, total] = await Promise.all([
+      Assessment.find({ userId, type: 'CARDIOVASCULAR_ASSESSMENT' })
+        .sort({ timestamp: -1 })
+        .skip(offset)
+        .limit(limit)
+        .lean(),
+      Assessment.countDocuments({ userId, type: 'CARDIOVASCULAR_ASSESSMENT' })
     ]);
 
     return successResponse(res, history, 200, {

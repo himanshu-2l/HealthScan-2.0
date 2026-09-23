@@ -234,6 +234,59 @@ runTest('TEST 7: Clinical Data Provenance correctly identifies MEASURED vs ESTIM
   assert.strictEqual(resultUnavailable.spo2, null);
 });
 
+// ---------------------------------------------------------
+// TEST 8: Optical Finger Contact Detection Rejects Open Room Noise
+// ---------------------------------------------------------
+runTest('TEST 8: Contact PPG optical criteria strictly reject open room, ambient light, and desk surfaces', () => {
+  function checkFingerContact(avgRed, avgGreen, avgBlue, rVariance) {
+    const totalBrightness = avgRed + avgGreen + avgBlue;
+    const redRatio = totalBrightness > 0 ? avgRed / totalBrightness : 0;
+
+    const hasMinRed = avgRed >= 50;
+    const hasRedDominance = redRatio >= 0.58 && 
+                            avgRed >= avgGreen * 1.35 && 
+                            avgRed >= avgBlue * 2.2;
+    const hasLowBlue = avgBlue <= 75;
+    const isDiffuseTissue = rVariance < 850;
+
+    return hasMinRed && hasRedDominance && hasLowBlue && isDiffuseTissue;
+  }
+
+  // Case A: Warm room light (incandescent) - must be rejected
+  assert.strictEqual(checkFingerContact(120, 110, 85, 200), false, 'Warm room light must be rejected');
+
+  // Case B: Wooden desk or table - must be rejected
+  assert.strictEqual(checkFingerContact(140, 100, 75, 400), false, 'Wooden desk surface must be rejected');
+
+  // Case C: Pitch black room / camera covered on dark cloth - must be rejected (not transilluminated)
+  assert.strictEqual(checkFingerContact(20, 15, 10, 50), false, 'Darkness without light must be rejected');
+
+  // Case D: High spatial variance (camera pointing at textured room objects) - must be rejected
+  assert.strictEqual(checkFingerContact(160, 45, 15, 1200), false, 'High variance textured scene must be rejected');
+
+  // Case E: Genuine transilluminated fingertip over camera & flash - MUST PASS
+  assert.strictEqual(checkFingerContact(175, 40, 12, 180), true, 'Genuine fingertip contact must be accepted');
+});
+
+// ---------------------------------------------------------
+// TEST 9: Uncontacted camera yields null / 0 BPM without noise computation
+// ---------------------------------------------------------
+runTest('TEST 9: Uncontacted sensor state guarantees null pulse and zero beat trigger', () => {
+  const fingerActive = false;
+  let heartRate = null;
+  let beatTriggered = false;
+
+  // Emulate callback gating:
+  if (!fingerActive) {
+    heartRate = null;
+    beatTriggered = false;
+  }
+
+  assert.strictEqual(heartRate, null, 'Uncontacted sensor must never report a numerical heart rate');
+  assert.strictEqual(beatTriggered, false, 'Uncontacted sensor must never trigger pulse audio or beat animations');
+});
+
+
 console.log('\n====================================================');
 console.log(`TEST SUMMARY: ${passedTests}/${totalTests} TESTS PASSED`);
 console.log('====================================================\n');

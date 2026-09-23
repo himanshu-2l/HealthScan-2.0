@@ -87,6 +87,7 @@ export const CardiovascularLab: React.FC = () => {
   const lastBeatTickRef = useRef<number>(0);
   const lastUiUpdateRef = useRef<number>(0);
   const isBeatActiveRef = useRef<boolean>(false);
+  const isFingerActiveRef = useRef<boolean>(false);
   const beatTimeoutRef = useRef<number | null>(null);
   const [age, setAge] = useState<number | string>(35);
 
@@ -439,39 +440,54 @@ export const CardiovascularLab: React.FC = () => {
     // Start pulse detection
     pulseDetector.start(
       (bpm, conf, intervals, currentSpo2, fingerActive, isBeat) => {
-        heartRateRef.current = bpm;
-        confidenceRef.current = conf;
-        if (currentSpo2 !== undefined && currentSpo2 > 0) {
-          spo2Ref.current = currentSpo2;
+        const isContact = Boolean(fingerActive);
+        setFingerDetected(isContact);
+        isFingerActiveRef.current = isContact;
+
+        if (ppgMode === 'fingertip' && !isContact) {
+          // No finger on camera: immediately clear reading and prevent false beats
+          setHeartRate(null);
+          heartRateRef.current = null;
+          setConfidence(0);
+          confidenceRef.current = 0;
+          setSpo2(null);
+          spo2Ref.current = null;
+          return;
         }
 
-        // Throttle React state updates so we do not re-render at 60 FPS
-        const now = Date.now();
-        if (isBeat || now - lastUiUpdateRef.current >= 250) {
-          lastUiUpdateRef.current = now;
-          setHeartRate(bpm);
-          setConfidence(conf);
+        // Only process pulse when verified contact is active
+        if (bpm > 40 && bpm < 200 && conf >= 0.25) {
+          heartRateRef.current = bpm;
+          confidenceRef.current = conf;
           if (currentSpo2 !== undefined && currentSpo2 > 0) {
-            setSpo2(currentSpo2);
+            spo2Ref.current = currentSpo2;
           }
-          if (fingerActive !== undefined) {
-            setFingerDetected(fingerActive);
-          }
-        }
 
-        // Real-time physiological beat detected!
-        if (isBeat) {
-          triggerPulseBeat(currentSpo2);
-        }
-
-        // Collect genuine RR intervals from peak detection
-        if (isBeat && intervals && intervals.length > 0) {
-          const latestInterval = intervals[intervals.length - 1];
-          if (latestInterval >= 300 && latestInterval <= 2000) {
-            rrIntervalsRef.current.push(latestInterval);
+          // Throttle React state updates so we do not re-render at 60 FPS
+          const now = Date.now();
+          if (isBeat || now - lastUiUpdateRef.current >= 250) {
+            lastUiUpdateRef.current = now;
+            setHeartRate(bpm);
+            setConfidence(conf);
+            if (currentSpo2 !== undefined && currentSpo2 > 0) {
+              setSpo2(currentSpo2);
+            }
           }
-          if (rrIntervalsRef.current.length > 120) {
-            rrIntervalsRef.current = rrIntervalsRef.current.slice(-120);
+
+          // Real-time physiological beat detected!
+          if (isBeat) {
+            triggerPulseBeat(currentSpo2);
+          }
+
+          // Collect genuine RR intervals from peak detection
+          if (isBeat && intervals && intervals.length > 0) {
+            const latestInterval = intervals[intervals.length - 1];
+            if (latestInterval >= 300 && latestInterval <= 2000) {
+              rrIntervalsRef.current.push(latestInterval);
+            }
+            if (rrIntervalsRef.current.length > 120) {
+              rrIntervalsRef.current = rrIntervalsRef.current.slice(-120);
+            }
           }
         }
       },
@@ -486,7 +502,12 @@ export const CardiovascularLab: React.FC = () => {
       testDurationRef.current = elapsed;
       setTestDuration(elapsed);
 
-      // Rhythm watchdog: if we have a locked physiological BPM, ensure visual & audio pulse fire steadily
+      // Rhythm watchdog: only fire when finger is actively in contact (in fingertip mode)
+      if (ppgMode === 'fingertip' && !isFingerActiveRef.current) {
+        return;
+      }
+
+      // If we have a locked physiological BPM, ensure visual & audio pulse fire steadily
       const liveHeartRate = heartRateRef.current;
       const liveConfidence = confidenceRef.current;
       const currentBpm = (liveHeartRate && liveHeartRate >= 40 && liveHeartRate <= 190 && liveConfidence >= 0.35) ? liveHeartRate : null;

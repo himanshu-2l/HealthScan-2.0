@@ -330,7 +330,14 @@ export const QuickScanModal: React.FC<QuickScanModalProps> = ({
         pulseDetector.initialize(videoRef.current, canvasRef.current);
         pulseDetector.setMode('fingertip');
 
-        pulseDetector.start((bpm, conf, intervals) => {
+        pulseDetector.start((bpm, conf, intervals, currentSpo2, fingerActive) => {
+          if (!fingerActive) {
+            setHeartBpm(null);
+            setHeartHrv(null);
+            setPpgConfidence(0);
+            return;
+          }
+
           if (bpm > 45 && bpm < 190 && conf >= 0.25) {
             setHeartBpm(Math.round(bpm));
             setPpgConfidence(conf);

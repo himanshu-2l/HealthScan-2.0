@@ -198,6 +198,8 @@ class PulseDetector {
   // PPG mode and contact status
   private mode: PPGMode = 'fingertip';
   private fingerDetected: boolean = false;
+  private consecutiveFingerFrames: number = 0;
+  private consecutiveNoFingerFrames: number = 0;
   private latestSpo2: number | null = null;
 
   // Face or finger detection region
@@ -355,33 +357,99 @@ class PulseDetector {
       // Extract pixel data from detection region
       const imageData = this.ctx.getImageData(regX, regY, regW, regH);
 
-      // Calculate average RGB values
+      // Calculate average RGB values and spatial variance across pixels
       let rSum = 0, gSum = 0, bSum = 0;
+      let rSqSum = 0;
       const pixelCount = imageData.data.length / 4;
 
       for (let i = 0; i < imageData.data.length; i += 4) {
-        rSum += imageData.data[i];     // Red
-        gSum += imageData.data[i + 1]; // Green
-        bSum += imageData.data[i + 2];  // Blue
+        const r = imageData.data[i];
+        const g = imageData.data[i + 1];
+        const b = imageData.data[i + 2];
+        rSum += r;
+        gSum += g;
+        bSum += b;
+        rSqSum += r * r;
       }
 
       const avgRed = rSum / pixelCount;
       const avgGreen = gSum / pixelCount;
       const avgBlue = bSum / pixelCount;
+      const rVariance = Math.max(0, (rSqSum / pixelCount) - (avgRed * avgRed));
 
-      // Robust finger coverage detection in fingertip mode
+      // Strict physiological finger coverage verification in fingertip mode
       if (this.mode === 'fingertip') {
         const totalBrightness = avgRed + avgGreen + avgBlue;
         const redRatio = totalBrightness > 0 ? avgRed / totalBrightness : 0;
-        const isRedDominant = (redRatio >= 0.40 && avgRed > avgGreen && avgRed > avgBlue) ||
-                              (avgRed > 55 && avgRed > avgGreen * 1.05 && avgRed > avgBlue * 1.08) ||
-                              (avgRed > 175 && avgRed > avgGreen && avgRed > avgBlue);
-        this.fingerDetected = totalBrightness > 25 && isRedDominant;
+
+        // True contact PPG physics:
+        // 1. Minimum red illumination (tissue must be illuminated by flash or light, not occluded blackness)
+        const hasMinRed = avgRed >= 50;
+        // 2. High red dominance: hemoglobin strongly absorbs green and blue, transmitting red
+        const hasRedDominance = redRatio >= 0.58 && 
+                                avgRed >= avgGreen * 1.35 && 
+                                avgRed >= avgBlue * 2.2;
+        // 3. Low blue intensity: subcutaneous tissue absorbs virtually all blue light
+        const hasLowBlue = avgBlue <= 75;
+        // 4. Optical diffusion: direct contact diffuses light evenly across sensor (low spatial variance vs open room)
+        const isDiffuseTissue = rVariance < 850;
+
+        const isContactActive = hasMinRed && hasRedDominance && hasLowBlue && isDiffuseTissue;
+
+        if (isContactActive) {
+          this.consecutiveFingerFrames++;
+          this.consecutiveNoFingerFrames = 0;
+          if (this.consecutiveFingerFrames >= 3) {
+            this.fingerDetected = true;
+          }
+        } else {
+          this.consecutiveNoFingerFrames++;
+          this.consecutiveFingerFrames = 0;
+          if (this.consecutiveNoFingerFrames >= 2) {
+            this.fingerDetected = false;
+          }
+        }
+
+        // STRICT GATE: When finger is NOT in contact with camera, do NOT compute pulse from air/room noise
+        if (!this.fingerDetected) {
+          this.redValues = [];
+          this.greenValues = [];
+          this.blueValues = [];
+          this.timestamps = [];
+          this.lastRRIntervals = [];
+          this.latestSpo2 = null;
+
+          if (this.onPulseUpdate) {
+            this.onPulseUpdate(0, 0, [], null, false, false);
+          }
+
+          this.animationFrame = requestAnimationFrame(() => this.processFrame());
+          return;
+        }
       } else {
-        this.fingerDetected = true;
+        // Face rPPG mode: verify face region is well-illuminated and present
+        const totalBrightness = avgRed + avgGreen + avgBlue;
+        const isFaceIlluminated = avgGreen >= 35 && avgGreen <= 235 && totalBrightness >= 90;
+        this.fingerDetected = isFaceIlluminated;
+
+        if (!this.fingerDetected) {
+          this.redValues = [];
+          this.greenValues = [];
+          this.blueValues = [];
+          this.timestamps = [];
+          this.lastRRIntervals = [];
+          this.latestSpo2 = null;
+
+          if (this.onPulseUpdate) {
+            this.onPulseUpdate(0, 0, [], null, false, false);
+          }
+
+          this.animationFrame = requestAnimationFrame(() => this.processFrame());
+          return;
+        }
       }
 
-      // Store values
+      // Store values strictly when valid optical contact is confirmed
       const timestamp = Date.now();
       this.redValues.push(avgRed);
       this.greenValues.push(avgGreen);
@@ -627,6 +695,13 @@ class PulseDetector {
    * Get current waveform data
    */
   getWaveform(): PulseWaveform {
+    if (this.mode === 'fingertip' && !this.fingerDetected) {
+      return {
+        samples: [],
+        timestamps: [],
+        sampleRate: 30
+      };
+    }
     const signal = this.selectSignal();
     return {
       samples: [...signal],
@@ -682,6 +757,8 @@ class PulseDetector {
     this.lastRRIntervals = [];
     this.detectionRegion = null;
     this.fingerDetected = false;
+    this.consecutiveFingerFrames = 0;
+    this.consecutiveNoFingerFrames = 0;
     this.latestSpo2 = null;
     this.lastBeatTimestamp = 0;
   }
