@@ -257,19 +257,19 @@ const CyclePhaseIntelligence: React.FC = () => {
   // Empty state
   if (!hasPeriodData) {
     return (
-      <div className="bg-white/[0.04] backdrop-blur-sm border border-white/[0.06] rounded-2xl p-8 sm:p-12 text-center">
+      <div className="bg-white dark:bg-white/[0.04] backdrop-blur-sm border border-slate-200/80 dark:border-white/[0.06] rounded-2xl p-8 sm:p-12 text-center shadow-sm">
         <div className="p-4 bg-rose-500/10 rounded-2xl w-fit mx-auto mb-6">
-          <Calendar className="w-12 h-12 text-rose-400/60" />
+          <Calendar className="w-12 h-12 text-rose-500 dark:text-rose-400/60" />
         </div>
-        <h3 className="text-xl font-semibold text-white mb-3">
+        <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-3">
           No Period Data Logged Yet
         </h3>
-        <p className="text-white/50 mb-6 max-w-md mx-auto">
+        <p className="text-slate-600 dark:text-slate-400 mb-6 max-w-md mx-auto">
           To get personalized cycle intelligence, please log your period in the
           "Period Log" tab first. We'll calculate your cycle phases and provide
           tailored insights.
         </p>
-        <p className="text-sm text-white/40">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           💡 Tip: Log at least 2-3 cycles for more accurate predictions
         </p>
       </div>

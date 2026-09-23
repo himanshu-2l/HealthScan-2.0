@@ -3,7 +3,7 @@
  * Speak to record health readings hands-free
  */
 
-import { GlassNavbar } from '@/components/GlassNavbar';
+import { SubPageHeader } from '@/components/pwa/SubPageHeader';
 import { SiteFooter } from '@/components/SiteFooter';
 import { VoiceDataEntry } from '@/components/VoiceDataEntry';
 import { Badge } from '@/components/ui/badge';
@@ -12,9 +12,9 @@ import { Mic, Wand2 } from 'lucide-react';
 export default function VoiceEntryPage() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 transition-colors duration-200">
-      <GlassNavbar />
+      <SubPageHeader backLabel="Back to Today" backTo="/app?tab=today" category="Speech to Vitals" />
 
-      <main className="flex-1 pt-28 pb-16">
+      <main className="flex-1 py-6 pb-24 md:pb-12">
         <div className="container mx-auto px-3 sm:px-4 lg:px-8 overflow-x-hidden">
           <div className="max-w-6xl mx-auto space-y-10">
             {/* Page Header */}

@@ -5,7 +5,7 @@
  */
 
 import React, { Suspense, lazy, useState } from 'react';
-import { GlassNavbar } from '@/components/GlassNavbar';
+import { SubPageHeader } from '@/components/pwa/SubPageHeader';
 import { SiteFooter } from '@/components/SiteFooter';
 import { Badge } from '@/components/ui/badge';
 import { Activity, Calendar, Brain, Heart, Search, Sparkles, Droplet, HeartPulse } from 'lucide-react';
@@ -45,9 +45,9 @@ export default function PeriodTrackerPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 transition-colors duration-200">
-      <GlassNavbar />
+      <SubPageHeader backLabel="Back to Care" backTo="/app?tab=care" category="Hormonal Health" />
 
-      <main className="flex-1 pt-28 pb-16">
+      <main className="flex-1 py-6 pb-24 md:pb-12">
         <div className="container mx-auto px-3 sm:px-4 overflow-x-hidden">
           <div className="max-w-6xl mx-auto space-y-6">
             {/* Page Header */}

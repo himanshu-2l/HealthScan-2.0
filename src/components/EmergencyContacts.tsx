@@ -284,14 +284,14 @@ export const EmergencyContacts: React.FC = () => {
   return (
     <div className="space-y-8">
       {/* SOS Section */}
-      <div className="bg-gradient-to-br from-rose-500/20 to-red-600/10 backdrop-blur-sm border border-rose-500/30 rounded-2xl p-5 sm:p-8">
+      <div className="bg-rose-50/80 dark:bg-gradient-to-br dark:from-rose-500/20 dark:to-red-600/10 backdrop-blur-sm border border-rose-200 dark:border-rose-500/30 rounded-2xl p-5 sm:p-8 shadow-sm">
         <div className="flex items-center gap-3 sm:gap-4 mb-5 sm:mb-6">
-          <div className="p-3 sm:p-4 bg-rose-500/20 rounded-xl sm:rounded-2xl border border-rose-500/30">
-            <ShieldAlert className="w-6 h-6 sm:w-8 sm:h-8 text-rose-400" />
+          <div className="p-3 sm:p-4 bg-rose-500/15 dark:bg-rose-500/20 rounded-xl sm:rounded-2xl border border-rose-500/30">
+            <ShieldAlert className="w-6 h-6 sm:w-8 sm:h-8 text-rose-600 dark:text-rose-400" />
           </div>
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-white">Emergency SOS</h2>
-            <p className="text-rose-200/70 text-xs sm:text-sm">In an emergency, call immediately</p>
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">Emergency SOS</h2>
+            <p className="text-rose-700/80 dark:text-rose-200/70 text-xs sm:text-sm">In an emergency, call immediately</p>
           </div>
         </div>
 
@@ -299,28 +299,28 @@ export const EmergencyContacts: React.FC = () => {
           {/* National Emergency */}
           <a
             href="tel:112"
-            className="flex items-center gap-3 sm:gap-4 p-4 sm:p-5 bg-rose-600/30 hover:bg-rose-600/40 border border-rose-500/40 rounded-xl transition-all duration-300 group"
+            className="flex items-center gap-3 sm:gap-4 p-4 sm:p-5 bg-white dark:bg-rose-600/30 hover:bg-rose-100/50 dark:hover:bg-rose-600/40 border border-rose-200 dark:border-rose-500/40 rounded-xl transition-all duration-300 group shadow-sm"
           >
-            <div className="p-2.5 sm:p-3 bg-rose-500/30 rounded-xl group-hover:bg-rose-500/40 transition-colors">
-              <Phone className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+            <div className="p-2.5 sm:p-3 bg-rose-500/15 dark:bg-rose-500/30 rounded-xl group-hover:bg-rose-500/25 dark:group-hover:bg-rose-500/40 transition-colors">
+              <Phone className="w-5 h-5 sm:w-6 sm:h-6 text-rose-600 dark:text-white" />
             </div>
             <div>
-              <span className="text-white font-bold text-xl sm:text-2xl block">112</span>
-              <span className="text-rose-200/70 text-xs sm:text-sm">National Emergency</span>
+              <span className="text-slate-900 dark:text-white font-bold text-xl sm:text-2xl block font-mono">112</span>
+              <span className="text-slate-600 dark:text-rose-200/70 text-xs sm:text-sm">National Emergency</span>
             </div>
           </a>
 
           {/* Ambulance */}
           <a
             href="tel:102"
-            className="flex items-center gap-3 sm:gap-4 p-4 sm:p-5 bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/30 rounded-xl transition-all duration-300 group"
+            className="flex items-center gap-3 sm:gap-4 p-4 sm:p-5 bg-white dark:bg-rose-600/20 hover:bg-rose-100/50 dark:hover:bg-rose-600/30 border border-rose-200 dark:border-rose-500/30 rounded-xl transition-all duration-300 group shadow-sm"
           >
-            <div className="p-2.5 sm:p-3 bg-rose-500/20 rounded-xl group-hover:bg-rose-500/30 transition-colors">
-              <Ambulance className="w-5 h-5 sm:w-6 sm:h-6 text-rose-300" />
+            <div className="p-2.5 sm:p-3 bg-rose-500/15 dark:bg-rose-500/20 rounded-xl group-hover:bg-rose-500/25 dark:group-hover:bg-rose-500/30 transition-colors">
+              <Ambulance className="w-5 h-5 sm:w-6 sm:h-6 text-rose-600 dark:text-rose-300" />
             </div>
             <div>
-              <span className="text-white font-bold text-xl sm:text-2xl block">102</span>
-              <span className="text-rose-200/60 text-xs sm:text-sm">Ambulance</span>
+              <span className="text-slate-900 dark:text-white font-bold text-xl sm:text-2xl block font-mono">102</span>
+              <span className="text-slate-600 dark:text-rose-200/60 text-xs sm:text-sm">Ambulance</span>
             </div>
           </a>
 
@@ -328,25 +328,25 @@ export const EmergencyContacts: React.FC = () => {
           {primaryContact ? (
             <a
               href={`tel:${primaryContact.phone}`}
-              className="flex items-center gap-3 sm:gap-4 p-4 sm:p-5 bg-white/[0.06] hover:bg-white/[0.10] border border-white/[0.10] rounded-xl transition-all duration-300 group"
+              className="flex items-center gap-3 sm:gap-4 p-4 sm:p-5 bg-white dark:bg-white/[0.06] hover:bg-slate-50 dark:hover:bg-white/[0.10] border border-slate-200 dark:border-white/[0.10] rounded-xl transition-all duration-300 group shadow-sm"
             >
-              <div className="p-2.5 sm:p-3 bg-teal-500/20 rounded-xl group-hover:bg-teal-500/30 transition-colors">
-                <User className="w-5 h-5 sm:w-6 sm:h-6 text-teal-400" />
+              <div className="p-2.5 sm:p-3 bg-teal-500/15 dark:bg-teal-500/20 rounded-xl group-hover:bg-teal-500/25 dark:group-hover:bg-teal-500/30 transition-colors">
+                <User className="w-5 h-5 sm:w-6 sm:h-6 text-teal-600 dark:text-teal-400" />
               </div>
               <div className="flex-1 min-w-0">
-                <span className="text-white font-semibold block truncate text-sm sm:text-base">{primaryContact.name}</span>
-                <span className="text-white/50 text-xs sm:text-sm">{primaryContact.phone}</span>
+                <span className="text-slate-900 dark:text-white font-semibold block truncate text-sm sm:text-base">{primaryContact.name}</span>
+                <span className="text-slate-500 dark:text-white/50 text-xs sm:text-sm">{primaryContact.phone}</span>
               </div>
-              <Star className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 flex-shrink-0" />
+              <Star className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500 dark:text-amber-400 flex-shrink-0" />
             </a>
           ) : (
-            <div className="flex items-center gap-3 sm:gap-4 p-4 sm:p-5 bg-white/[0.03] border border-dashed border-white/[0.10] rounded-xl">
-              <div className="p-2.5 sm:p-3 bg-white/[0.04] rounded-xl">
-                <User className="w-5 h-5 sm:w-6 sm:h-6 text-white/30" />
+            <div className="flex items-center gap-3 sm:gap-4 p-4 sm:p-5 bg-white/70 dark:bg-white/[0.03] border border-dashed border-slate-300 dark:border-white/[0.10] rounded-xl">
+              <div className="p-2.5 sm:p-3 bg-slate-100 dark:bg-white/[0.04] rounded-xl">
+                <User className="w-5 h-5 sm:w-6 sm:h-6 text-slate-400 dark:text-white/30" />
               </div>
               <div>
-                <span className="text-white/40 font-medium block text-sm sm:text-base">No Primary Contact</span>
-                <span className="text-white/30 text-xs sm:text-sm">Add one below</span>
+                <span className="text-slate-700 dark:text-white/40 font-medium block text-sm sm:text-base">No Primary Contact</span>
+                <span className="text-slate-500 dark:text-white/30 text-xs sm:text-sm">Add one below</span>
               </div>
             </div>
           )}
@@ -354,20 +354,20 @@ export const EmergencyContacts: React.FC = () => {
       </div>
 
       {/* Emergency Contacts Section */}
-      <div className="bg-white/[0.04] backdrop-blur-sm border border-white/[0.06] rounded-2xl overflow-hidden">
-        <div className="px-4 sm:px-8 py-4 sm:py-6 border-b border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="bg-white dark:bg-white/[0.04] backdrop-blur-sm border border-slate-200/80 dark:border-white/[0.06] rounded-2xl overflow-hidden shadow-sm">
+        <div className="px-4 sm:px-8 py-4 sm:py-6 border-b border-slate-200/80 dark:border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-teal-500/15 rounded-xl">
-              <User className="w-5 h-5 text-teal-400" />
+              <User className="w-5 h-5 text-teal-600 dark:text-teal-400" />
             </div>
             <div>
-              <h3 className="text-base sm:text-lg font-semibold text-white">Emergency Contacts</h3>
-              <p className="text-white/40 text-xs sm:text-sm">{contacts.length} contact{contacts.length !== 1 ? 's' : ''} saved</p>
+              <h3 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-white">Emergency Contacts</h3>
+              <p className="text-slate-500 dark:text-white/40 text-xs sm:text-sm">{contacts.length} contact{contacts.length !== 1 ? 's' : ''} saved</p>
             </div>
           </div>
           <Button
             onClick={() => { resetContactForm(); setShowContactForm(true); }}
-            className="bg-teal-600 hover:bg-teal-500 text-white rounded-xl px-4 sm:px-5 py-2 sm:py-2.5 h-auto font-medium shadow-lg shadow-teal-600/20 text-sm sm:text-base w-full sm:w-auto"
+            className="bg-teal-600 hover:bg-teal-500 text-white rounded-xl px-4 sm:px-5 py-2 sm:py-2.5 h-auto font-medium shadow-md shadow-teal-600/20 text-sm sm:text-base w-full sm:w-auto"
           >
             <Plus className="w-4 h-4 mr-2" />
             Add Contact

@@ -176,6 +176,7 @@ const AppContent = () => {
         <Route path="/purpose" element={<Purpose />} />
         <Route path="/about" element={<About />} />
         <Route path="/hardware-integration" element={<HardwareIntegration />} />
+        <Route path="/hardware" element={<HardwareIntegration />} />
         <Route path="/device-model" element={<DeviceModel />} />
         
         {/* Caregiver Route - Protected to prevent unauthorized access */}

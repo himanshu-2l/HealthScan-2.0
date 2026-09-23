@@ -1,5 +1,5 @@
 import React from 'react';
-import { GlassNavbar } from '@/components/GlassNavbar';
+import { SubPageHeader } from '@/components/pwa/SubPageHeader';
 import { SiteFooter } from '@/components/SiteFooter';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Linkedin, Github, Sparkles, CheckCircle2, AlertTriangle, Search } from 'lucide-react';
@@ -126,34 +126,34 @@ const About: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <GlassNavbar />
+    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 transition-colors duration-200">
+      <SubPageHeader backLabel="Back to App" backTo="/" category="About Us" />
 
-      <main className="pt-28 pb-24 px-6 flex-1">
+      <main className="py-8 pb-24 md:pb-12 px-4 sm:px-6 flex-1">
         <div className="max-w-7xl mx-auto space-y-20">
           
           {/* Hero Section */}
           <section className="text-center space-y-8">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.04] border border-white/[0.06]">
-              <Sparkles className="w-4 h-4 text-teal-400" />
-              <span className="text-white/60 text-sm">Pioneering Neurological Healthcare</span>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.06]">
+              <Sparkles className="w-4 h-4 text-teal-500 dark:text-teal-400" />
+              <span className="text-slate-600 dark:text-white/60 text-sm font-medium">Pioneering Neurological Healthcare</span>
             </div>
             
-            <h1 className="text-5xl md:text-7xl font-bold text-white tracking-tight">
-              About <span className="text-teal-400">HealthScan</span>
+            <h1 className="text-5xl md:text-7xl font-bold text-slate-900 dark:text-white tracking-tight">
+              About <span className="text-teal-600 dark:text-teal-400">HealthScan</span>
             </h1>
             
-            <p className="text-xl text-white/60 max-w-3xl mx-auto leading-relaxed">
-              We're pioneering the future of neurological healthcare by developing the <strong className="text-white">HealthScan device</strong> —
+            <p className="text-xl text-slate-600 dark:text-white/60 max-w-3xl mx-auto leading-relaxed">
+              We're pioneering the future of neurological healthcare by developing the <strong className="text-slate-900 dark:text-white">HealthScan device</strong> —
               a comprehensive medical-grade hardware platform that combines advanced AI with professional sensor technology
               for early detection and monitoring of neurological conditions.
             </p>
             
             <div className="flex flex-wrap justify-center gap-3">
-              <span className="px-4 py-2 rounded-xl bg-teal-500/10 text-teal-400 text-sm font-medium border border-teal-500/20">
+              <span className="px-4 py-2 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 text-sm font-medium border border-teal-500/20">
                 ABDM Integrated
               </span>
-              <span className="px-4 py-2 rounded-xl bg-emerald-500/10 text-emerald-400 text-sm font-medium border border-emerald-500/20">
+              <span className="px-4 py-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-sm font-medium border border-emerald-500/20">
                 Government Approved
               </span>
             </div>
@@ -161,22 +161,22 @@ const About: React.FC = () => {
 
           {/* Healthcare Crisis Section */}
           <section className="space-y-10">
-            <h2 className="text-3xl font-semibold text-white text-center">India's Healthcare Crisis</h2>
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-white text-center">India's Healthcare Crisis</h2>
             
             <div className="grid md:grid-cols-2 gap-8">
               {/* The Problem */}
-              <div className="bg-white/[0.04] backdrop-blur-sm border border-white/[0.06] rounded-2xl p-8 space-y-6">
+              <div className="bg-white dark:bg-white/[0.04] backdrop-blur-sm border border-slate-200 dark:border-white/[0.06] rounded-2xl p-8 space-y-6 shadow-sm">
                 <div className="flex items-center gap-3">
                   <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20">
-                    <AlertTriangle className="w-6 h-6 text-rose-400" />
+                    <AlertTriangle className="w-6 h-6 text-rose-500 dark:text-rose-400" />
                   </div>
-                  <h3 className="text-xl font-semibold text-rose-400">The Problem</h3>
+                  <h3 className="text-xl font-bold text-rose-600 dark:text-rose-400">The Problem</h3>
                 </div>
                 
                 <ul className="space-y-4">
                   {problemItems.map((item, i) => (
-                    <li key={i} className="flex items-start gap-3 text-white/60">
-                      <span className="w-1.5 h-1.5 rounded-full bg-rose-400 mt-2.5 flex-shrink-0" />
+                    <li key={i} className="flex items-start gap-3 text-slate-700 dark:text-white/60">
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500 dark:bg-rose-400 mt-2.5 flex-shrink-0" />
                       {item}
                     </li>
                   ))}
@@ -184,18 +184,18 @@ const About: React.FC = () => {
               </div>
 
               {/* Root Causes */}
-              <div className="bg-white/[0.04] backdrop-blur-sm border border-white/[0.06] rounded-2xl p-8 space-y-6">
+              <div className="bg-white dark:bg-white/[0.04] backdrop-blur-sm border border-slate-200 dark:border-white/[0.06] rounded-2xl p-8 space-y-6 shadow-sm">
                 <div className="flex items-center gap-3">
                   <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                    <Search className="w-6 h-6 text-amber-400" />
+                    <Search className="w-6 h-6 text-amber-500 dark:text-amber-400" />
                   </div>
-                  <h3 className="text-xl font-semibold text-amber-400">Root Causes</h3>
+                  <h3 className="text-xl font-bold text-amber-600 dark:text-amber-400">Root Causes</h3>
                 </div>
                 
                 <ul className="space-y-4">
                   {rootCauses.map((item, i) => (
-                    <li key={i} className="flex items-start gap-3 text-white/60">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-2.5 flex-shrink-0" />
+                    <li key={i} className="flex items-start gap-3 text-slate-700 dark:text-white/60">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 dark:bg-amber-400 mt-2.5 flex-shrink-0" />
                       {item}
                     </li>
                   ))}
@@ -204,7 +204,7 @@ const About: React.FC = () => {
             </div>
 
             <div className="text-center">
-              <span className="inline-block px-6 py-3 rounded-xl bg-rose-500/10 text-rose-300 text-lg font-medium border border-rose-500/20">
+              <span className="inline-block px-6 py-3 rounded-xl bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-300 text-lg font-semibold border border-rose-200 dark:border-rose-500/20 shadow-sm">
                 50+ Million Indians Need Accessible Health Screening
               </span>
             </div>
@@ -212,31 +212,31 @@ const About: React.FC = () => {
 
           {/* Our Solution */}
           <section className="space-y-10">
-            <h2 className="text-3xl font-semibold text-white text-center">Our Solution: HealthScan</h2>
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-white text-center">Our Solution: HealthScan</h2>
             
-            <div className="bg-white/[0.04] backdrop-blur-sm border border-white/[0.06] rounded-2xl p-10 space-y-10">
+            <div className="bg-white dark:bg-white/[0.04] backdrop-blur-sm border border-slate-200 dark:border-white/[0.06] rounded-2xl p-10 space-y-10 shadow-sm">
               {/* Labs Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {labs.map((lab, i) => (
                   <div 
                     key={i} 
-                    className="flex items-start gap-4 p-5 rounded-xl bg-white/[0.04] border border-white/[0.06] hover:bg-white/[0.06] transition-all duration-300"
+                    className="flex items-start gap-4 p-5 rounded-xl bg-slate-50 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.06] hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-all duration-300 shadow-sm"
                   >
                     <lab.icon className={`w-6 h-6 shrink-0 ${lab.color}`} />
                     <div>
-                      <div className="font-semibold text-white">{lab.label}</div>
-                      <div className="text-sm text-white/50 mt-1">{lab.desc}</div>
+                      <div className="font-semibold text-slate-900 dark:text-white">{lab.label}</div>
+                      <div className="text-sm text-slate-600 dark:text-white/50 mt-1">{lab.desc}</div>
                     </div>
                   </div>
                 ))}
               </div>
 
               {/* Features */}
-              <div className="pt-8 border-t border-white/[0.06]">
+              <div className="pt-8 border-t border-slate-200 dark:border-white/[0.06]">
                 <div className="grid sm:grid-cols-2 gap-4">
                   {features.map((feature, i) => (
-                    <div key={i} className="flex items-center gap-3 text-white/60">
-                      <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                    <div key={i} className="flex items-center gap-3 text-slate-700 dark:text-white/60">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-500 dark:text-emerald-400 shrink-0" />
                       {feature}
                     </div>
                   ))}
@@ -244,8 +244,8 @@ const About: React.FC = () => {
               </div>
 
               {/* Footer */}
-              <div className="pt-8 border-t border-white/[0.06] text-center">
-                <p className="text-teal-400 font-medium">
+              <div className="pt-8 border-t border-slate-200 dark:border-white/[0.06] text-center">
+                <p className="text-teal-600 dark:text-teal-400 font-medium">
                   100% Browser-Based | No Installation | Powered by Google Technologies
                 </p>
               </div>
@@ -254,7 +254,7 @@ const About: React.FC = () => {
 
           {/* Our Values */}
           <section className="space-y-12">
-            <h2 className="text-3xl font-semibold text-white text-center">Our Values</h2>
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-white text-center">Our Values</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {values.map((value, index) => {
@@ -262,14 +262,14 @@ const About: React.FC = () => {
                 return (
                   <div 
                     key={index} 
-                    className="group bg-white/[0.04] backdrop-blur-sm border border-white/[0.06] rounded-2xl p-8 hover:bg-white/[0.06] transition-all duration-300"
+                    className="group bg-white dark:bg-white/[0.04] backdrop-blur-sm border border-slate-200 dark:border-white/[0.06] rounded-2xl p-8 shadow-sm hover:shadow-md transition-all duration-300"
                   >
                     <div className={`inline-flex p-4 rounded-xl ${value.bgAccent} border ${value.borderAccent} mb-6 group-hover:scale-110 transition-transform duration-300`}>
                       <IconComponent className={`w-6 h-6 ${value.accentColor}`} />
                     </div>
                     
-                    <h3 className="text-xl font-semibold text-white mb-3">{value.title}</h3>
-                    <p className="text-white/50 leading-relaxed">{value.description}</p>
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">{value.title}</h3>
+                    <p className="text-slate-600 dark:text-white/50 leading-relaxed text-sm">{value.description}</p>
                   </div>
                 );
               })}
@@ -278,13 +278,13 @@ const About: React.FC = () => {
 
           {/* Team Section */}
           <section className="space-y-12">
-            <h2 className="text-3xl font-semibold text-white text-center">Our Team</h2>
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-white text-center">Our Team</h2>
             
             <div className="grid md:grid-cols-2 gap-8">
               {teamMembers.map((member, index) => (
                 <div 
                   key={index} 
-                  className="bg-white/[0.04] backdrop-blur-sm border border-white/[0.06] rounded-2xl overflow-hidden"
+                  className="bg-white dark:bg-white/[0.04] backdrop-blur-sm border border-slate-200 dark:border-white/[0.06] rounded-2xl overflow-hidden shadow-sm"
                 >
                   {/* Header */}
                   <div className={`p-10 text-center ${member.bgAccent}`}>
@@ -295,13 +295,13 @@ const About: React.FC = () => {
                       </AvatarFallback>
                     </Avatar>
                     
-                    <h3 className="text-2xl font-bold text-white">{member.name}</h3>
+                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{member.name}</h3>
                     <p className={`text-lg font-medium mt-2 ${member.accentColor}`}>{member.role}</p>
                   </div>
                   
                   {/* Content */}
                   <div className="p-8 space-y-8">
-                    <p className="text-white/60 text-center leading-relaxed">
+                    <p className="text-slate-600 dark:text-white/60 text-center leading-relaxed">
                       {member.description}
                     </p>
 
@@ -321,7 +321,7 @@ const About: React.FC = () => {
                         href={member.github} 
                         target="_blank" 
                         rel="noopener noreferrer" 
-                        className={`text-white/40 ${member.hoverColor} transition-all duration-300 hover:scale-110`}
+                        className={`text-slate-400 hover:text-slate-900 dark:text-white/40 ${member.hoverColor} transition-all duration-300 hover:scale-110`}
                       >
                         <Github className="w-7 h-7" />
                       </a>
@@ -329,7 +329,7 @@ const About: React.FC = () => {
                         href={member.linkedin} 
                         target="_blank" 
                         rel="noopener noreferrer" 
-                        className={`text-white/40 ${member.hoverColor} transition-all duration-300 hover:scale-110`}
+                        className={`text-slate-400 hover:text-slate-900 dark:text-white/40 ${member.hoverColor} transition-all duration-300 hover:scale-110`}
                       >
                         <Linkedin className="w-7 h-7" />
                       </a>

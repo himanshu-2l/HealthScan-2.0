@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { GlassNavbar } from '@/components/GlassNavbar';
+import { SubPageHeader } from '@/components/pwa/SubPageHeader';
 import { SiteFooter } from '@/components/SiteFooter';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,9 +10,9 @@ import { Brain, Shield, Cpu, Lightbulb, Smartphone, Heart, Activity, Zap, Target
 const Purpose = () => {
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <GlassNavbar />
-      <main className="container mx-auto px-3 sm:px-4 py-12 pt-24 flex-1 overflow-x-hidden">
+    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 transition-colors duration-200">
+      <SubPageHeader backLabel="Back to App" backTo="/" category="Mission & Vision" />
+      <main className="container mx-auto px-3 sm:px-4 py-8 pb-24 md:pb-12 flex-1 overflow-x-hidden">
         <div className="max-w-4xl mx-auto">
           <Card className="glass-panel border-l-4 border-blue-500">
             <CardHeader className="text-center pb-8 bg-transparent">

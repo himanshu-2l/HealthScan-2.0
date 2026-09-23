@@ -1,4 +1,4 @@
-import { GlassNavbar } from '@/components/GlassNavbar';
+import { SubPageHeader } from '@/components/pwa/SubPageHeader';
 import { SiteFooter } from '@/components/SiteFooter';
 import SymptomChecker from '../components/SymptomChecker';
 import { Badge } from '@/components/ui/badge';
@@ -7,9 +7,9 @@ import { Stethoscope, Sparkles, AlertCircle } from 'lucide-react';
 export default function SymptomCheckerPage() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 transition-colors duration-200">
-      <GlassNavbar />
+      <SubPageHeader backLabel="Back to App" backTo="/app?tab=today" category="Clinical AI" />
 
-      <main className="flex-1 pt-24 pb-16">
+      <main className="flex-1 py-6 pb-24 md:pb-12">
         <div className="container mx-auto px-3 sm:px-4 lg:px-8 overflow-x-hidden">
           <div className="max-w-5xl mx-auto space-y-8">
             {/* Page Header */}

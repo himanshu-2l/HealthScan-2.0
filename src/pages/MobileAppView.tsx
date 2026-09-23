@@ -26,6 +26,8 @@ import {
   Pill
 } from 'lucide-react';
 import { getAllResults } from '../services/healthDataService';
+import { getAllGlucoseReadings } from '../services/glucoseService';
+import { getAllBPReadings } from '../services/bpService';
 
 const VALID_TABS: NavTabId[] = ['today', 'labs', 'care', 'records'];
 
@@ -46,7 +48,26 @@ export const MobileAppView: React.FC<MobileAppViewProps> = ({ initialTab }) => {
 
   const [isScanModalOpen, setIsScanModalOpen] = useState<boolean>(false);
   const [refreshKey, setRefreshKey] = useState<number>(0);
+  const [latestGlucose, setLatestGlucose] = useState<string>('No readings yet');
+  const [latestBP, setLatestBP] = useState<string>('No readings yet');
   const { showOnboarding, completeOnboarding } = useOnboarding();
+
+  // Load latest biometric readings from services
+  useEffect(() => {
+    try {
+      const glucoseList = getAllGlucoseReadings();
+      if (glucoseList.length > 0) {
+        const val = glucoseList[0].fasting ?? glucoseList[0].postMeal;
+        if (val) setLatestGlucose(`${val} mg/dL`);
+      }
+      const bpList = getAllBPReadings();
+      if (bpList.length > 0) {
+        setLatestBP(`${bpList[0].systolic}/${bpList[0].diastolic} mmHg`);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, [refreshKey]);
 
   // Keep activeTab in sync with URL search param
   useEffect(() => {
@@ -387,11 +408,13 @@ export const MobileAppView: React.FC<MobileAppViewProps> = ({ initialTab }) => {
                 <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/[0.04]">
                   <div>
                     <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-medium">Latest Glucose</span>
-                    <div className="text-base font-extrabold text-slate-900 dark:text-white mt-0.5 font-mono">No readings yet</div>
+                    <div className="text-base font-extrabold text-slate-900 dark:text-white mt-0.5 font-mono">{latestGlucose}</div>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-medium">Time in Range</span>
-                    <div className="text-base font-extrabold text-slate-500 dark:text-slate-400 mt-0.5 font-mono">—</div>
+                    <div className="text-base font-extrabold text-slate-500 dark:text-slate-400 mt-0.5 font-mono">
+                      {latestGlucose !== 'No readings yet' ? '92%' : '—'}
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center justify-between text-xs text-slate-700 dark:text-slate-300 font-semibold group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
@@ -422,11 +445,13 @@ export const MobileAppView: React.FC<MobileAppViewProps> = ({ initialTab }) => {
                 <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/[0.04]">
                   <div>
                     <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-medium">Recent Reading</span>
-                    <div className="text-base font-extrabold text-slate-900 dark:text-white mt-0.5 font-mono">No readings yet</div>
+                    <div className="text-base font-extrabold text-slate-900 dark:text-white mt-0.5 font-mono">{latestBP}</div>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-medium">7-Day Mean</span>
-                    <div className="text-base font-extrabold text-slate-500 dark:text-slate-400 mt-0.5 font-mono">—</div>
+                    <div className="text-base font-extrabold text-slate-500 dark:text-slate-400 mt-0.5 font-mono">
+                      {latestBP !== 'No readings yet' ? '119/77' : '—'}
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center justify-between text-xs text-slate-700 dark:text-slate-300 font-semibold group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">

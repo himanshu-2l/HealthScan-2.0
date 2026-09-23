@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { GlassNavbar } from '@/components/GlassNavbar';
+import { SubPageHeader } from '@/components/pwa/SubPageHeader';
 import { SiteFooter } from '@/components/SiteFooter';
 import {
   User,
@@ -134,12 +134,12 @@ export default function PatientProfilePage() {
 
   if (!profile) {
     return (
-      <div className="min-h-screen">
-        <GlassNavbar />
-        <div className="flex items-center justify-center min-h-screen pt-24">
+      <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100">
+        <SubPageHeader backLabel="Back to App" backTo="/app?tab=today" category="Medical Identity" />
+        <div className="flex items-center justify-center flex-1 py-20">
           <div className="text-center">
-            <Activity className="w-12 h-12 animate-spin mx-auto text-blue-500" />
-            <p className="text-white/70 mt-4">Loading profile...</p>
+            <Activity className="w-12 h-12 animate-spin mx-auto text-teal-500" />
+            <p className="text-slate-600 dark:text-white/70 mt-4">Loading profile...</p>
           </div>
         </div>
       </div>
@@ -151,9 +151,9 @@ export default function PatientProfilePage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 transition-colors duration-200">
-      <GlassNavbar />
+      <SubPageHeader backLabel="Back to App" backTo="/app?tab=today" category="Medical Identity" />
 
-      <div className="container mx-auto px-3 sm:px-4 pt-24 pb-12 flex-1 overflow-x-hidden">
+      <div className="container mx-auto px-3 sm:px-4 py-6 pb-24 md:pb-12 flex-1 overflow-x-hidden">
         <div className="max-w-7xl mx-auto space-y-6">
           {/* Header */}
           <div className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm p-5 sm:p-6">

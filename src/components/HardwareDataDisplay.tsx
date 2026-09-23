@@ -354,16 +354,16 @@ export const HardwareDataDisplay: React.FC = () => {
           <p className="text-lg text-muted-foreground">
             Real-time neurological sensor data monitoring from Health Scan waistband device
           </p>
-          <Badge className="bg-indigo-500/20 text-indigo-300 border-indigo-500/20 mt-2">Live Data Streaming</Badge>
+          <Badge className="bg-indigo-50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-500/20 mt-2">Live Data Streaming</Badge>
         </div>
       </div>
 
       {/* Development Status Banner */}
-      <Alert className="border-yellow-500/50 bg-yellow-500/10 border-l-4 text-yellow-200">
-        <AlertTriangle className="h-5 w-5 text-yellow-500" />
-        <AlertDescription className="text-yellow-100/80">
+      <Alert className="border-amber-500/50 bg-amber-50 dark:bg-amber-500/10 border-l-4 text-amber-900 dark:text-amber-200">
+        <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-500" />
+        <AlertDescription className="text-amber-800 dark:text-amber-100/80">
           <div className="space-y-2">
-            <p className="font-semibold text-yellow-100">Hardware Integration Interface</p>
+            <p className="font-semibold text-amber-900 dark:text-amber-100">Hardware Integration Interface</p>
             <p className="text-sm">
               This hardware integration interface displays real-time sensor data from the Health Scan waistband device.
               Connect your device to view live sensor readings.
