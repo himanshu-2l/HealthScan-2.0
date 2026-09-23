@@ -13,17 +13,12 @@ import {
   Hand,
   Eye,
   Pill,
-  ShieldCheck,
-  Smartphone,
-  Sun,
-  Moon
+  ShieldCheck
 } from 'lucide-react';
 import { getAllResults } from '../../services/healthDataService';
 import { getAllGlucoseReadings } from '../../services/glucoseService';
 import { getAllBPReadings } from '../../services/bpService';
-import { HealthTestResult } from '../../types/health';
 import { ClinicalRangeBar } from './ClinicalRangeBar';
-import { useTheme } from '../../contexts/ThemeContext';
 
 interface TodayDashboardProps {
   onStartScan: () => void;
@@ -39,7 +34,6 @@ export const TodayDashboard: React.FC<TodayDashboardProps> = ({
   isStandalone,
 }) => {
   const navigate = useNavigate();
-  const { mode, toggleMode } = useTheme();
   const [hasData, setHasData] = useState<boolean>(false);
   const [currentScore, setCurrentScore] = useState<number | null>(null);
   const [latestHR, setLatestHR] = useState<number | null>(null);
@@ -98,55 +92,15 @@ export const TodayDashboard: React.FC<TodayDashboardProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* 1. MOBILE-ONLY COMPACT HEADER (Hidden on desktop because AppNavbar is visible) */}
-      <div className="flex md:hidden items-center justify-between pt-1">
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-teal-400 to-emerald-500 p-0.5 shadow-md shadow-teal-500/10">
-              <div className="w-full h-full rounded-full bg-teal-50 dark:bg-[#0E1422] flex items-center justify-center font-bold text-teal-700 dark:text-teal-300 text-xs">
-                AR
-              </div>
-            </div>
-            <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-slate-50 dark:border-[#070A11]" />
+      {/* 1. GREETING BANNER (Consolidated: AppNavbar handles global actions, avoiding duplicate controls) */}
+      <div className="flex items-center justify-between pt-1">
+        <div>
+          <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+            {currentDate}
           </div>
-          <div>
-            <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-              {currentDate}
-            </div>
-            <h1 className="text-base font-bold text-slate-900 dark:text-white tracking-tight">Good morning, Alex</h1>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-1.5">
-          {/* Mobile Theme Toggle */}
-          <button
-            onClick={toggleMode}
-            title={mode === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            aria-label="Toggle color theme"
-            className="p-2 rounded-xl bg-slate-100 dark:bg-white/[0.08] border border-slate-200 dark:border-white/[0.1] text-slate-700 dark:text-slate-200 active:scale-95 transition-all"
-          >
-            {mode === 'dark' ? (
-              <Sun className="w-4 h-4 text-amber-400" />
-            ) : (
-              <Moon className="w-4 h-4 text-slate-700" />
-            )}
-          </button>
-
-          {onInstallPWA && (
-            <button
-              onClick={onInstallPWA}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-teal-500/15 border border-teal-500/30 text-teal-700 dark:text-teal-300 text-[10px] font-bold active:scale-95 transition-all shadow-sm"
-              title="Download PWA App"
-            >
-              <Download className="w-3 h-3 text-teal-600 dark:text-teal-400" />
-              <span>App</span>
-            </button>
-          )}
-
-          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-700 dark:text-emerald-300 text-[10px] font-semibold">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Synced</span>
-          </div>
+          <h1 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+            Good morning, Alex
+          </h1>
         </div>
       </div>
 

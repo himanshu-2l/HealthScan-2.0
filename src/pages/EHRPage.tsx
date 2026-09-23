@@ -4,15 +4,16 @@
  */
 
 import React from 'react';
-import { GlassNavbar } from '@/components/GlassNavbar';
-import { SiteFooter } from '@/components/SiteFooter';
+import { useNavigate } from 'react-router-dom';
+import { MobileBottomNav } from '@/components/pwa/MobileBottomNav';
 import { EHRIntegration } from '@/components/EHRIntegration';
 import { useEHR } from '@/contexts/EHRContext';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Shield, TrendingUp, Users, FileText, Hospital, Lock, Link as LinkIcon } from 'lucide-react';
+import { Shield, TrendingUp, Users, FileText, Hospital, Lock, Link as LinkIcon, ArrowLeft } from 'lucide-react';
 
 export const EHRPage: React.FC = () => {
+  const navigate = useNavigate();
   const { isAuthenticated } = useEHR();
 
   const features = [
@@ -44,9 +45,27 @@ export const EHRPage: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 transition-colors duration-200">
-      <GlassNavbar />
-      
-      <main className="container mx-auto px-3 sm:px-4 lg:px-8 pt-24 pb-12 flex-1 overflow-x-hidden">
+      {/* Canonical Modern Header */}
+      <header className="sticky top-0 z-40 w-full bg-white/95 dark:bg-[#070A11]/95 backdrop-blur-md border-b border-slate-200 dark:border-white/[0.08] pt-[env(safe-area-inset-top,0px)] transition-colors">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+          <button
+            onClick={() => navigate('/app?tab=records')}
+            aria-label="Back to Health Records"
+            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] border border-slate-200 dark:border-white/[0.08] text-sm font-semibold text-slate-700 dark:text-slate-200 transition active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-teal-500/40"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Records</span>
+          </button>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 hidden sm:inline">ABDM EHR Integration</span>
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center text-slate-950 font-bold text-[10px]">
+              HS
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-3 sm:px-4 lg:px-8 py-6 pb-24 md:pb-12 flex-1 overflow-x-hidden">
         <div className="max-w-7xl mx-auto space-y-8">
           
           {/* Page Header */}
@@ -146,8 +165,13 @@ export const EHRPage: React.FC = () => {
 
         </div>
       </main>
-      
-      <SiteFooter />
+
+      {/* Modern PWA Mobile Navigation Dock */}
+      <MobileBottomNav
+        activeTab="records"
+        onTabChange={(tab) => navigate(tab === 'today' ? '/app' : `/app?tab=${tab}`)}
+        onQuickScanClick={() => navigate('/app')}
+      />
     </div>
   );
 };

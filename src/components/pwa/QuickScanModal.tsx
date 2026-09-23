@@ -158,6 +158,7 @@ export const QuickScanModal: React.FC<QuickScanModalProps> = ({
   const [lastTapSide, setLastTapSide] = useState<'left' | 'right' | null>(null);
   const [tapSpeed, setTapSpeed] = useState<number>(0);
   const tapTimestampsRef = useRef<number[]>([]);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
 
   // Results
   const [finalScore, setFinalScore] = useState<number>(94);
@@ -701,13 +702,34 @@ export const QuickScanModal: React.FC<QuickScanModalProps> = ({
     }
   };
 
-  // Escape key handler
+  // Escape key handler & Accessible Focus Trap
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         cleanupHardware();
         onClose();
+        return;
+      }
+      if (e.key === 'Tab' && dialogRef.current) {
+        const focusableElements = dialogRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusableElements.length === 0) return;
+        const first = focusableElements[0];
+        const last = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -728,7 +750,11 @@ export const QuickScanModal: React.FC<QuickScanModalProps> = ({
       <video ref={videoRef} className="hidden" playsInline muted autoPlay />
       <canvas ref={canvasRef} className="hidden" width={640} height={480} />
 
-      <div 
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="quick-scan-modal-title"
         className="w-full max-w-lg bg-white dark:bg-[#0C111E] border border-slate-200 dark:border-white/[0.12] rounded-t-[32px] sm:rounded-[32px] shadow-2xl overflow-hidden flex flex-col max-h-[92vh] text-slate-900 dark:text-slate-100 transition-colors duration-200"
         onClick={e => e.stopPropagation()}
       >
@@ -740,7 +766,7 @@ export const QuickScanModal: React.FC<QuickScanModalProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-sm font-bold text-slate-900 dark:text-white tracking-tight">60-Second Health Triage</h2>
+                <h2 id="quick-scan-modal-title" className="text-sm font-bold text-slate-900 dark:text-white tracking-tight">60-Second Health Triage</h2>
                 {isPromptSpeaking && (
                   <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-teal-500/10 text-teal-600 dark:text-teal-300 border border-teal-500/20 animate-pulse">
                     <span className="w-1.5 h-1.5 rounded-full bg-teal-500"></span>

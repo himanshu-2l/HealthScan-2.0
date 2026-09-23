@@ -4,11 +4,10 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { GlassNavbar } from '@/components/GlassNavbar';
-import { SiteFooter } from '@/components/SiteFooter';
+import { MobileBottomNav } from '@/components/pwa/MobileBottomNav';
 import { ChatBot } from '@/components/ChatBot';
 import { CardSkeleton } from '@/components/LoadingState';
 import {
@@ -32,7 +31,8 @@ import {
   Leaf,
   Trash2,
   Sparkles,
-  Plus
+  Plus,
+  ArrowLeft
 } from 'lucide-react';
 import { getAllResults, deleteTestResult } from '@/services/healthDataService';
 import { generateDiagnosticPDF } from '@/services/pdfReportService';
@@ -43,6 +43,7 @@ type ReportFilter = 'all' | 'lab-results' | 'bp-reports' | 'health-score';
 type DateRangeFilter = '7days' | '30days' | 'all';
 
 export default function ReportsPage() {
+  const navigate = useNavigate();
   const [reports, setReports] = useState<HealthTestResult[]>([]);
   const [filteredReports, setFilteredReports] = useState<HealthTestResult[]>([]);
   const [loading, setLoading] = useState(true);
@@ -292,8 +293,25 @@ export default function ReportsPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 transition-colors duration-200">
-        <GlassNavbar />
-        <div className="pt-24 pb-20 px-3 sm:px-4 flex-1 overflow-x-hidden">
+        <header className="sticky top-0 z-40 w-full bg-white/95 dark:bg-[#070A11]/95 backdrop-blur-md border-b border-slate-200 dark:border-white/[0.08] pt-[env(safe-area-inset-top,0px)] transition-colors">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+            <button
+              onClick={() => navigate('/app?tab=records')}
+              aria-label="Back to Health Records"
+              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] border border-slate-200 dark:border-white/[0.08] text-sm font-semibold text-slate-700 dark:text-slate-200 transition"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Records</span>
+            </button>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 hidden sm:inline">Diagnostic Records</span>
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center text-slate-950 font-bold text-[10px]">
+                HS
+              </div>
+            </div>
+          </div>
+        </header>
+        <div className="py-6 pb-20 px-3 sm:px-4 flex-1 overflow-x-hidden">
           <div className="max-w-5xl mx-auto space-y-6">
             {/* Header skeleton */}
             <div className="text-center space-y-3 animate-pulse">
@@ -316,9 +334,27 @@ export default function ReportsPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 transition-colors duration-200">
-      <GlassNavbar />
+      {/* Canonical Modern Header */}
+      <header className="sticky top-0 z-40 w-full bg-white/95 dark:bg-[#070A11]/95 backdrop-blur-md border-b border-slate-200 dark:border-white/[0.08] pt-[env(safe-area-inset-top,0px)] transition-colors">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+          <button
+            onClick={() => navigate('/app?tab=records')}
+            aria-label="Back to Health Records"
+            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] border border-slate-200 dark:border-white/[0.08] text-sm font-semibold text-slate-700 dark:text-slate-200 transition active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-teal-500/40"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Records</span>
+          </button>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 hidden sm:inline">Diagnostic Records</span>
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center text-slate-950 font-bold text-[10px]">
+              HS
+            </div>
+          </div>
+        </div>
+      </header>
 
-      <div className="pt-24 pb-20 px-3 sm:px-4 flex-1 overflow-x-hidden">
+      <div className="py-6 pb-24 md:pb-12 px-3 sm:px-4 flex-1 overflow-x-hidden">
         <div className="max-w-5xl mx-auto space-y-6">
           {/* Page Header */}
           <div className="text-center space-y-2 animate-fade-in-up">
@@ -682,7 +718,7 @@ export default function ReportsPage() {
               <h3 className="text-base font-bold text-slate-900 dark:text-white">Need Additional Biomarker Screening?</h3>
               <p className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm max-w-md mx-auto">Take additional computer-vision health lab assessments to complete your profile.</p>
               <div className="pt-2">
-                <Link to="/labs">
+                <Link to="/app?tab=labs">
                   <Button className="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-xl font-semibold shadow-sm text-xs sm:text-sm">
                     <Plus className="w-4 h-4 mr-1.5" />
                     Enter Health Labs
@@ -693,7 +729,13 @@ export default function ReportsPage() {
           )}
         </div>
       </div>
-      <SiteFooter />
+
+      {/* Modern PWA Mobile Navigation Dock */}
+      <MobileBottomNav
+        activeTab="records"
+        onTabChange={(tab) => navigate(tab === 'today' ? '/app' : `/app?tab=${tab}`)}
+        onQuickScanClick={() => navigate('/app')}
+      />
 
       {/* ChatBot with Report Context */}
       <ChatBot
