@@ -2,15 +2,28 @@ import jwt from 'jsonwebtoken';
 import { getJwtSecret, JWT_SECRET } from '../config/jwt.js';
 
 /**
- * Extract token from Authorization header
+ * Extract token from httpOnly cookie or Authorization header
  * @param {import('express').Request} req 
  * @returns {string|null}
  */
 const extractToken = (req) => {
-  const authHeader = req.headers.authorization;
+  // 1. Check httpOnly cookie first
+  if (req.cookies && req.cookies.healthscan_auth_token) {
+    return req.cookies.healthscan_auth_token;
+  }
+
+  // 2. Check Cookie header directly if cookie-parser wasn't used
+  if (req.headers && req.headers.cookie) {
+    const match = req.headers.cookie.match(/healthscan_auth_token=([^;]+)/);
+    if (match) {
+      return decodeURIComponent(match[1]);
+    }
+  }
+
+  // 3. Fall back to Authorization Bearer header
+  const authHeader = req.headers?.authorization;
   if (!authHeader) return null;
   
-  // Support "Bearer <token>" format
   if (authHeader.startsWith('Bearer ')) {
     return authHeader.substring(7);
   }

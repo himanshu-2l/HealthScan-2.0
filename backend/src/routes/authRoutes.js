@@ -8,6 +8,16 @@ import { authLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
 
+const setAuthCookie = (res, token) => {
+  const isProduction = process.env.NODE_ENV === 'production';
+  res.cookie('healthscan_auth_token', token, {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+  });
+};
+
 const isDemoAuthEnabled = () => process.env.NODE_ENV !== 'production' && process.env.ENABLE_DEMO_AUTH === 'true';
 
 // Seed demo users only when non-production and explicit ENABLE_DEMO_AUTH=true
@@ -95,6 +105,7 @@ router.post('/register', authLimiter, async (req, res) => {
       };
 
       const token = generateToken(userPayload, '7d');
+      setAuthCookie(res, token);
 
       return res.status(201).json({
         message: 'Account created successfully',
@@ -139,6 +150,7 @@ router.post('/register', authLimiter, async (req, res) => {
     };
 
     const token = generateToken(userPayload, '7d');
+    setAuthCookie(res, token);
 
     return res.status(201).json({
       message: 'Account created successfully',
@@ -185,6 +197,7 @@ router.post('/login', authLimiter, async (req, res) => {
       };
 
       const token = generateToken(userPayload, '7d');
+      setAuthCookie(res, token);
 
       return res.json({
         message: 'Signed in successfully',
@@ -220,6 +233,7 @@ router.post('/login', authLimiter, async (req, res) => {
     };
 
     const token = generateToken(userPayload, '7d');
+    setAuthCookie(res, token);
 
     return res.json({
       message: 'Signed in successfully',
@@ -230,6 +244,20 @@ router.post('/login', authLimiter, async (req, res) => {
     console.error('Login error:', error);
     return res.status(500).json({ error: 'Internal server error during login' });
   }
+});
+
+/**
+ * POST /api/auth/logout
+ * Clear authentication cookie
+ */
+router.post('/logout', (req, res) => {
+  const isProduction = process.env.NODE_ENV === 'production';
+  res.clearCookie('healthscan_auth_token', {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: 'lax'
+  });
+  res.json({ message: 'Signed out successfully' });
 });
 
 /**

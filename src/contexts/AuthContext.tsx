@@ -96,6 +96,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const res = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({ email, password })
             });
 
@@ -112,9 +113,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 role: data.user.role
             };
 
-            localStorage.setItem('healthscan_token', data.token);
+            // Tokens are kept strictly in secure httpOnly cookies to prevent XSS exfiltration
+            localStorage.removeItem('healthscan_token');
+            localStorage.removeItem('healthscan_auth_token');
             localStorage.setItem('healthscan_user', JSON.stringify(appUser));
-            setToken(data.token);
+            setToken(data.token || null);
             setCurrentUser(appUser);
 
             toast({
@@ -133,6 +136,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const res = await fetch('/api/auth/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({ name, email, password, role })
             });
 
@@ -149,9 +153,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 role: data.user.role
             };
 
-            localStorage.setItem('healthscan_token', data.token);
+            // Tokens are kept strictly in secure httpOnly cookies to prevent XSS exfiltration
+            localStorage.removeItem('healthscan_token');
+            localStorage.removeItem('healthscan_auth_token');
             localStorage.setItem('healthscan_user', JSON.stringify(appUser));
-            setToken(data.token);
+            setToken(data.token || null);
             setCurrentUser(appUser);
             seedDemoData();
 
@@ -282,10 +288,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const logout = async () => {
         localStorage.removeItem('healthscan_token');
+        localStorage.removeItem('healthscan_auth_token');
         localStorage.removeItem('healthscan_user');
         localStorage.removeItem('healthscan_demo_user');
         setToken(null);
         setCurrentUser(null);
+
+        try {
+            await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+        } catch {
+            // Ignore offline logout error
+        }
 
         try {
             if (isFirebaseConfigured && auth) {

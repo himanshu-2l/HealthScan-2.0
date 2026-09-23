@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 import crypto from 'crypto';
@@ -37,6 +38,11 @@ const securityHeaders = (req, res, next) => {
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   // Don't expose server info
   res.removeHeader('X-Powered-By');
+  // Content Security Policy
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' blob: https://apis.google.com https://www.gstatic.com https://cdn.jsdelivr.net; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://*.googleapis.com https://*.firebaseio.com https://cdn.jsdelivr.net wss: ws: blob: data:; worker-src 'self' blob:; media-src 'self' blob: data: mediastream:;"
+  );
   // Permissions Policy - Allow camera and microphone for HealthScan diagnostic tests
   res.setHeader('Permissions-Policy', 'camera=(self), microphone=(self), geolocation=(self)');
   
@@ -94,6 +100,7 @@ app.use('/api/gemini-proxy', express.json({ limit: '8mb' }));
 // Body parsing with size limit
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+app.use(cookieParser());
 
 // Session middleware for OAuth & fit data
 const isProduction = process.env.NODE_ENV === 'production';
@@ -291,7 +298,7 @@ app.use((err, req, res, next) => {
     error: statusCode >= 500 ? 'Internal Server Error' : 'Error',
     message: message,
     requestId: req.requestId,
-    ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
   });
 });
 

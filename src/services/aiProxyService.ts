@@ -41,6 +41,7 @@ export async function callAIProxy<T = any>(type: string, payload: any): Promise<
     const response = await fetch('/api/gemini-proxy', {
       method: 'POST',
       headers,
+      credentials: 'include',
       body: JSON.stringify({ type, payload }),
     });
 

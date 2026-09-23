@@ -17,28 +17,8 @@ export async function getAuthToken(): Promise<string | null> {
     }
   }
 
-  // 2. Check stored session / auth token
-  if (typeof window !== 'undefined') {
-    const storedToken = localStorage.getItem('healthscan_auth_token') || sessionStorage.getItem('healthscan_auth_token');
-    if (storedToken) return storedToken;
-
-    // 3. If in demo mode and backend is reachable, retrieve demo session token
-    if (localStorage.getItem('healthscan_demo_user')) {
-      try {
-        const res = await fetch('/api/auth/demo-token', { method: 'POST' });
-        if (res.ok) {
-          const data = await res.json();
-          if (data?.token) {
-            localStorage.setItem('healthscan_auth_token', data.token);
-            return data.token;
-          }
-        }
-      } catch {
-        // Backend not reachable
-      }
-    }
-  }
-
+  // 2. HealthScan native sessions use secure httpOnly cookies sent with credentials: 'include'.
+  // We do not store or read JWTs in client-accessible localStorage/sessionStorage.
   return null;
 }
 
