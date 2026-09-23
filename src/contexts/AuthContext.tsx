@@ -215,6 +215,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 photoURL: user.photoURL,
                 role: 'patient'
             };
+            const idToken = await user.getIdToken();
+            localStorage.setItem('healthscan_token', idToken);
+            setToken(idToken);
             localStorage.setItem('healthscan_user', JSON.stringify(appUser));
             setCurrentUser(appUser);
             toast({
