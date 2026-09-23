@@ -264,10 +264,11 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
               <button
                 onClick={onInstallPWA}
                 title="Download & Install HealthScan PWA"
-                className="hidden 2xl:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] border border-slate-200 dark:border-white/[0.1] text-xs font-semibold text-teal-700 dark:text-teal-300 transition-all active:scale-[0.98]"
+                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 dark:bg-teal-500/15 dark:hover:bg-teal-500/25 border border-teal-500/30 text-xs font-semibold text-teal-700 dark:text-teal-300 transition-all active:scale-[0.98]"
               >
-                <Download className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
-                <span>App</span>
+                <Download className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-teal-600 dark:text-teal-400" />
+                <span className="hidden sm:inline">Install App</span>
+                <span className="sm:hidden text-[11px]">Install</span>
               </button>
             )}
 
@@ -458,6 +459,28 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 <Zap className="w-4 h-4 fill-white stroke-white" />
                 <span>Start 60-Second Full Scan</span>
               </button>
+
+              {/* Install PWA Mobile Action */}
+              {onInstallPWA && (
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    onInstallPWA();
+                  }}
+                  className="w-full flex items-center justify-between p-3 rounded-2xl bg-teal-500/10 hover:bg-teal-500/15 border border-teal-500/25 text-left active:scale-[0.98] transition-all"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-teal-600 text-white flex items-center justify-center shadow-sm shrink-0">
+                      <Download className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-slate-900 dark:text-white">Install HealthScan App</div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400">Add to Home Screen • Offline & Fast</div>
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-teal-600 text-white shrink-0">Install</span>
+                </button>
+              )}
 
               {/* Navigation Categories */}
               {NAV_CATEGORIES.map((category) => (

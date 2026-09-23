@@ -104,6 +104,30 @@ export const TodayDashboard: React.FC<TodayDashboardProps> = ({
         </div>
       </div>
 
+      {/* PWA Install Quick Banner (Visible on mobile/desktop browsers when not in standalone mode) */}
+      {!isStandalone && onInstallPWA && (
+        <div className="flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-teal-500/10 via-emerald-500/10 to-teal-500/5 border border-teal-500/20 text-slate-900 dark:text-white shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-teal-600 text-white flex items-center justify-center shadow-sm shrink-0">
+              <Download className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="text-xs sm:text-sm font-bold tracking-tight">Install HealthScan App</div>
+              <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                Install on your device for full-screen camera vitals & offline screening
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={onInstallPWA}
+            className="shrink-0 ml-3 px-3.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold shadow-sm transition-all active:scale-95 flex items-center gap-1.5"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Install</span>
+          </button>
+        </div>
+      )}
+
       {/* 2. HERO: VITALITY & READINESS SCORE (Desktop & Mobile Optimized) */}
       <div className="relative rounded-2xl p-5 sm:p-7 bg-white dark:bg-[#0F1523] border border-slate-200/90 dark:border-white/[0.08] shadow-sm overflow-hidden transition-colors duration-200">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
