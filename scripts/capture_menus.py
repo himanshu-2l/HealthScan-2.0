@@ -59,4 +59,25 @@ with sync_playwright() as p:
         print("[OK] subpage_modules_menu.png")
     page_sub.close()
 
+    # 5. QR Code Modal (Tunnel and Wi-Fi tabs)
+    page_qr = browser.new_page(viewport={"width": 1280, "height": 800})
+    page_qr.goto("http://localhost:5174/", timeout=20000)
+    page_qr.evaluate("() => localStorage.setItem('healthscan_onboarded', 'true')")
+    page_qr.reload()
+    page_qr.wait_for_timeout(1000)
+    qr_btn = page_qr.locator("button:has-text('Test on Phone')")
+    if qr_btn.is_visible():
+        qr_btn.click()
+        page_qr.wait_for_timeout(600)
+        page_qr.screenshot(path=f"{OUTPUT_DIR}/qr_modal_tunnel.png")
+        print("[OK] qr_modal_tunnel.png")
+        
+        wifi_btn = page_qr.locator("button:has-text('Local Wi-Fi')")
+        if wifi_btn.is_visible():
+            wifi_btn.click()
+            page_qr.wait_for_timeout(600)
+            page_qr.screenshot(path=f"{OUTPUT_DIR}/qr_modal_wifi.png")
+            print("[OK] qr_modal_wifi.png")
+    page_qr.close()
+
     browser.close()

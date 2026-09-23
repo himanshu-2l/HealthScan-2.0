@@ -10,7 +10,8 @@
     "build": "npm run prepare:mediapipe && vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "tunnel": "ssh -o StrictHostKeyChecking=no -R 80:localhost:5174 nokey@localhost.run"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",

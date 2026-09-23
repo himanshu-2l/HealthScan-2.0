@@ -8,7 +8,11 @@ import {
   Smartphone, 
   ShieldCheck, 
   Sparkles,
-  Camera
+  Camera,
+  Wifi,
+  Globe,
+  Terminal,
+  RefreshCw
 } from 'lucide-react';
 
 interface QRCodeModalProps {
@@ -22,24 +26,42 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
   onClose,
   customUrl
 }) => {
+  // Modes: 'tunnel' (HTTPS Cloud Tunnel) or 'wifi' (Local LAN IP)
+  const [mode, setMode] = useState<'tunnel' | 'wifi'>('tunnel');
   const [url, setUrl] = useState<string>('');
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const [isCopied, setIsCopied] = useState<boolean>(false);
-  const [isCustomizing, setIsCustomizing] = useState<boolean>(false);
+  const [cmdCopied, setCmdCopied] = useState<boolean>(false);
 
+  // Defaults
+  const LOCAL_WIFI_IP = '192.168.29.148';
+  const DEFAULT_PORT = '5174';
+  const DEFAULT_TUNNEL = 'https://0c6957637c079b.lhr.life';
+
+  // Compute active URL based on mode and storage
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const activeTunnel = 'https://dc020235d76486.lhr.life';
-      if (customUrl) {
-        setUrl(customUrl);
-      } else if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        setUrl(activeTunnel);
-      } else {
-        setUrl(window.location.origin);
-      }
-    }
-  }, [customUrl, isOpen]);
+    if (typeof window === 'undefined') return;
 
+    if (customUrl) {
+      setUrl(customUrl);
+      return;
+    }
+
+    if (mode === 'wifi') {
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const wifiHost = isLocalhost ? LOCAL_WIFI_IP : window.location.hostname;
+      const port = window.location.port || DEFAULT_PORT;
+      setUrl(`http://${wifiHost}:${port}`);
+    } else {
+      // Tunnel mode
+      const savedTunnel = localStorage.getItem('healthscan_tunnel_url');
+      const envTunnel = (import.meta as any).env?.VITE_TUNNEL_URL;
+      const activeTunnel = savedTunnel || envTunnel || DEFAULT_TUNNEL;
+      setUrl(activeTunnel);
+    }
+  }, [mode, customUrl, isOpen]);
+
+  // Generate QR Code whenever URL changes
   useEffect(() => {
     if (!url) return;
 
@@ -68,15 +90,32 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
   if (!isOpen) return null;
   if (typeof document === 'undefined') return null;
 
-  const handleCopy = async () => {
+  const handleCopyUrl = async () => {
     try {
       await navigator.clipboard.writeText(url);
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
     } catch {
-      // Fallback
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
+    }
+  };
+
+  const handleCopyCmd = async () => {
+    try {
+      await navigator.clipboard.writeText('npm run tunnel');
+      setCmdCopied(true);
+      setTimeout(() => setCmdCopied(false), 2000);
+    } catch {
+      setCmdCopied(true);
+      setTimeout(() => setCmdCopied(false), 2000);
+    }
+  };
+
+  const handleUrlChange = (newUrl: string) => {
+    setUrl(newUrl);
+    if (mode === 'tunnel') {
+      localStorage.setItem('healthscan_tunnel_url', newUrl);
     }
   };
 
@@ -89,7 +128,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
       />
 
       {/* Modal Surface */}
-      <div className="relative w-full max-w-md bg-white dark:bg-[#0F1523] rounded-3xl border border-slate-200/90 dark:border-white/[0.08] shadow-2xl p-6 sm:p-8 space-y-6 z-10 my-auto transition-all transform animate-scale-up max-h-[92vh] overflow-y-auto">
+      <div className="relative w-full max-w-md bg-white dark:bg-[#0F1523] rounded-3xl border border-slate-200/90 dark:border-white/[0.08] shadow-2xl p-5 sm:p-7 space-y-4 sm:space-y-5 z-10 my-auto transition-all transform animate-scale-up max-h-[92vh] overflow-y-auto">
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -103,14 +142,40 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
         <div className="space-y-1 text-center pr-6">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20 text-xs font-semibold mb-1">
             <Smartphone className="w-3.5 h-3.5" />
-            <span>Judge & Mobile Live Testing</span>
+            <span>Mobile Live Testing</span>
           </div>
           <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Test on Your Smartphone
+            Test on Your Phone
           </h2>
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-xs mx-auto">
-            Scan with your iPhone or Android camera to experience HealthScan's 60 FPS vitals engine live.
+            Scan the QR code with your iPhone or Android camera to run HealthScan on your device.
           </p>
+        </div>
+
+        {/* Mode Selector Tabs */}
+        <div className="grid grid-cols-2 gap-1.5 p-1 rounded-2xl bg-slate-100 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.06] text-xs font-semibold">
+          <button
+            onClick={() => setMode('tunnel')}
+            className={`flex items-center justify-center gap-1.5 py-2 rounded-xl transition-all ${
+              mode === 'tunnel'
+                ? 'bg-white dark:bg-teal-500/20 text-teal-700 dark:text-teal-300 shadow-sm border border-slate-200/80 dark:border-teal-500/30'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+            }`}
+          >
+            <Globe className="w-3.5 h-3.5" />
+            <span>Cloud Tunnel (SSL)</span>
+          </button>
+          <button
+            onClick={() => setMode('wifi')}
+            className={`flex items-center justify-center gap-1.5 py-2 rounded-xl transition-all ${
+              mode === 'wifi'
+                ? 'bg-white dark:bg-teal-500/20 text-teal-700 dark:text-teal-300 shadow-sm border border-slate-200/80 dark:border-teal-500/30'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+            }`}
+          >
+            <Wifi className="w-3.5 h-3.5" />
+            <span>Local Wi-Fi (Fast)</span>
+          </button>
         </div>
 
         {/* QR Code Container */}
@@ -120,17 +185,17 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
               <img 
                 src={qrDataUrl} 
                 alt="HealthScan Live Mobile QR Code"
-                className="w-56 h-56 sm:w-60 sm:h-60 rounded-xl object-contain"
+                className="w-52 h-52 sm:w-56 sm:h-56 rounded-xl object-contain"
               />
             ) : (
-              <div className="w-56 h-56 sm:w-60 sm:h-60 flex items-center justify-center bg-slate-50 rounded-xl text-xs text-slate-400 font-mono">
+              <div className="w-52 h-52 sm:w-56 sm:h-56 flex items-center justify-center bg-slate-50 rounded-xl text-xs text-slate-400 font-mono">
                 Generating QR Code...
               </div>
             )}
             
             {/* Center Logo Overlay */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-11 h-11 rounded-xl bg-teal-600 border-2 border-white shadow-md flex items-center justify-center text-white font-black text-xs">
+              <div className="w-10 h-10 rounded-xl bg-teal-600 border-2 border-white shadow-md flex items-center justify-center text-white font-black text-xs">
                 HS
               </div>
             </div>
@@ -139,16 +204,17 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
 
         {/* URL Box & One-Click Copy */}
         <div className="space-y-2">
-          <div className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200/90 dark:border-white/[0.06] text-xs">
+          <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200/90 dark:border-white/[0.06] text-xs">
             <input
               type="text"
               value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              className="flex-1 bg-transparent text-slate-800 dark:text-slate-200 font-mono text-xs focus:outline-none truncate"
+              onChange={(e) => handleUrlChange(e.target.value)}
+              placeholder={mode === 'tunnel' ? 'https://your-tunnel-url' : 'http://192.168.x.x:5174'}
+              className="flex-1 bg-transparent text-slate-800 dark:text-slate-200 font-mono text-xs focus:outline-none truncate px-1"
               title="Target test URL"
             />
             <button
-              onClick={handleCopy}
+              onClick={handleCopyUrl}
               className="px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-semibold text-xs transition flex items-center gap-1.5 shrink-0 active:scale-95 shadow-sm"
             >
               {isCopied ? (
@@ -165,20 +231,34 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
             </button>
           </div>
 
-          <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 px-1">
-            <span>Scan via standard Camera app</span>
-            <button 
-              onClick={() => setIsCustomizing(!isCustomizing)}
-              className="text-teal-600 dark:text-teal-400 hover:underline font-medium"
-            >
-              {isCustomizing ? 'Hide URL edit' : 'Need LAN / Custom URL?'}
-            </button>
-          </div>
-
-          {isCustomizing && (
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 p-2.5 rounded-lg bg-slate-100 dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.04] leading-relaxed">
-              <strong>Demo Tip:</strong> When testing on local Wi-Fi, change <code className="font-mono text-teal-600 dark:text-teal-300">localhost</code> to your machine's local IP (e.g. <code className="font-mono">http://192.168.1.15:5174</code>) so your phone can reach it.
-            </p>
+          {/* Mode-specific guidance */}
+          {mode === 'tunnel' ? (
+            <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.06] text-[11px] text-slate-600 dark:text-slate-400 space-y-1.5">
+              <div className="flex items-center justify-between font-semibold text-slate-800 dark:text-slate-200">
+                <span className="flex items-center gap-1.5">
+                  <Terminal className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+                  <span>Cloud Tunnel Command</span>
+                </span>
+                <button
+                  onClick={handleCopyCmd}
+                  className="text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-1"
+                >
+                  {cmdCopied ? 'Copied!' : 'Copy command'}
+                </button>
+              </div>
+              <p className="leading-relaxed">
+                If the tunnel disconnected, run <code className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-white/10 font-mono text-[10px] text-teal-700 dark:text-teal-300">npm run tunnel</code> in terminal and paste the new URL above.
+              </p>
+            </div>
+          ) : (
+            <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.06] text-[11px] text-slate-600 dark:text-slate-400 space-y-1">
+              <span className="font-semibold text-slate-800 dark:text-slate-200 block">
+                Local Wi-Fi Note:
+              </span>
+              <p className="leading-relaxed">
+                Ensure phone and PC are on the same Wi-Fi. (If your phone camera requires HTTPS, switch to <strong>Cloud Tunnel</strong> tab).
+              </p>
+            </div>
           )}
         </div>
 
