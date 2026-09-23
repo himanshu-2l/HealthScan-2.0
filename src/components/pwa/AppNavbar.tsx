@@ -418,20 +418,34 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             {/* Drawer Body */}
             <div className="flex-1 overflow-y-auto p-4 space-y-6">
               {/* Profile Card */}
-              <div 
-                onClick={() => handleNavigate('/profile')}
-                className="p-3.5 rounded-2xl bg-gradient-to-br from-teal-500/10 via-emerald-500/5 to-transparent border border-teal-500/20 flex items-center gap-3 cursor-pointer"
-              >
-                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-teal-400 to-emerald-500 p-0.5 shrink-0">
-                  <div className="w-full h-full rounded-full bg-white dark:bg-[#0E1422] flex items-center justify-center font-bold text-teal-700 dark:text-teal-300 text-xs">
-                    {initials}
+              <div className="p-3.5 rounded-2xl bg-gradient-to-br from-teal-500/10 via-emerald-500/5 to-transparent border border-teal-500/20 flex items-center justify-between gap-3">
+                <div 
+                  onClick={() => handleNavigate('/profile')}
+                  className="flex items-center gap-3 cursor-pointer flex-1 min-w-0"
+                >
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-teal-400 to-emerald-500 p-0.5 shrink-0">
+                    <div className="w-full h-full rounded-full bg-white dark:bg-[#0E1422] flex items-center justify-center font-bold text-teal-700 dark:text-teal-300 text-xs">
+                      {initials}
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-bold text-slate-900 dark:text-white truncate">{displayName}</div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{emailOrAbha}</div>
+                    <span className="text-[9px] font-semibold text-teal-600 dark:text-teal-400">View Patient Profile →</span>
                   </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-bold text-slate-900 dark:text-white truncate">{displayName}</div>
-                  <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{emailOrAbha}</div>
-                  <span className="text-[9px] font-semibold text-teal-600 dark:text-teal-400">View Patient Profile →</span>
-                </div>
+                {currentUser && (
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      logout();
+                    }}
+                    title="Sign Out"
+                    className="p-2 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
+                )}
               </div>
 
               {/* Quick Scan CTA */}

@@ -3,8 +3,7 @@ import {
     onAuthStateChanged,
     signInWithPopup,
     signOut,
-    User,
-    GoogleAuthProvider
+    User
 } from 'firebase/auth';
 import { auth, googleProvider, isFirebaseConfigured } from '../lib/firebase';
 import { useToast } from '@/components/ui/use-toast';
@@ -14,15 +13,19 @@ export interface AppUser {
     uid: string;
     displayName: string | null;
     email: string | null;
-    photoURL: string | null;
+    photoURL?: string | null;
+    role?: string;
 }
 
 interface AuthContextType {
     currentUser: User | AppUser | null;
+    token: string | null;
     loading: boolean;
     isFirebaseConfigured: boolean;
+    loginWithEmail: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+    registerWithEmail: (name: string, email: string, password: string, role?: string) => Promise<{ success: boolean; error?: string }>;
     loginWithGoogle: () => Promise<void>;
-    loginAsDemo: () => void;
+    loginAsDemo: (demoRole?: 'patient' | 'doctor') => void;
     logout: () => Promise<void>;
 }
 
@@ -38,27 +41,43 @@ export const useAuth = () => {
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [currentUser, setCurrentUser] = useState<User | AppUser | null>(null);
+    const [token, setToken] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
 
     useEffect(() => {
-        const savedDemo = localStorage.getItem('healthscan_demo_user');
-        if (savedDemo) {
+        // 1. Check existing saved user session in localStorage
+        const savedUser = localStorage.getItem('healthscan_user') || localStorage.getItem('healthscan_demo_user');
+        const savedToken = localStorage.getItem('healthscan_token');
+
+        if (savedUser) {
             try {
-                setCurrentUser(JSON.parse(savedDemo));
+                const parsed = JSON.parse(savedUser);
+                setCurrentUser(parsed);
+                setToken(savedToken);
                 setLoading(false);
                 return;
             } catch (e) {
+                localStorage.removeItem('healthscan_user');
                 localStorage.removeItem('healthscan_demo_user');
+                localStorage.removeItem('healthscan_token');
             }
         }
 
+        // 2. Check Firebase Auth if configured
         if (isFirebaseConfigured && auth) {
             try {
                 const unsubscribe = onAuthStateChanged(auth, (user) => {
-                    // If not in demo mode, use Firebase user
-                    if (!localStorage.getItem('healthscan_demo_user')) {
-                        setCurrentUser(user);
+                    if (user) {
+                        const appUser: AppUser = {
+                            uid: user.uid,
+                            displayName: user.displayName,
+                            email: user.email,
+                            photoURL: user.photoURL,
+                            role: 'patient'
+                        };
+                        setCurrentUser(appUser);
+                        localStorage.setItem('healthscan_user', JSON.stringify(appUser));
                     }
                     setLoading(false);
                 });
@@ -67,33 +86,112 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 console.warn('Firebase auth listener skipped:', err);
             }
         }
-        
-        // Auto-provision demo session so hackathon judges & local testers never hit an auth wall
-        const defaultUser: AppUser = {
-            uid: 'demo-user-healthscan',
-            displayName: 'Dr. Alex Mercer',
-            email: 'alex.mercer@healthscan.io',
-            photoURL: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=200&h=200&q=80'
-        };
-        localStorage.setItem('healthscan_demo_user', JSON.stringify(defaultUser));
-        setCurrentUser(defaultUser);
-        seedDemoData();
+
+        // No active session: ready to display login screen
         setLoading(false);
     }, []);
 
-    const loginAsDemo = () => {
-        const demoUser: AppUser = {
+    const loginWithEmail = async (email: string, password: string) => {
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                return { success: false, error: data.error || 'Login failed' };
+            }
+
+            const appUser: AppUser = {
+                uid: data.user.uid,
+                displayName: data.user.name,
+                email: data.user.email,
+                role: data.user.role
+            };
+
+            localStorage.setItem('healthscan_token', data.token);
+            localStorage.setItem('healthscan_user', JSON.stringify(appUser));
+            setToken(data.token);
+            setCurrentUser(appUser);
+
+            toast({
+                title: `Welcome back, ${data.user.name}!`,
+                description: "Signed in successfully to HealthScan."
+            });
+
+            return { success: true };
+        } catch (err: any) {
+            return { success: false, error: err.message || 'Network error during sign in' };
+        }
+    };
+
+    const registerWithEmail = async (name: string, email: string, password: string, role: string = 'patient') => {
+        try {
+            const res = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, password, role })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                return { success: false, error: data.error || 'Registration failed' };
+            }
+
+            const appUser: AppUser = {
+                uid: data.user.uid,
+                displayName: data.user.name,
+                email: data.user.email,
+                role: data.user.role
+            };
+
+            localStorage.setItem('healthscan_token', data.token);
+            localStorage.setItem('healthscan_user', JSON.stringify(appUser));
+            setToken(data.token);
+            setCurrentUser(appUser);
+            seedDemoData();
+
+            toast({
+                title: "Account Created!",
+                description: `Welcome to HealthScan, ${data.user.name}.`
+            });
+
+            return { success: true };
+        } catch (err: any) {
+            return { success: false, error: err.message || 'Network error during account registration' };
+        }
+    };
+
+    const loginAsDemo = (demoRole: 'patient' | 'doctor' = 'patient') => {
+        const demoUser: AppUser = demoRole === 'doctor' ? {
             uid: 'demo-user-healthscan',
             displayName: 'Dr. Alex Mercer',
             email: 'alex.mercer@healthscan.io',
-            photoURL: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=200&h=200&q=80'
+            photoURL: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=200&h=200&q=80',
+            role: 'doctor'
+        } : {
+            uid: 'demo-patient-healthscan',
+            displayName: 'Alex Rivera',
+            email: 'alex.rivera@abdm',
+            photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&h=200&q=80',
+            role: 'patient'
         };
+
+        const demoToken = 'demo-jwt-token-' + Date.now();
+        localStorage.setItem('healthscan_token', demoToken);
+        localStorage.setItem('healthscan_user', JSON.stringify(demoUser));
         localStorage.setItem('healthscan_demo_user', JSON.stringify(demoUser));
+        setToken(demoToken);
         setCurrentUser(demoUser);
         seedDemoData();
+
         toast({
-            title: "Demo Mode Active",
-            description: "Signed in as Dr. Alex Mercer. All features are unlocked!",
+            title: `Demo Mode: ${demoUser.displayName}`,
+            description: `Signed in as ${demoRole === 'doctor' ? 'Clinician' : 'Patient'}. All diagnostic labs unlocked!`
         });
     };
 
@@ -101,18 +199,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (!isFirebaseConfigured || !auth) {
             toast({
                 variant: "destructive",
-                title: "Firebase Google Auth Not Configured",
-                description: "Firebase credentials not configured for this environment. Click 'Continue in Demo Mode' to explore all features immediately!",
+                title: "Google Auth Requires Configuration",
+                description: "Firebase keys not set in environment. Use Email/Password or 1-Click Demo Mode below for instant testing!",
             });
             return;
         }
 
         try {
-            await signInWithPopup(auth, googleProvider);
-            localStorage.removeItem('healthscan_demo_user');
+            const result = await signInWithPopup(auth, googleProvider);
+            const user = result.user;
+            const appUser: AppUser = {
+                uid: user.uid,
+                displayName: user.displayName,
+                email: user.email,
+                photoURL: user.photoURL,
+                role: 'patient'
+            };
+            localStorage.setItem('healthscan_user', JSON.stringify(appUser));
+            setCurrentUser(appUser);
             toast({
                 title: "Welcome back!",
-                description: "Successfully signed in with Google.",
+                description: `Signed in as ${user.displayName || user.email}.`,
             });
         } catch (error: any) {
             console.error("Login failed:", error);
@@ -121,14 +228,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 variant: "destructive",
                 title: "Google Sign-In Failed",
                 description: isApiKeyError
-                    ? "Invalid Firebase API key in .env. Click 'Continue in Demo Mode' below to test the app without setting up Firebase!"
+                    ? "Invalid Firebase API key in .env. Use Email/Password or Demo Mode to test immediately!"
                     : (error.message || "Failed to sign in with Google."),
             });
         }
     };
 
     const logout = async () => {
+        localStorage.removeItem('healthscan_token');
+        localStorage.removeItem('healthscan_user');
         localStorage.removeItem('healthscan_demo_user');
+        setToken(null);
+        setCurrentUser(null);
+
         try {
             if (isFirebaseConfigured && auth) {
                 await signOut(auth);
@@ -136,17 +248,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } catch (error: any) {
             console.error("Logout failed:", error);
         }
-        setCurrentUser(null);
+
         toast({
             title: "Signed out",
-            description: "You have been successfully signed out.",
+            description: "You have been successfully signed out of HealthScan.",
         });
     };
 
     const value = {
         currentUser,
+        token,
         loading,
         isFirebaseConfigured,
+        loginWithEmail,
+        registerWithEmail,
         loginWithGoogle,
         loginAsDemo,
         logout

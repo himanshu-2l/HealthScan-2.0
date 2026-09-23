@@ -72,9 +72,21 @@ const AppContent = () => {
   return (
     <Suspense fallback={<PageLoadingFallback />}>
       <Routes>
-        <Route path="/" element={<MobileAppView />} />
-        <Route path="/app" element={<MobileAppView />} />
-        <Route path="/dashboard" element={<MobileAppView />} />
+        <Route path="/" element={
+          <ProtectedRoute>
+            <MobileAppView />
+          </ProtectedRoute>
+        } />
+        <Route path="/app" element={
+          <ProtectedRoute>
+            <MobileAppView />
+          </ProtectedRoute>
+        } />
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <MobileAppView />
+          </ProtectedRoute>
+        } />
         <Route path="/web-overview" element={<Index />} />
         <Route path="/legacy-dashboard" element={
           <ProtectedRoute>

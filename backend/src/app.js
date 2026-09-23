@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import crypto from 'crypto';
 import labRoutes from './routes/labRoutes.js';
 import featureRoutes from './routes/featureRoutes.js';
+import authRoutes from './routes/authRoutes.js';
 import { apiLimiter, aiProxyLimiter, authLimiter } from './middleware/rateLimiter.js';
 import { requireAuth, generateToken } from './middleware/auth.js';
 import session from 'express-session';
@@ -119,6 +120,9 @@ app.use(apiLimiter);
 // Request logging with request ID
 morgan.token('request-id', (req) => req.requestId || '-');
 app.use(morgan(':method :url :status :response-time ms - :request-id'));
+
+// Dedicated authentication routes (register, login, me)
+app.use('/api/auth', authRoutes);
 
 // Demo session token endpoint for development/demo testing
 app.post('/api/auth/demo-token', authLimiter, (req, res) => {
