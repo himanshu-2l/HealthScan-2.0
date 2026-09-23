@@ -86,7 +86,9 @@ export const removeUserGoogleTokens = async (userId) => {
 
 export const isGoogleFitConfigured = () => googleFitService.isConfigured();
 
-// Generate mock fitness data for local demonstration only when ENABLE_DEMO_DATA=true
+export const isDemoDataAllowed = () => process.env.NODE_ENV !== 'production' && process.env.ENABLE_DEMO_DATA === 'true';
+
+// Generate mock fitness data for local demonstration only when ENABLE_DEMO_DATA=true and non-production
 export const getMockFitnessData = () => {
   const now = new Date();
   const heartRate = Array.from({ length: 7 }, (_, i) => {
@@ -235,7 +237,7 @@ router.get('/data', requireAuth, async (req, res) => {
   try {
     const configured = googleFitService.isConfigured();
     if (!configured) {
-      if (process.env.ENABLE_DEMO_DATA === 'true') {
+      if (isDemoDataAllowed()) {
         return res.json(getMockFitnessData());
       }
       return res.status(409).json({
@@ -249,7 +251,7 @@ router.get('/data', requireAuth, async (req, res) => {
     const tokens = (await getUserGoogleTokens(userId)) || req.session?.googleFitTokens;
 
     if (!tokens) {
-      if (process.env.ENABLE_DEMO_DATA === 'true') {
+      if (isDemoDataAllowed()) {
         return res.json(getMockFitnessData());
       }
       return res.status(401).json({
@@ -292,7 +294,7 @@ router.get('/data/:type', requireAuth, async (req, res) => {
 
     const configured = googleFitService.isConfigured();
     if (!configured) {
-      if (process.env.ENABLE_DEMO_DATA === 'true') {
+      if (isDemoDataAllowed()) {
         const mockData = getMockFitnessData();
         return res.json(mockData[mapTypeToKey[type]]);
       }
@@ -307,7 +309,7 @@ router.get('/data/:type', requireAuth, async (req, res) => {
     const tokens = (await getUserGoogleTokens(userId)) || req.session?.googleFitTokens;
 
     if (!tokens) {
-      if (process.env.ENABLE_DEMO_DATA === 'true') {
+      if (isDemoDataAllowed()) {
         const mockData = getMockFitnessData();
         return res.json(mockData[mapTypeToKey[type]]);
       }

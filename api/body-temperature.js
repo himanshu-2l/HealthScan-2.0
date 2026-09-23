@@ -12,7 +12,7 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  if (process.env.ENABLE_DEMO_DATA === 'true') {
+  if (process.env.NODE_ENV !== 'production' && process.env.ENABLE_DEMO_DATA === 'true') {
     return res.status(200).json({
       temperature: 36.6,
       unit: 'celsius',

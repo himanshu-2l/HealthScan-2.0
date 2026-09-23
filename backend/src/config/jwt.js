@@ -2,17 +2,14 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const FALLBACK_JWT_SECRET = 'healthscan-jwt-default-secret-key-32chars-2026';
-
 /**
  * Shared JWT secret provider.
- * Provides fallback to prevent crash during Vercel build/bundle or when unconfigured.
+ * Reads process.env.JWT_SECRET at call time and throws if it is missing.
  */
 export function getJwtSecret() {
-  const secret = process.env.JWT_SECRET || process.env.VITE_JWT_SECRET || FALLBACK_JWT_SECRET;
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error('JWT_SECRET environment variable is required');
+  }
   return secret;
 }
-
-export const JWT_SECRET = getJwtSecret();
-
-export default JWT_SECRET;
