@@ -129,7 +129,8 @@ export const MobileAppView: React.FC<MobileAppViewProps> = ({ initialTab }) => {
         activeTab={activeTab}
         onTabChange={handleTabChange}
         onStartScan={() => setIsScanModalOpen(true)}
-        onInstallPWA={promptInstall}
+        onInstallPWA={(!isInstalled && !isStandalone) ? promptInstall : undefined}
+        isInstalled={isInstalled || isStandalone}
       />
 
       {/* 2. MAIN RESPONSIVE VIEWPORT CONTAINER */}
@@ -140,8 +141,9 @@ export const MobileAppView: React.FC<MobileAppViewProps> = ({ initialTab }) => {
             key={refreshKey}
             onStartScan={() => setIsScanModalOpen(true)}
             onNavigateTab={handleTabChange}
-            onInstallPWA={promptInstall}
-            isStandalone={isStandalone}
+            onInstallPWA={(!isInstalled && !isStandalone) ? promptInstall : undefined}
+            isStandalone={isStandalone || isInstalled}
+            isInstalled={isInstalled || isStandalone}
           />
         )}
 

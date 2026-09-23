@@ -43,6 +43,7 @@ interface AppNavbarProps {
   onTabChange: (tab: NavTabId) => void;
   onStartScan: () => void;
   onInstallPWA?: () => void;
+  isInstalled?: boolean;
 }
 
 export const AppNavbar: React.FC<AppNavbarProps> = ({
@@ -50,6 +51,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
   onTabChange,
   onStartScan,
   onInstallPWA,
+  isInstalled = false,
 }) => {
   const navigate = useNavigate();
   const { mode, toggleMode } = useTheme();
@@ -259,8 +261,8 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
               <span className="hidden md:inline">Test on Phone</span>
             </button>
 
-            {/* Download / Install PWA App Button */}
-            {onInstallPWA && (
+            {/* Download / Install PWA App Button (Hidden if already installed) */}
+            {!isInstalled && onInstallPWA && (
               <button
                 onClick={onInstallPWA}
                 title="Download & Install HealthScan PWA"
@@ -460,8 +462,8 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 <span>Start 60-Second Full Scan</span>
               </button>
 
-              {/* Install PWA Mobile Action */}
-              {onInstallPWA && (
+              {/* Install PWA Mobile Action (Hidden if already installed) */}
+              {!isInstalled && onInstallPWA && (
                 <button
                   onClick={() => {
                     setMobileMenuOpen(false);

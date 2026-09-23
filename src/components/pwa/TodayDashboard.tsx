@@ -25,13 +25,15 @@ interface TodayDashboardProps {
   onNavigateTab: (tab: 'today' | 'scan' | 'labs' | 'care' | 'records') => void;
   onInstallPWA?: () => void;
   isStandalone?: boolean;
+  isInstalled?: boolean;
 }
 
 export const TodayDashboard: React.FC<TodayDashboardProps> = ({
   onStartScan,
   onNavigateTab,
   onInstallPWA,
-  isStandalone,
+  isStandalone = false,
+  isInstalled = false,
 }) => {
   const navigate = useNavigate();
   const [hasData, setHasData] = useState<boolean>(false);
@@ -104,8 +106,8 @@ export const TodayDashboard: React.FC<TodayDashboardProps> = ({
         </div>
       </div>
 
-      {/* PWA Install Quick Banner (Visible on mobile/desktop browsers when not in standalone mode) */}
-      {!isStandalone && onInstallPWA && (
+      {/* PWA Install Quick Banner (Only visible if not installed and not in standalone mode) */}
+      {!isStandalone && !isInstalled && onInstallPWA && (
         <div className="flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-teal-500/10 via-emerald-500/10 to-teal-500/5 border border-teal-500/20 text-slate-900 dark:text-white shadow-sm">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-teal-600 text-white flex items-center justify-center shadow-sm shrink-0">
