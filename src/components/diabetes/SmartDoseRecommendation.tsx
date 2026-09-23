@@ -1,6 +1,7 @@
 /**
- * Smart Dose Recommendation Component
- * 3-step input flow for calculating insulin doses
+ * Meal Carbohydrate & Glycemic Tracking Component
+ * 3-step input flow for tracking glucose, carbohydrates, and active insulin context
+ * CLINICAL SAFETY: HealthScan does NOT calculate, prescribe, or recommend insulin doses.
  */
 
 import React, { useState, useCallback, useMemo } from 'react';
@@ -11,15 +12,14 @@ import { Badge } from '@/components/ui/badge';
 import {
   Utensils,
   Droplet,
-  Calculator,
   AlertTriangle,
   Check,
   ChevronRight,
   ChevronLeft,
-  Plus,
   Minus,
   RotateCcw,
-  Mic,
+  Shield,
+  Activity,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { VoiceInputButton } from '@/components/ui/VoiceInputButton';
@@ -59,6 +59,7 @@ export const SmartDoseRecommendation: React.FC<SmartDoseRecommendationProps> = (
   const [glucose, setGlucose] = useState<string>(initialGlucose?.toString() || '');
   const [selectedMeals, setSelectedMeals] = useState<MealOption[]>([]);
   const [customCarbs, setCustomCarbs] = useState<string>('');
+  const [loggedUnits, setLoggedUnits] = useState<string>('');
 
   // Result states
   const [recommendation, setRecommendation] = useState<DoseRecommendation | null>(null);
@@ -86,7 +87,6 @@ export const SmartDoseRecommendation: React.FC<SmartDoseRecommendationProps> = (
 
   // Handle glucose voice input
   const handleGlucoseVoiceInput = useCallback((transcript: string) => {
-    // Extract numbers from transcript
     const match = transcript.match(/(\d{2,3})/);
     if (match) {
       const value = parseInt(match[1]);
@@ -107,32 +107,45 @@ export const SmartDoseRecommendation: React.FC<SmartDoseRecommendationProps> = (
     });
   }, []);
 
-  // Calculate recommendation
-  const calculateDose = useCallback(() => {
+  // Generate informational summary
+  const generateSummary = useCallback(() => {
     const glucoseValue = parseInt(glucose);
     if (isNaN(glucoseValue) || glucoseValue < 40 || glucoseValue > 600) {
       return;
     }
 
     const rec = calculateRecommendedDose(glucoseValue, totalCarbs);
-    const stacking = checkStackingRisk(rec.finalDose, glucoseValue);
+    const stacking = checkStackingRisk(0, glucoseValue);
 
     setRecommendation(rec);
     setStackingWarning(stacking);
     setCurrentStep(3);
   }, [glucose, totalCarbs]);
 
-  // Log dose
-  const handleLogDose = useCallback(() => {
-    if (!recommendation || recommendation.finalDose <= 0) return;
+  // Reset form
+  const resetForm = useCallback(() => {
+    setCurrentStep(1);
+    setGlucose('');
+    setSelectedMeals([]);
+    setCustomCarbs('');
+    setLoggedUnits('');
+    setRecommendation(null);
+    setStackingWarning(null);
+    setDoseLogged(false);
+  }, []);
 
-    logInsulinDose({
-      units: recommendation.finalDose,
-      type: 'rapid',
-      insulinName: 'Rapid-acting',
-      timestamp: new Date().toISOString(),
-      notes: `Meal: ${totalCarbs}g carbs, Glucose: ${glucose} mg/dL`,
-    });
+  // Log dose / meal entry
+  const handleLogDose = useCallback(() => {
+    const unitsToLog = parseFloat(loggedUnits);
+    if (!isNaN(unitsToLog) && unitsToLog > 0) {
+      logInsulinDose({
+        units: unitsToLog,
+        type: 'rapid',
+        insulinName: 'Physician-Prescribed Rapid',
+        timestamp: new Date().toISOString(),
+        notes: `Meal: ${totalCarbs}g carbs, Glucose: ${glucose} mg/dL`,
+      });
+    }
 
     setDoseLogged(true);
     onDoseLogged?.();
@@ -141,32 +154,13 @@ export const SmartDoseRecommendation: React.FC<SmartDoseRecommendationProps> = (
     setTimeout(() => {
       resetForm();
     }, 3000);
-  }, [recommendation, totalCarbs, glucose, onDoseLogged]);
-
-  // Reset form
-  const resetForm = useCallback(() => {
-    setCurrentStep(1);
-    setGlucose('');
-    setSelectedMeals([]);
-    setCustomCarbs('');
-    setRecommendation(null);
-    setStackingWarning(null);
-    setDoseLogged(false);
-  }, []);
+  }, [loggedUnits, totalCarbs, glucose, onDoseLogged, resetForm]);
 
   // Get step color
   const getStepColor = (step: Step) => {
     if (currentStep === step) return 'bg-primary text-primary-foreground';
     if (currentStep > step) return 'bg-emerald-500 text-white';
     return 'bg-muted text-muted-foreground';
-  };
-
-  // Get result card color based on risk
-  const getResultColor = () => {
-    if (!stackingWarning) return 'border-emerald-500/30 bg-emerald-500/5';
-    if (stackingWarning.isAtRisk) return 'border-red-500/30 bg-red-500/5';
-    if (stackingWarning.currentIOB > 0) return 'border-amber-500/30 bg-amber-500/5';
-    return 'border-emerald-500/30 bg-emerald-500/5';
   };
 
   // Quick glucose presets
@@ -178,8 +172,8 @@ export const SmartDoseRecommendation: React.FC<SmartDoseRecommendationProps> = (
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between mb-4">
           <CardTitle className="flex items-center gap-2 text-xl">
-            <Calculator className="w-5 h-5 text-primary" />
-            Smart Dose Calculator
+            <Activity className="w-5 h-5 text-primary" />
+            Meal & Glucose Tracker
           </CardTitle>
           <Button
             variant="ghost"
@@ -223,7 +217,7 @@ export const SmartDoseRecommendation: React.FC<SmartDoseRecommendationProps> = (
         <CardDescription className="text-center mt-2">
           {currentStep === 1 && 'Step 1: Enter your current blood sugar'}
           {currentStep === 2 && 'Step 2: Select what you are planning to eat'}
-          {currentStep === 3 && 'Step 3: Review your recommended dose'}
+          {currentStep === 3 && 'Step 3: Review meal carbohydrate & glycemic summary'}
         </CardDescription>
       </CardHeader>
 
@@ -398,95 +392,90 @@ export const SmartDoseRecommendation: React.FC<SmartDoseRecommendationProps> = (
                 Back
               </Button>
               <Button
-                onClick={calculateDose}
+                onClick={generateSummary}
                 className="flex-1 h-12"
               >
-                <Calculator className="w-4 h-4 mr-2" />
-                Calculate
+                <Activity className="w-4 h-4 mr-2" />
+                Review Summary
               </Button>
             </div>
           </div>
         )}
 
-        {/* Step 3: Results */}
+        {/* Step 3: Informational Glycemic & Carbohydrate Summary */}
         {currentStep === 3 && recommendation && (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-            {/* Main dose display */}
-            <div className={cn('rounded-2xl p-6 border-2 text-center', getResultColor())}>
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <Droplet className="w-6 h-6 text-primary" />
-                <span className="text-sm font-medium text-muted-foreground">Recommended Dose</span>
+            {/* Informational Summary Card */}
+            <div className="rounded-2xl p-6 border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 text-center">
+              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                Logged Meal & Glycemic State
               </div>
-              <div className="text-6xl font-bold text-foreground mb-2">
-                {recommendation.finalDose.toFixed(1)}
-              </div>
-              <div className="text-lg text-muted-foreground">units</div>
-            </div>
-
-            {/* Breakdown */}
-            <div className="glass-panel rounded-xl p-4 space-y-3">
-              <h4 className="font-medium text-sm text-muted-foreground mb-3">Calculation Breakdown</h4>
-
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Meal dose ({totalCarbs}g ÷ ICR)</span>
-                <span className="font-medium text-emerald-400">+{recommendation.mealDose.toFixed(1)}u</span>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Correction dose</span>
-                <span className={cn(
-                  'font-medium',
-                  recommendation.correctionDose > 0 ? 'text-amber-400' : 'text-muted-foreground'
-                )}>
-                  {recommendation.correctionDose > 0 ? `+${recommendation.correctionDose.toFixed(1)}u` : '0u'}
-                </span>
-              </div>
-
-              {recommendation.currentIOB > 0 && (
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">Active insulin (IOB)</span>
-                  <span className="font-medium text-red-400">-{recommendation.currentIOB.toFixed(1)}u</span>
+              <div className="grid grid-cols-3 gap-3 my-3 text-center">
+                <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/60 dark:border-white/10">
+                  <div className="text-xs text-muted-foreground">Glucose</div>
+                  <div className="text-xl sm:text-2xl font-bold text-foreground">
+                    {glucose} <span className="text-xs font-normal">mg/dL</span>
+                  </div>
                 </div>
-              )}
-
-              <div className="border-t border-white/10 pt-2 mt-2">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">Final dose</span>
-                  <span className="font-bold text-xl text-primary">{recommendation.finalDose.toFixed(1)}u</span>
+                <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/60 dark:border-white/10">
+                  <div className="text-xs text-muted-foreground">Carbs</div>
+                  <div className="text-xl sm:text-2xl font-bold text-primary">
+                    {totalCarbs} <span className="text-xs font-normal">g</span>
+                  </div>
+                </div>
+                <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/60 dark:border-white/10">
+                  <div className="text-xs text-muted-foreground">Active IOB</div>
+                  <div className="text-xl sm:text-2xl font-bold text-amber-500">
+                    {recommendation.currentIOB.toFixed(1)} <span className="text-xs font-normal">u</span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Explanation card */}
-            <div className="bg-primary/10 border border-primary/20 rounded-xl p-4">
-              <p className="text-sm leading-relaxed">{recommendation.explanation}</p>
+            {/* Clinical Safety Guidance Banner */}
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex gap-3 text-left">
+              <Shield className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+              <div className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                <span className="font-semibold text-blue-500 block mb-1">Clinical Safety Guidance</span>
+                HealthScan is an informational screening and logging tool. HealthScan does not calculate or recommend individualized insulin doses. Always follow your physician&apos;s prescribed insulin-to-carbohydrate ratios and correction scales. Consult your diabetes care team for all medication decisions.
+              </div>
             </div>
 
             {/* Stacking warning */}
             {stackingWarning && stackingWarning.isAtRisk && (
-              <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex gap-3">
-                <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex gap-3">
+                <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="font-medium text-red-400 mb-1">Stacking Warning</h4>
-                  <p className="text-sm text-red-300/80">{stackingWarning.warningMessage}</p>
+                  <h4 className="font-medium text-amber-400 mb-1">Active Insulin Notice</h4>
+                  <p className="text-sm text-amber-300/80">{stackingWarning.warningMessage}</p>
                 </div>
               </div>
             )}
 
-            {/* Safe max dose info */}
-            {stackingWarning && stackingWarning.safeMaxDose > 0 && stackingWarning.safeMaxDose < recommendation.finalDose && (
-              <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4">
-                <p className="text-sm text-amber-300">
-                  Safe maximum additional dose: <strong>{stackingWarning.safeMaxDose.toFixed(1)} units</strong>
-                </p>
+            {/* Record Physician-Directed Dose (Optional) */}
+            <div className="glass-panel rounded-xl p-4 space-y-3">
+              <label className="text-xs font-semibold text-muted-foreground block">
+                Record Physician-Directed Dose (Optional)
+              </label>
+              <div className="flex items-center gap-3">
+                <Input
+                  type="number"
+                  placeholder="Units administered per care plan"
+                  value={loggedUnits}
+                  onChange={(e) => setLoggedUnits(e.target.value)}
+                  className="glass-input"
+                  min={0}
+                  step={0.5}
+                />
+                <span className="text-muted-foreground text-sm font-medium">units</span>
               </div>
-            )}
+            </div>
 
             {/* Action buttons */}
             <div className="space-y-3">
               <Button
                 onClick={handleLogDose}
-                disabled={doseLogged || recommendation.finalDose <= 0}
+                disabled={doseLogged}
                 className={cn(
                   'w-full h-14 text-lg font-medium transition-all duration-300',
                   doseLogged && 'bg-emerald-500 hover:bg-emerald-500'
@@ -495,12 +484,12 @@ export const SmartDoseRecommendation: React.FC<SmartDoseRecommendationProps> = (
                 {doseLogged ? (
                   <>
                     <Check className="w-5 h-5 mr-2" />
-                    Dose Logged!
+                    Entry Logged!
                   </>
                 ) : (
                   <>
                     <Droplet className="w-5 h-5 mr-2" />
-                    Log {recommendation.finalDose.toFixed(1)} Units
+                    Save Meal & Glucose Entry
                   </>
                 )}
               </Button>
@@ -520,7 +509,7 @@ export const SmartDoseRecommendation: React.FC<SmartDoseRecommendationProps> = (
                   className="flex-1 h-12"
                 >
                   <RotateCcw className="w-4 h-4 mr-2" />
-                  New Calculation
+                  New Entry
                 </Button>
               </div>
             </div>

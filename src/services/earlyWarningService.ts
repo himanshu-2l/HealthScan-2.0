@@ -23,54 +23,61 @@ export interface WarningAlert {
 
 /**
  * Detect hypoglycemia risk
- * Low heart rate + low glucose = hypoglycemia risk
+ * Glucose is evaluated independently of heart rate.
+ * - glucose < 54 mg/dL: Critical/severe hypoglycemia
+ * - glucose 54-69 mg/dL: Hypoglycemia alert
+ * - glucose >= 70 mg/dL: No alert
+ * Missing/null heart rate does NOT suppress valid hypoglycemia alerts.
  */
 export const detectHypoglycemiaRisk = (sensorData: SensorData): WarningAlert | null => {
-  if (!sensorData.glucose || !sensorData.heartRate) {
+  if (sensorData.glucose === undefined || sensorData.glucose === null || isNaN(sensorData.glucose)) {
     return null;
   }
-  
+
   const glucose = sensorData.glucose;
   const heartRate = sensorData.heartRate;
-  
-  // Critical hypoglycemia
-  if (glucose < 70 && heartRate < 60) {
+
+  // Severe / critical hypoglycemia (< 54 mg/dL)
+  if (glucose < 54) {
+    const hrContext = heartRate ? ` (Heart rate: ${heartRate} bpm)` : '';
     return {
       id: `alert-${Date.now()}`,
       type: 'hypoglycemia',
       severity: 'critical',
-      message: '🚨 CRITICAL: Risk of hypoglycemia detected — eat fast sugar and check again immediately!',
+      message: `🚨 CRITICAL: Severe hypoglycemia detected (${glucose} mg/dL)${hrContext} — consume fast-acting carbohydrates immediately and seek assistance if needed!`,
       timestamp: sensorData.timestamp,
       sensorData,
       recommendations: [
-        'Consume 15-20g fast-acting sugar (glucose tablets, fruit juice, honey)',
+        'Consume 15-20g fast-acting carbohydrates (glucose tablets, fruit juice, honey) immediately',
         'Recheck glucose in 15 minutes',
         'If still low, repeat treatment',
-        'Contact healthcare provider or emergency services if symptoms worsen',
+        'Contact emergency medical services or your healthcare provider if symptoms worsen',
+        'Follow your clinician-prescribed hypoglycemia protocol',
       ],
       requiresImmediateAction: true,
     };
   }
-  
-  // Moderate hypoglycemia risk
-  if (glucose < 100 && heartRate < 65) {
+
+  // Hypoglycemia (54 - 69 mg/dL)
+  if (glucose < 70) {
+    const hrContext = heartRate ? ` (Heart rate: ${heartRate} bpm)` : '';
     return {
       id: `alert-${Date.now()}`,
-      type: 'hypoglycemia-risk',
-      severity: 'moderate',
-      message: '⚠️ Low sugar + low heart rate detected — monitor closely',
+      type: 'hypoglycemia',
+      severity: 'high',
+      message: `⚠️ Hypoglycemia detected (${glucose} mg/dL)${hrContext} — consume fast-acting carbohydrates and recheck.`,
       timestamp: sensorData.timestamp,
       sensorData,
       recommendations: [
-        'Monitor glucose levels closely',
-        'Have fast-acting sugar ready',
-        'Avoid skipping meals',
-        'Consider reducing insulin dose if pattern continues',
+        'Consume 15-20g fast-acting carbohydrates (glucose tablets, fruit juice, honey)',
+        'Recheck glucose in 15 minutes',
+        'Follow your clinician-prescribed diabetes care plan',
+        'Contact your diabetes care team if low glucose patterns recur',
       ],
-      requiresImmediateAction: false,
+      requiresImmediateAction: true,
     };
   }
-  
+
   return null;
 };
 

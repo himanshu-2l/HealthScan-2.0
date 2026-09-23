@@ -385,10 +385,10 @@ function DashboardTab({ summaryData, onTriggerEmergency }: DashboardTabProps) {
               <span className="text-xs font-normal text-slate-500 ml-1">units</span>
             </div>
             <p className="text-xs text-slate-600 dark:text-slate-400 mt-2">
-              {summaryData.currentIOB < 2 
-                ? 'Low IOB - Safe to dose' 
-                : summaryData.currentIOB <= 5 
-                  ? 'Moderate - Monitor closely' 
+              {summaryData.currentIOB < 2
+                ? 'Low active insulin'
+                : summaryData.currentIOB <= 5
+                  ? 'Moderate - Monitor closely'
                   : 'High - Stacking risk'}
             </p>
           </CardContent>

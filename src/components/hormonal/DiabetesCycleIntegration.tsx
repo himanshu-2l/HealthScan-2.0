@@ -116,9 +116,9 @@ const DiabetesCycleIntegration: React.FC = () => {
     };
     const phaseTips: Record<CyclePhaseName, string> = {
       menstrual: 'Glucose tends to normalize. Good time for baseline readings.',
-      follicular: 'Rising estrogen improves insulin sensitivity. You may need less insulin.',
+      follicular: 'Rising estrogen improves insulin sensitivity and glucose uptake. Monitor glucose levels closely.',
       ovulation: 'Brief glucose fluctuation possible. Monitor around ovulation day.',
-      luteal: 'Progesterone rise increases insulin resistance. Expect 20-40 mg/dL higher readings. Monitor more frequently, consider discussing temporary dose adjustment.',
+      luteal: 'Progesterone rise increases insulin resistance. Expect 20-40 mg/dL higher readings. Monitor more frequently and discuss cyclical trends with your healthcare provider.',
     };
 
     // Calculate overall averages

@@ -122,7 +122,7 @@ export const identifyPatterns = (days: number = 7): GlucosePattern[] => {
       frequency: overnightLows.length,
       severity: overnightLows.some(r => getGlucoseValue(r)! < 70) ? 'severe' : 'moderate',
       trend: 'stable',
-      recommendation: 'You consistently go low between 12-5 AM. Consider reducing bedtime insulin by 1-2 units or having a small snack before bed.',
+      recommendation: 'You consistently go low between 12-5 AM. Review these nighttime patterns with your diabetes care team and discuss bedtime snack options.',
       affectedDays,
     });
   }
@@ -152,7 +152,7 @@ export const identifyPatterns = (days: number = 7): GlucosePattern[] => {
 
   let dawnPhenomenonCount = 0;
   const dawnAffectedDays: string[] = [];
-  
+
   dawnDays.forEach((data, date) => {
     if (data.early !== null && data.late !== null && data.late - data.early > 30) {
       dawnPhenomenonCount++;
@@ -169,13 +169,13 @@ export const identifyPatterns = (days: number = 7): GlucosePattern[] => {
       frequency: dawnPhenomenonCount,
       severity: 'moderate',
       trend: 'stable',
-      recommendation: 'Dawn phenomenon detected on multiple mornings. This is a natural hormone effect -- discuss timing of long-acting insulin with your doctor.',
+      recommendation: 'Dawn phenomenon detected on multiple mornings. This is a natural hormone effect — discuss these morning fasting patterns with your doctor.',
       affectedDays: dawnAffectedDays,
     });
   }
 
   // Detect post-meal highs
-  const postMealReadings = recentReadings.filter(r => 
+  const postMealReadings = recentReadings.filter(r =>
     r.postMeal !== undefined && r.postMeal > 180 && r.mealType
   );
 
@@ -192,7 +192,7 @@ export const identifyPatterns = (days: number = 7): GlucosePattern[] => {
     if (readings.length >= 2) {
       const avgPostMeal = readings.reduce((sum, r) => sum + r.postMeal!, 0) / readings.length;
       const affectedDays = [...new Set(readings.map(r => r.date))];
-      
+
       let timeRange = { start: 12, end: 14 }; // lunch default
       if (mealType === 'breakfast') timeRange = { start: 8, end: 10 };
       if (mealType === 'dinner') timeRange = { start: 19, end: 21 };
@@ -206,7 +206,7 @@ export const identifyPatterns = (days: number = 7): GlucosePattern[] => {
         frequency: readings.length,
         severity: avgPostMeal > 250 ? 'severe' : avgPostMeal > 200 ? 'moderate' : 'mild',
         trend: 'stable',
-        recommendation: `Your post-${mealType} readings are frequently above target. Your ${mealType} carb ratio may need adjustment.`,
+        recommendation: `Your post-${mealType} readings are frequently above target. Review meal composition and discuss target ranges with your healthcare provider.`,
         affectedDays,
       });
     }
@@ -253,7 +253,7 @@ export const identifyPatterns = (days: number = 7): GlucosePattern[] => {
     if (highDays.length >= 3) {
       const allValues = windowReadings.map(r => getGlucoseValue(r)).filter((v): v is number => v !== null);
       const avgWindow = allValues.reduce((a, b) => a + b, 0) / allValues.length;
-      
+
       patterns.push({
         id: generateId(),
         type: 'consistent_high',
@@ -262,7 +262,7 @@ export const identifyPatterns = (days: number = 7): GlucosePattern[] => {
         frequency: highDays.length,
         severity: avgWindow > 250 ? 'severe' : avgWindow > 200 ? 'moderate' : 'mild',
         trend: 'stable',
-        recommendation: `Your glucose is consistently high during ${window.name} hours. Consider adjusting basal insulin or meal timing.`,
+        recommendation: `Your glucose is consistently high during ${window.name} hours. Review persistent elevations with your healthcare provider or diabetes educator.`,
         affectedDays: highDays,
       });
     }
@@ -307,7 +307,7 @@ export const identifyPatterns = (days: number = 7): GlucosePattern[] => {
         frequency: lowDays.length,
         severity: 'moderate',
         trend: 'stable',
-        recommendation: `Your glucose is consistently low during ${window.name} hours. Consider reducing insulin or increasing carb intake during this time.`,
+        recommendation: `Your glucose is consistently low during ${window.name} hours. Discuss recurrent low patterns during these hours with your healthcare provider or diabetes educator.`,
         affectedDays: lowDays,
       });
     }
@@ -468,7 +468,7 @@ export const generateWeeklySummary = (days: number = 7): WeeklySummary => {
   } else if (timeInRange >= 50) {
     insights.push(`Your time in range is ${timeInRange}%. Aim for 70% to improve your glucose control.`);
   } else {
-    insights.push(`Your time in range is ${timeInRange}%, which is below target. Consider reviewing your insulin dosing with your healthcare provider.`);
+    insights.push(`Your time in range is ${timeInRange}%, which is below target. Consider reviewing your diabetes management plan with your healthcare provider.`);
   }
 
   // Pattern-based insights
@@ -486,7 +486,7 @@ export const generateWeeklySummary = (days: number = 7): WeeklySummary => {
         }
         break;
       case 'consistent_high':
-        insights.push(`Your glucose runs high during ${pattern.timeRange.start}:00-${pattern.timeRange.end}:00. Consider adjusting your basal insulin for this period.`);
+        insights.push(`Your glucose runs high during ${pattern.timeRange.start}:00-${pattern.timeRange.end}:00. Discuss these persistent elevations with your healthcare provider.`);
         break;
       case 'consistent_low':
         insights.push(`Watch out for lows during ${pattern.timeRange.start}:00-${pattern.timeRange.end}:00. Keep fast-acting carbs handy.`);
