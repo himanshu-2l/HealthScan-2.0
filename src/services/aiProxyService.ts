@@ -37,6 +37,9 @@ export async function callAIProxy<T = any>(type: string, payload: any): Promise<
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
+    if (typeof window !== 'undefined' && (localStorage.getItem('healthscan_demo_user') || localStorage.getItem('healthscan_token')?.startsWith('demo-'))) {
+      headers['x-demo-session'] = 'true';
+    }
 
     const response = await fetch('/api/gemini-proxy', {
       method: 'POST',

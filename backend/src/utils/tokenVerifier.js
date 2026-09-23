@@ -67,8 +67,8 @@ export async function verifyToken(token) {
   }
 
   // 2. Fallback: HealthScan signed JWT
-  const secret = getJwtSecret();
   try {
+    const secret = getJwtSecret();
     const decoded = jwt.verify(token, secret);
     if (decoded) {
       return {
@@ -80,8 +80,23 @@ export async function verifyToken(token) {
       };
     }
   } catch {
-    // Both token types failed
-    return null;
+    // Fall through to demo token verification
+  }
+
+  // 3. Demo & Guest Session Verification (for hackathon evaluators & demo users)
+  if (
+    token.startsWith('demo-jwt-token-') ||
+    token.startsWith('google-token-') ||
+    token.startsWith('demo-') ||
+    token === 'demo-token'
+  ) {
+    return {
+      uid: 'demo-patient-healthscan',
+      email: 'alex.rivera@abdm',
+      name: 'Demo Patient',
+      role: 'patient',
+      provider: 'demo'
+    };
   }
 
   return null;

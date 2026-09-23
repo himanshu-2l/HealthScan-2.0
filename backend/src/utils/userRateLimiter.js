@@ -127,7 +127,7 @@ export async function checkRateLimit(key, maxRequests = 20, windowMs = 60000) {
 export async function enforceRateLimit(req, res, user, maxRequests = 20, windowMs = 60000) {
   const forwarded = req.headers['x-forwarded-for'];
   const ip = forwarded ? (Array.isArray(forwarded) ? forwarded[0] : forwarded.split(',')[0].trim()) : (req.socket?.remoteAddress || 'unknown');
-  const key = user?.uid ? `user:${user.uid}` : `ip:${ip}`;
+  const key = user?.provider === 'demo' ? `demo:${ip}` : (user?.uid ? `user:${user.uid}` : `ip:${ip}`);
 
   const result = await checkRateLimit(key, maxRequests, windowMs);
 

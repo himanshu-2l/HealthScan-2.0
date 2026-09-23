@@ -17,8 +17,19 @@ export async function getAuthToken(): Promise<string | null> {
     }
   }
 
-  // 2. HealthScan native sessions use secure httpOnly cookies sent with credentials: 'include'.
-  // We do not store or read JWTs in client-accessible localStorage/sessionStorage.
+  // 2. Check local stored token (for demo sessions or resilient fallback auth)
+  if (typeof window !== 'undefined') {
+    const localToken = localStorage.getItem('healthscan_token');
+    if (localToken) {
+      return localToken;
+    }
+    const demoUser = localStorage.getItem('healthscan_demo_user');
+    if (demoUser) {
+      return 'demo-jwt-token-active';
+    }
+  }
+
+  // 3. HealthScan native sessions use secure httpOnly cookies sent with credentials: 'include'.
   return null;
 }
 
