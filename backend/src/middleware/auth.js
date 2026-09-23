@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { getJwtSecret, JWT_SECRET } from '../config/jwt.js';
+import { getJwtSecret } from '../config/jwt.js';
 
 /**
  * Extract token from httpOnly cookie or Authorization header

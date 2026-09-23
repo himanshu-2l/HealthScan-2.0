@@ -67,8 +67,8 @@ export async function verifyToken(token) {
   }
 
   // 2. Fallback: HealthScan signed JWT
+  const secret = getJwtSecret();
   try {
-    const secret = getJwtSecret();
     const decoded = jwt.verify(token, secret);
     if (decoded) {
       return {

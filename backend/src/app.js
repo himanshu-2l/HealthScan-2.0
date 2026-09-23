@@ -170,9 +170,9 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Body temperature endpoint - returns 501 unless demo data mode is explicitly enabled
+// Body temperature endpoint - returns 501 unless demo data mode is explicitly enabled in non-production
 app.get('/api/body-temperature', (req, res) => {
-  if (process.env.ENABLE_DEMO_DATA === 'true') {
+  if (process.env.NODE_ENV !== 'production' && process.env.ENABLE_DEMO_DATA === 'true') {
     return res.json({
       temperature: 36.6,
       unit: 'celsius',
