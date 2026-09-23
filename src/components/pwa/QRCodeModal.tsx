@@ -10,9 +10,7 @@ import {
   Sparkles,
   Camera,
   Wifi,
-  Globe,
-  Terminal,
-  RefreshCw
+  Globe
 } from 'lucide-react';
 
 interface QRCodeModalProps {
@@ -26,19 +24,18 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
   onClose,
   customUrl
 }) => {
-  // Modes: 'tunnel' (HTTPS Cloud Tunnel) or 'wifi' (Local LAN IP)
-  const [mode, setMode] = useState<'tunnel' | 'wifi'>('tunnel');
+  // Modes: 'live' (Production Vercel URL) or 'wifi' (Local LAN IP)
+  const [mode, setMode] = useState<'live' | 'wifi'>('live');
   const [url, setUrl] = useState<string>('');
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const [isCopied, setIsCopied] = useState<boolean>(false);
-  const [cmdCopied, setCmdCopied] = useState<boolean>(false);
 
   // Defaults
+  const PRODUCTION_URL = 'https://health-scan-2-0-azure.vercel.app';
   const LOCAL_WIFI_IP = '192.168.29.148';
   const DEFAULT_PORT = '5174';
-  const DEFAULT_TUNNEL = 'https://0c6957637c079b.lhr.life';
 
-  // Compute active URL based on mode and storage
+  // Compute active URL based on mode
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -53,11 +50,11 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
       const port = window.location.port || DEFAULT_PORT;
       setUrl(`http://${wifiHost}:${port}`);
     } else {
-      // Tunnel mode
-      const savedTunnel = localStorage.getItem('healthscan_tunnel_url');
-      const envTunnel = (import.meta as any).env?.VITE_TUNNEL_URL;
-      const activeTunnel = savedTunnel || envTunnel || DEFAULT_TUNNEL;
-      setUrl(activeTunnel);
+      // Live production mode
+      const liveOrigin = window.location.origin.includes('vercel.app') 
+        ? window.location.origin 
+        : PRODUCTION_URL;
+      setUrl(liveOrigin);
     }
   }, [mode, customUrl, isOpen]);
 
@@ -101,22 +98,8 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
     }
   };
 
-  const handleCopyCmd = async () => {
-    try {
-      await navigator.clipboard.writeText('npm run tunnel');
-      setCmdCopied(true);
-      setTimeout(() => setCmdCopied(false), 2000);
-    } catch {
-      setCmdCopied(true);
-      setTimeout(() => setCmdCopied(false), 2000);
-    }
-  };
-
   const handleUrlChange = (newUrl: string) => {
     setUrl(newUrl);
-    if (mode === 'tunnel') {
-      localStorage.setItem('healthscan_tunnel_url', newUrl);
-    }
   };
 
   return createPortal(
@@ -148,22 +131,22 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
             Test on Your Phone
           </h2>
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-xs mx-auto">
-            Scan the QR code with your iPhone or Android camera to run HealthScan on your device.
+            Scan the QR code with your iPhone or Android camera to run HealthScan live on your device.
           </p>
         </div>
 
         {/* Mode Selector Tabs */}
         <div className="grid grid-cols-2 gap-1.5 p-1 rounded-2xl bg-slate-100 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.06] text-xs font-semibold">
           <button
-            onClick={() => setMode('tunnel')}
+            onClick={() => setMode('live')}
             className={`flex items-center justify-center gap-1.5 py-2 rounded-xl transition-all ${
-              mode === 'tunnel'
+              mode === 'live'
                 ? 'bg-white dark:bg-teal-500/20 text-teal-700 dark:text-teal-300 shadow-sm border border-slate-200/80 dark:border-teal-500/30'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
             <Globe className="w-3.5 h-3.5" />
-            <span>Cloud Tunnel (SSL)</span>
+            <span>Live Vercel (HTTPS)</span>
           </button>
           <button
             onClick={() => setMode('wifi')}
@@ -174,7 +157,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
             }`}
           >
             <Wifi className="w-3.5 h-3.5" />
-            <span>Local Wi-Fi (Fast)</span>
+            <span>Local Network</span>
           </button>
         </div>
 
@@ -209,7 +192,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
               type="text"
               value={url}
               onChange={(e) => handleUrlChange(e.target.value)}
-              placeholder={mode === 'tunnel' ? 'https://your-tunnel-url' : 'http://192.168.x.x:5174'}
+              placeholder={mode === 'live' ? PRODUCTION_URL : 'http://192.168.x.x:5174'}
               className="flex-1 bg-transparent text-slate-800 dark:text-slate-200 font-mono text-xs focus:outline-none truncate px-1"
               title="Target test URL"
             />
@@ -232,22 +215,14 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
           </div>
 
           {/* Mode-specific guidance */}
-          {mode === 'tunnel' ? (
-            <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.06] text-[11px] text-slate-600 dark:text-slate-400 space-y-1.5">
-              <div className="flex items-center justify-between font-semibold text-slate-800 dark:text-slate-200">
-                <span className="flex items-center gap-1.5">
-                  <Terminal className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
-                  <span>Cloud Tunnel Command</span>
-                </span>
-                <button
-                  onClick={handleCopyCmd}
-                  className="text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-1"
-                >
-                  {cmdCopied ? 'Copied!' : 'Copy command'}
-                </button>
+          {mode === 'live' ? (
+            <div className="p-2.5 rounded-xl bg-teal-50/60 dark:bg-teal-950/20 border border-teal-200/60 dark:border-teal-800/30 text-[11px] text-teal-800 dark:text-teal-300 space-y-1">
+              <div className="flex items-center gap-1.5 font-semibold text-teal-900 dark:text-teal-200">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Production Vercel Deployment</span>
               </div>
-              <p className="leading-relaxed">
-                If the tunnel disconnected, run <code className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-white/10 font-mono text-[10px] text-teal-700 dark:text-teal-300">npm run tunnel</code> in terminal and paste the new URL above.
+              <p className="leading-relaxed text-teal-700/90 dark:text-teal-400/90">
+                Permanent HTTPS enabled. Perfect for mobile camera PPG, mic permissions, and installable PWA testing.
               </p>
             </div>
           ) : (
@@ -256,7 +231,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
                 Local Wi-Fi Note:
               </span>
               <p className="leading-relaxed">
-                Ensure phone and PC are on the same Wi-Fi. (If your phone camera requires HTTPS, switch to <strong>Cloud Tunnel</strong> tab).
+                Ensure phone and PC are connected to the same Wi-Fi. For mobile camera sensors, HTTPS (Live Vercel) is recommended.
               </p>
             </div>
           )}
