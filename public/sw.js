@@ -1,10 +1,15 @@
 // HealthScan Clinical PWA Service Worker
-const CACHE_NAME = 'healthscan-v1';
+const CACHE_NAME = 'healthscan-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/pwa-icon.svg'
+  '/pwa-icon.svg',
+  '/models/hand_landmarker.task',
+  '/models/mediapipe/wasm/vision_wasm_internal.js',
+  '/models/mediapipe/wasm/vision_wasm_internal.wasm',
+  '/models/mediapipe/wasm/vision_wasm_nosimd_internal.js',
+  '/models/mediapipe/wasm/vision_wasm_nosimd_internal.wasm'
 ];
 
 self.addEventListener('install', (event) => {

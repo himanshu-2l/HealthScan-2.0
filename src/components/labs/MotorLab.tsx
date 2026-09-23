@@ -5,19 +5,12 @@ import { HAND_CONNECTIONS } from "@mediapipe/hands";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Camera as CameraIcon, Play, Brain, Lightbulb, FileText, Activity } from "lucide-react";
+import { Camera as CameraIcon, Play, FileText, Activity } from "lucide-react";
 import { saveTestResult, generateTestResultId } from '@/services/healthDataService';
 import { HealthTestResult } from '@/types/health';
-import {
-  robustStatistics,
-  validateDataQuality,
-  calculateAccuracyScore,
-  movingAverage
-} from '@/utils/statisticalAccuracy';
+import { robustStatistics } from '@/utils/statisticalAccuracy';
 import {
   calculateFatigueIndex,
-  calculateAmplitudeDecay,
   analyzeRhythmPattern,
   analyzeTremorAdvanced,
   calculateParkinsonsRiskScore,
@@ -28,7 +21,7 @@ import {
   type MotorQualityResult
 } from '@/utils/advancedMotorAnalysis';
 
-const WASM_PATH = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm";
+const WASM_PATH = "/models/mediapipe/wasm";
 const MODEL_PATH = "/models/hand_landmarker.task";
 
 let globalHandLandmarker: HandLandmarker | undefined;
@@ -474,7 +467,7 @@ function generateAdvancedClinicalFindings(
       normalRange: 'None or < 4 Hz physiological',
       status: tremorStatus,
       clinicalSignificance: advancedTremor.type === 'parkinsonian_rest'
-        ? `Parkinsonian rest tremor at ${advancedTremor.dominantFrequency.toFixed(1)} Hz - classic Parkinson\'s sign`
+        ? `Parkinsonian rest tremor at ${advancedTremor.dominantFrequency.toFixed(1)} Hz - classic Parkinson's sign`
         : advancedTremor.type === 'essential'
           ? 'Essential tremor pattern - action tremor during movement'
           : 'Tremor within physiological range'
@@ -638,11 +631,11 @@ export const MotorLab: React.FC = () => {
   const [fingerTaps, setFingerTaps] = useState(0);
   const [tapIntervals, setTapIntervals] = useState<number[]>([]);
   const [status, setStatus] = useState('Click "Enable Camera" to begin motor assessment');
-  const [thresholdFraction, setThresholdFraction] = useState(0.05);
+  const [thresholdFraction] = useState(0.05);
   const [handsDetected, setHandsDetected] = useState(0);
   const [lastDistancePx, setLastDistancePx] = useState<number | null>(null);
-  const [tapDetectedFrame, setTapDetectedFrame] = useState(false);
-  const [tremorSamples, setTremorSamples] = useState<TremorSample[]>([]);
+  const [, setTapDetectedFrame] = useState(false);
+  const [, setTremorSamples] = useState<TremorSample[]>([]);
   const [analysisResults, setAnalysisResults] = useState<MotorAnalysisResults | null>(null);
 
   // Ref for the report section to enable auto-scroll
@@ -662,6 +655,7 @@ export const MotorLab: React.FC = () => {
   }, [analysisResults]);
 
   const fingerTapsRef = useRef(0);
+  const tapIntervalsRef = useRef<number[]>([]);
   const tremorSamplesRef = useRef<TremorSample[]>([]);
   const lastTapTimeRef = useRef<number | null>(null);
   const timerRef = useRef<number | null>(null);
@@ -689,27 +683,17 @@ export const MotorLab: React.FC = () => {
       try {
         setStatus("Loading ML runtime + model...");
         const vision = await FilesetResolver.forVisionTasks(WASM_PATH);
-        let landmarker: HandLandmarker | undefined;
-        try {
-          landmarker = await HandLandmarker.createFromOptions(vision, {
-            baseOptions: { modelAssetPath: MODEL_PATH },
-            runningMode: "VIDEO",
-            numHands: 2,
-          });
-        } catch (localErr) {
-          console.warn("Local hand landmarker model load failed, attempting CDN fallback:", localErr);
-          landmarker = await HandLandmarker.createFromOptions(vision, {
-            baseOptions: { modelAssetPath: "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task" },
-            runningMode: "VIDEO",
-            numHands: 2,
-          });
-        }
+        const landmarker = await HandLandmarker.createFromOptions(vision, {
+          baseOptions: { modelAssetPath: MODEL_PATH },
+          runningMode: "VIDEO",
+          numHands: 2,
+        });
         globalHandLandmarker = landmarker;
         if (!mounted) return;
         setStatus('Model loaded. Click "Enable Camera" to begin motor assessment');
       } catch (err) {
         console.error("Model init error:", err);
-        setStatus("Failed to load model. Check camera and network connection.");
+        setStatus("Failed to load the local motor-analysis model. Reload the app and try again.");
       }
     })();
     return () => {
@@ -717,7 +701,7 @@ export const MotorLab: React.FC = () => {
       if (timerRef.current) window.clearInterval(timerRef.current);
       if (animationFrameIdRef.current !== null) cancelAnimationFrame(animationFrameIdRef.current);
       if (streamRef.current) streamRef.current.getTracks().forEach(track => track.stop());
-      try { globalHandLandmarker?.close(); } catch { }
+      try { globalHandLandmarker?.close(); } catch { /* Model may already be closed. */ }
       globalHandLandmarker = undefined;
       globalLastVideoTime = -1;
     };
@@ -778,8 +762,10 @@ export const MotorLab: React.FC = () => {
     setFingerTaps(0);
     fingerTapsRef.current = 0;
     setTapIntervals([]);
+    tapIntervalsRef.current = [];
     tremorSamplesRef.current = [];
     setTremorSamples([]);
+    setAnalysisResults(null);
     lastTapTimeRef.current = null;
     setStatus("Test running — tap index & thumb rapidly for 5s");
 
@@ -809,33 +795,46 @@ export const MotorLab: React.FC = () => {
     setStatus("Processing motor data with advanced clinical algorithms...");
 
     setTimeout(() => {
-      const { tapRate, coordinationScore, tremorMetrics, movementQuality } = liveMetricsRef.current;
+      const { coordinationScore } = liveMetricsRef.current;
       const video = videoRef.current;
-      const finalTaps = fingerTapsRef.current || fingerTaps;
-      const finalDuration = testDurationRef.current || testDuration || 5.0;
+      const finalTaps = fingerTapsRef.current;
+      const finalDuration = testDurationRef.current;
+      const finalTapIntervals = tapIntervalsRef.current;
+      const finalTremorSamples = tremorSamplesRef.current;
+
+      const hasSufficientMotorData =
+        finalDuration >= 4.5 &&
+        finalTaps >= 3 &&
+        finalTapIntervals.length >= 2 &&
+        finalTremorSamples.length >= 30;
+
+      if (!hasSufficientMotorData) {
+        setAnalysisResults(null);
+        setStatus('Not enough hand-tracking data for a report. Keep your hand visible and complete at least 3 clear finger taps, then retry.');
+        return;
+      }
+
       const computedTapRate = +(finalTaps / finalDuration).toFixed(2);
       
       console.log('Advanced analysis using:', {
         finalTaps,
         finalDuration,
         computedTapRate,
-        tapIntervals: tapIntervals.length,
-        tremorSamples: tremorSamplesRef.current.length
+        tapIntervals: finalTapIntervals.length,
+        tremorSamples: finalTremorSamples.length
       });
 
       // ===== ADVANCED ANALYSIS =====
       
       // 1. Advanced Tremor Analysis with FFT
       const videoHeight = video?.videoHeight || 480;
-      const advancedTremor = analyzeTremorAdvanced(tremorSamplesRef.current, videoHeight);
+      const advancedTremor = analyzeTremorAdvanced(finalTremorSamples, videoHeight);
 
       // 2. Rhythm Pattern Analysis
-      const rhythmAnalysis = analyzeRhythmPattern(tapIntervals);
+      const rhythmAnalysis = analyzeRhythmPattern(finalTapIntervals);
 
       // 3. Fatigue Index (key Parkinson's indicator)
-      const fatigueIndex = calculateFatigueIndex(tapIntervals);
-      const amplitudeDecay = calculateAmplitudeDecay(tremorSamplesRef.current);
-
+      const fatigueIndex = calculateFatigueIndex(finalTapIntervals);
       // 4. Motor Quality Score
       const motorQuality = calculateMotorQualityScore({
         tapRate: computedTapRate,
@@ -882,11 +881,11 @@ export const MotorLab: React.FC = () => {
       };
 
       setAnalysisResults(results);
-      setStatus("Advanced analysis complete! Clinical-grade assessment ready.");
+      setStatus("Analysis complete. Your motor screening assessment is ready.");
 
       // Save to unified health data storage
       try {
-        const safeScore = Math.max(0, Math.min(100, Math.round(motorQuality.score || movementQuality || 85)));
+        const safeScore = Math.max(0, Math.min(100, Math.round(motorQuality.score)));
         const healthTestResult: HealthTestResult = {
           id: generateTestResultId('motor'),
           testType: 'motor',
@@ -917,6 +916,8 @@ export const MotorLab: React.FC = () => {
   }
 
   function stopTest() {
+    if (!isRecordingRef.current) return;
+
     setIsRecording(false);
     isRecordingRef.current = false;
     if (timerRef.current) { window.clearInterval(timerRef.current); timerRef.current = null; }
@@ -944,7 +945,14 @@ export const MotorLab: React.FC = () => {
     lastTapTimeRef.current = now;
 
     setFingerTaps(prev => { const next = prev + 1; fingerTapsRef.current = next; return next; });
-    setTapIntervals(prev => { const next = [...prev, now - (last || now)]; if (next.length > 600) next.splice(0, next.length - 600); return next; });
+    if (last > 0) {
+      setTapIntervals(prev => {
+        const next = [...prev, now - last];
+        if (next.length > 600) next.splice(0, next.length - 600);
+        tapIntervalsRef.current = next;
+        return next;
+      });
+    }
     return true;
   }
 
@@ -1075,7 +1083,6 @@ export const MotorLab: React.FC = () => {
   }
 
   const tremorMetrics = computeTremorMetrics(tremorSamplesRef.current);
-  const tremorAmpPercent = tremorMetrics.ampNorm * 100;
   const coordinationScore = computeCoordinationScore(tapIntervals);
   const movementQuality = computeMovementQuality(coordinationScore, tremorMetrics.ampNorm);
   const tapRate = testDuration > 0 ? fingerTaps / testDuration : 0;
@@ -1087,112 +1094,6 @@ export const MotorLab: React.FC = () => {
     tremorMetrics,
     movementQuality
   };
-
-  // Enhanced analysis functions
-  function getRiskLevel(score: number, type: 'coordination' | 'tremor' | 'speed'): { level: string; color: string; description: string } {
-    if (type === 'coordination') {
-      if (score >= 80) return { level: 'Excellent', color: 'text-green-400', description: 'Very good motor coordination' };
-      if (score >= 60) return { level: 'Good', color: 'text-blue-400', description: 'Normal coordination patterns' };
-      if (score >= 40) return { level: 'Fair', color: 'text-yellow-400', description: 'Mild coordination irregularities' };
-      return { level: 'Poor', color: 'text-red-400', description: 'Significant coordination issues detected' };
-    }
-    if (type === 'tremor') {
-      if (tremorMetrics.freqHz === 0) return { level: 'None', color: 'text-green-400', description: 'No significant tremor detected' };
-      if (tremorMetrics.freqHz < 4) return { level: 'Low', color: 'text-blue-400', description: 'Minimal tremor activity' };
-      if (tremorMetrics.freqHz < 8) return { level: 'Moderate', color: 'text-yellow-400', description: 'Moderate tremor detected' };
-      return { level: 'High', color: 'text-red-400', description: 'Significant tremor activity' };
-    }
-    if (type === 'speed') {
-      if (tapRate >= 8) return { level: 'Fast', color: 'text-green-400', description: 'Excellent movement speed' };
-      if (tapRate >= 5) return { level: 'Normal', color: 'text-blue-400', description: 'Normal movement speed' };
-      if (tapRate >= 3) return { level: 'Slow', color: 'text-yellow-400', description: 'Reduced movement speed' };
-      return { level: 'Very Slow', color: 'text-red-400', description: 'Significantly reduced movement speed' };
-    }
-    return { level: 'Unknown', color: 'text-gray-400', description: 'Unable to assess' };
-  }
-
-  function generateRecommendations(): string[] {
-    const recommendations: string[] = [];
-
-    if (coordinationScore < 60) {
-      recommendations.push("Consider coordination exercises like finger-to-nose movements");
-      recommendations.push("Practice fine motor tasks such as writing or drawing");
-    }
-
-    if (tremorMetrics.freqHz > 6) {
-      recommendations.push("Monitor tremor patterns over time for changes");
-      recommendations.push("Consider consultation with a neurologist");
-      recommendations.push("Avoid caffeine before assessments as it may increase tremor");
-    }
-
-    if (tapRate < 4) {
-      recommendations.push("Practice rapid alternating movements to improve speed");
-      recommendations.push("Consider occupational therapy evaluation");
-    }
-
-    if (movementQuality < 70) {
-      recommendations.push("Regular exercise may help improve overall motor function");
-      recommendations.push("Consider tracking improvements over multiple sessions");
-    }
-
-    if (recommendations.length === 0) {
-      recommendations.push("Excellent motor function - maintain current activity level");
-      recommendations.push("Consider periodic re-assessment to monitor any changes");
-    }
-
-    return recommendations;
-  }
-
-  function getClinicalInsights(): { category: string; findings: string[]; significance: string }[] {
-    const insights = [];
-
-    // Coordination Analysis
-    insights.push({
-      category: "Motor Coordination",
-      findings: [
-        `Coordination score: ${coordinationScore}%`,
-        `Tap consistency: ${tapIntervals.length > 1 ? 'Measured' : 'Insufficient data'}`,
-        `Movement pattern: ${coordinationScore >= 70 ? 'Regular' : 'Irregular'}`
-      ],
-      significance: coordinationScore >= 70 ?
-        "Normal coordination patterns suggest intact motor control pathways." :
-        "Irregular patterns may indicate motor control difficulties requiring attention."
-    });
-
-    // Tremor Analysis
-    insights.push({
-      category: "Tremor Assessment",
-      findings: [
-        `Dominant frequency: ${tremorMetrics.freqHz.toFixed(2)} Hz`,
-        `Amplitude: ${tremorAmpPercent.toFixed(2)}%`,
-        `Tremor type: ${tremorMetrics.freqHz >= 4 && tremorMetrics.freqHz <= 12 ? 'Potential pathological' : 'Within normal range'}`
-      ],
-      significance: tremorMetrics.freqHz >= 4 && tremorMetrics.freqHz <= 12 ?
-        "Tremor frequency in 4-12 Hz range may warrant clinical evaluation." :
-        "Tremor patterns appear within normal physiological range."
-    });
-
-    // Speed Analysis
-    insights.push({
-      category: "Movement Speed",
-      findings: [
-        `Tap rate: ${tapRate.toFixed(2)} taps/second`,
-        `Total taps: ${fingerTaps} in ${testDuration.toFixed(1)}s`,
-        `Speed classification: ${getRiskLevel(0, 'speed').level}`
-      ],
-      significance: tapRate >= 5 ?
-        "Movement speed within normal range for finger tapping tasks." :
-        "Reduced movement speed may indicate bradykinesia or motor slowing."
-    });
-
-    return insights;
-  }
-
-  const coordinationRisk = getRiskLevel(coordinationScore, 'coordination');
-  const tremorRisk = getRiskLevel(0, 'tremor');
-  const speedRisk = getRiskLevel(0, 'speed');
-  const recommendations = generateRecommendations();
-  const clinicalInsights = getClinicalInsights();
 
   return (
     <div className="space-y-6 pb-8">
