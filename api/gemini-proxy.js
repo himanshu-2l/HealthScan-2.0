@@ -66,6 +66,58 @@ export const chatSchema = z.object({
   language: z.string().max(50).optional(),
 });
 
+export const medicineVisionResultSchema = z.object({
+  brandName: z.string().optional().default(''),
+  genericIngredients: z.array(z.object({
+    name: z.string(),
+    strength: z.string().optional().default(''),
+  })).optional().default([]),
+  dosageForm: z.string().optional().default('Unknown'),
+  manufacturer: z.string().optional().default(''),
+  packagingType: z.string().optional().default('unknown'),
+  visibleText: z.array(z.string()).optional().default([]),
+  confidenceScore: z.number().min(0).max(1).optional().default(0.5),
+});
+
+export const symptomCheckResultSchema = z.object({
+  possibleConditions: z.array(z.object({
+    name: z.string(),
+    likelihood: z.string().optional(),
+    description: z.string().optional(),
+  })).optional().default([]),
+  riskLevel: z.string().optional().default('Low'),
+  whenToSeeDoctor: z.array(z.string()).optional().default([]),
+  selfCareTips: z.array(z.string()).optional().default([]),
+});
+
+/**
+ * Strips markdown code fence wrappers from AI JSON outputs.
+ */
+export function cleanJsonText(raw) {
+  let cleaned = (raw || '').trim();
+  if (cleaned.startsWith('```json')) cleaned = cleaned.slice(7);
+  else if (cleaned.startsWith('```')) cleaned = cleaned.slice(3);
+  if (cleaned.endsWith('```')) cleaned = cleaned.slice(0, -3);
+  return cleaned.trim();
+}
+
+/**
+ * Attempts to parse and validate AI response text against a Zod schema.
+ * Returns parsed object or null if parsing/validation fails.
+ */
+export function parseAIJsonResponse(rawText, schema) {
+  try {
+    const cleaned = cleanJsonText(rawText);
+    const parsed = JSON.parse(cleaned);
+    if (!schema) return parsed;
+    const validated = schema.safeParse(parsed);
+    return validated.success ? validated.data : null;
+  } catch {
+    return null;
+  }
+}
+
+
 const MEDICINE_VISION_PROMPT = `You are a clinical OCR and pharmaceutical vision extraction engine.
 Analyze the provided image of a medicine (blister strip, box, label, bottle, or prescription).
 
@@ -256,19 +308,39 @@ export default async function handler(req, res) {
       const mimeType = match[1];
       const base64Data = match[2];
 
-      const visionResult = await model.generateContent([
-        MEDICINE_VISION_PROMPT,
-        {
-          inlineData: {
-            mimeType,
-            data: base64Data
+      const callVision = async (extraInstruction = '') => {
+        const promptText = extraInstruction
+          ? `${MEDICINE_VISION_PROMPT}\n\n${extraInstruction}`
+          : MEDICINE_VISION_PROMPT;
+        const visionResult = await model.generateContent([
+          promptText,
+          {
+            inlineData: {
+              mimeType,
+              data: base64Data
+            }
           }
-        }
-      ]);
+        ]);
+        const resp = await visionResult.response;
+        return resp.text();
+      };
 
-      const responseText = visionResult.response.text().trim();
-      const cleanedJson = responseText.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
-      const parsed = JSON.parse(cleanedJson);
+      let responseText = await callVision();
+      let parsed = parseAIJsonResponse(responseText, medicineVisionResultSchema);
+
+      if (!parsed) {
+        try {
+          responseText = await callVision('IMPORTANT: Respond with ONLY valid JSON matching the exact schema above. Do not include markdown code fences or conversational text.');
+          parsed = parseAIJsonResponse(responseText, medicineVisionResultSchema);
+        } catch (retryErr) {
+          console.error('[AI Proxy medicine-vision retry error]:', retryErr.message || retryErr);
+        }
+      }
+
+      if (!parsed) {
+        return res.status(502).json({ error: 'AI returned invalid response format. Please try again.' });
+      }
+
       return res.status(200).json({ result: parsed });
     }
 
@@ -278,32 +350,23 @@ export default async function handler(req, res) {
 
     // For symptom-check, parse and return validated JSON
     if (type === 'symptom-check') {
-      try {
-        let cleanedText = text.trim();
-        if (cleanedText.startsWith('```json')) cleanedText = cleanedText.slice(7);
-        else if (cleanedText.startsWith('```')) cleanedText = cleanedText.slice(3);
-        if (cleanedText.endsWith('```')) cleanedText = cleanedText.slice(0, -3);
-        cleanedText = cleanedText.trim();
+      let parsed = parseAIJsonResponse(text, symptomCheckResultSchema);
 
-        const parsed = JSON.parse(cleanedText);
-        return res.status(200).json({ result: parsed });
-      } catch {
-        // Fallback retry with JSON formatting instruction
+      if (!parsed) {
         try {
           const retryResult = await model.generateContent(prompt + '\n\nIMPORTANT: Respond with ONLY valid JSON, no markdown formatting.');
           const retryResponse = await retryResult.response;
-          let retryText = retryResponse.text().trim();
-          if (retryText.startsWith('```json')) retryText = retryText.slice(7);
-          else if (retryText.startsWith('```')) retryText = retryText.slice(3);
-          if (retryText.endsWith('```')) retryText = retryText.slice(0, -3);
-          retryText = retryText.trim();
-
-          const retryParsed = JSON.parse(retryText);
-          return res.status(200).json({ result: retryParsed });
-        } catch {
-          return res.status(502).json({ error: 'AI returned invalid response format. Please try again.' });
+          parsed = parseAIJsonResponse(retryResponse.text(), symptomCheckResultSchema);
+        } catch (retryErr) {
+          console.error('[AI Proxy symptom-check retry error]:', retryErr.message || retryErr);
         }
       }
+
+      if (!parsed) {
+        return res.status(502).json({ error: 'AI returned invalid response format. Please try again.' });
+      }
+
+      return res.status(200).json({ result: parsed });
     }
 
     return res.status(200).json({ result: text });

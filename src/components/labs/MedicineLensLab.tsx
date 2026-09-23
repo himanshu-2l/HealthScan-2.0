@@ -260,6 +260,34 @@ export const MedicineLensLab: React.FC = () => {
     }
   };
 
+  // Resize and compress image to max ~1600 px and JPEG quality ~0.8 before upload
+  const resizeAndCompress = (imageSource: HTMLImageElement | HTMLCanvasElement, maxDim = 1600, quality = 0.8): string => {
+    const width = imageSource.width;
+    const height = imageSource.height;
+
+    let targetWidth = width;
+    let targetHeight = height;
+
+    if (width > maxDim || height > maxDim) {
+      if (width > height) {
+        targetWidth = maxDim;
+        targetHeight = Math.round((height * maxDim) / width);
+      } else {
+        targetHeight = maxDim;
+        targetWidth = Math.round((width * maxDim) / height);
+      }
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.drawImage(imageSource, 0, 0, targetWidth, targetHeight);
+    }
+    return canvas.toDataURL('image/jpeg', quality);
+  };
+
   // Capture frame from live video
   const capturePhoto = async () => {
     if (!videoRef.current) return;
@@ -271,8 +299,8 @@ export const MedicineLensLab: React.FC = () => {
     if (!ctx) return;
 
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-    setCapturedImage(dataUrl);
+    const compressedDataUrl = resizeAndCompress(canvas, 1600, 0.8);
+    setCapturedImage(compressedDataUrl);
     stopCamera();
 
     // Run Image Quality Guard
@@ -280,7 +308,7 @@ export const MedicineLensLab: React.FC = () => {
     setQualityReport(quality);
 
     // Run Vision & Extraction
-    await runVisionAnalysis(dataUrl, quality);
+    await runVisionAnalysis(compressedDataUrl, quality);
   };
 
   // Handle uploaded image file
@@ -293,14 +321,14 @@ export const MedicineLensLab: React.FC = () => {
       const dataUrl = event.target?.result as string;
       if (!dataUrl) return;
 
-      setCapturedImage(dataUrl);
-
-      // Load into temporary image for canvas analysis
+      // Load into temporary image for canvas resizing and analysis
       const img = new Image();
       img.onload = async () => {
+        const compressedDataUrl = resizeAndCompress(img, 1600, 0.8);
+        setCapturedImage(compressedDataUrl);
         const quality = await assessImageQuality(img);
         setQualityReport(quality);
-        await runVisionAnalysis(dataUrl, quality);
+        await runVisionAnalysis(compressedDataUrl, quality);
       };
       img.src = dataUrl;
     };

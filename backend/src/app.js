@@ -87,6 +87,9 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID', 'X-Requested-With', 'Accept']
 }));
 
+// Route-specific body parser with higher limit for image/AI payloads
+app.use('/api/gemini-proxy', express.json({ limit: '8mb' }));
+
 // Body parsing with size limit
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
