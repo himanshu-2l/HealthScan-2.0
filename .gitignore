@@ -26,3 +26,6 @@ dist-ssr
 .gstack/
 *.tsbuildinfo
 .reference-repos/
+playwright-report/
+test-results/
+public/models/
