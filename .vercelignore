@@ -12,5 +12,3 @@ server.cjs
 docs
 README.md
 *.md
-api
-backend
