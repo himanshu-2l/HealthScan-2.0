@@ -541,8 +541,8 @@ export const PatternAnalysis: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto pb-2">
-            <div className="min-w-[600px]">
+          <div className="w-full max-w-full overflow-x-auto pb-2 touch-pan-x">
+            <div className="min-w-[520px] sm:min-w-[600px]">
               {/* Hour labels */}
               <div className="flex mb-1">
                 <div className="w-12" /> {/* Day label spacer */}

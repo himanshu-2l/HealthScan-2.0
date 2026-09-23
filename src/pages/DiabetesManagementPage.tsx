@@ -5,8 +5,8 @@
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { GlassNavbar } from '@/components/GlassNavbar';
-import { SiteFooter } from '@/components/SiteFooter';
+import { useNavigate } from 'react-router-dom';
+import { MobileBottomNav } from '@/components/pwa/MobileBottomNav';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -31,6 +31,7 @@ import {
   Heart,
   ArrowUp,
   ArrowDown,
+  ArrowLeft,
   ChevronLeft,
   Share2,
 } from 'lucide-react';
@@ -79,6 +80,7 @@ interface SummaryData {
 }
 
 export default function DiabetesManagementPage() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showEmergencyAlert, setShowEmergencyAlert] = useState(false);
   const [summaryData, setSummaryData] = useState<SummaryData>({
@@ -199,9 +201,27 @@ export default function DiabetesManagementPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 transition-colors duration-200">
-      <GlassNavbar />
+      {/* Canonical Modern Header */}
+      <header className="sticky top-0 z-40 w-full bg-white/95 dark:bg-[#070A11]/95 backdrop-blur-md border-b border-slate-200 dark:border-white/[0.08] pt-[env(safe-area-inset-top,0px)] transition-colors">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+          <button
+            onClick={() => navigate('/app?tab=care')}
+            aria-label="Back to Chronic Care Hub"
+            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] border border-slate-200 dark:border-white/[0.08] text-sm font-semibold text-slate-700 dark:text-slate-200 transition active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-teal-500/40"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Care</span>
+          </button>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 hidden sm:inline">Metabolic & Diabetes Care</span>
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center text-slate-950 font-bold text-[10px]">
+              HS
+            </div>
+          </div>
+        </div>
+      </header>
 
-      <main className="container mx-auto px-3 sm:px-4 lg:px-8 pt-24 pb-20 flex-1 overflow-x-hidden">
+      <main className="container mx-auto px-3 sm:px-4 lg:px-8 py-6 pb-24 md:pb-12 flex-1 overflow-x-hidden">
         <div className="max-w-7xl mx-auto space-y-6">
           {/* Page Header */}
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-slate-200/80 dark:border-white/10 pb-6">
@@ -226,96 +246,94 @@ export default function DiabetesManagementPage() {
             </div>
           </div>
 
-          {/* Top Summary Strip - Always Visible, Horizontal Scroll on Mobile */}
-          <div className="overflow-x-auto scrollbar-hide -mx-3 sm:mx-0">
-            <div className="flex gap-3 px-3 sm:px-0 min-w-max sm:min-w-0 sm:grid sm:grid-cols-4">
-              {/* Current IOB */}
-              <div className="flex-shrink-0 w-[160px] sm:w-auto bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="p-1.5 bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 rounded-lg">
-                    <Syringe className="w-4 h-4" />
-                  </div>
-                  <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Active Insulin (IOB)</span>
+          {/* Top Summary Strip - Responsive 2x2 Grid on Mobile, 4 Columns on Desktop */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4">
+            {/* Current IOB */}
+            <div className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm p-3.5 sm:p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-1.5 bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 rounded-lg">
+                  <Syringe className="w-4 h-4" />
                 </div>
-                <div className="flex items-baseline gap-1.5">
-                  <span className={`text-2xl font-black ${getIOBColor(summaryData.currentIOB)}`}>
-                    {summaryData.currentIOB.toFixed(1)}
-                  </span>
-                  <span className="text-xs text-slate-500 font-medium">units</span>
-                </div>
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Active Insulin (IOB)</span>
               </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className={`text-2xl font-black ${getIOBColor(summaryData.currentIOB)}`}>
+                  {summaryData.currentIOB.toFixed(1)}
+                </span>
+                <span className="text-xs text-slate-500 font-medium">units</span>
+              </div>
+            </div>
 
-              {/* Latest Glucose */}
-              <div className="flex-shrink-0 w-[160px] sm:w-auto bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="p-1.5 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 rounded-lg">
-                    <Droplet className="w-4 h-4" />
-                  </div>
-                  <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Latest Glucose</span>
+            {/* Latest Glucose */}
+            <div className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm p-3.5 sm:p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-1.5 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 rounded-lg">
+                  <Droplet className="w-4 h-4" />
                 </div>
-                <div className="flex items-baseline gap-1.5">
-                  <span className={`text-2xl font-black ${getGlucoseColor(summaryData.latestGlucose)}`}>
-                    {summaryData.latestGlucose ?? '--'}
-                  </span>
-                  {summaryData.latestGlucose && (
-                    <span className="text-xs text-slate-500 font-medium">mg/dL</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Latest Glucose</span>
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className={`text-2xl font-black ${getGlucoseColor(summaryData.latestGlucose)}`}>
+                  {summaryData.latestGlucose ?? '--'}
+                </span>
+                {summaryData.latestGlucose && (
+                  <span className="text-xs text-slate-500 font-medium">mg/dL</span>
+                )}
+              </div>
+            </div>
+
+            {/* Predicted Trend */}
+            <div className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm p-3.5 sm:p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-1.5 bg-purple-50 dark:bg-purple-950/20 text-purple-600 dark:text-purple-400 rounded-lg">
+                  {summaryData.glucoseTrend === 'rising' ? (
+                    <TrendingUp className="w-4 h-4" />
+                  ) : summaryData.glucoseTrend === 'falling' ? (
+                    <TrendingDown className="w-4 h-4" />
+                  ) : (
+                    <Minus className="w-4 h-4" />
                   )}
                 </div>
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Glycemic Trend</span>
               </div>
-
-              {/* Predicted Trend */}
-              <div className="flex-shrink-0 w-[160px] sm:w-auto bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="p-1.5 bg-purple-50 dark:bg-purple-950/20 text-purple-600 dark:text-purple-400 rounded-lg">
-                    {summaryData.glucoseTrend === 'rising' ? (
-                      <TrendingUp className="w-4 h-4" />
-                    ) : summaryData.glucoseTrend === 'falling' ? (
-                      <TrendingDown className="w-4 h-4" />
-                    ) : (
-                      <Minus className="w-4 h-4" />
-                    )}
-                  </div>
-                  <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Glycemic Trend</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className={`text-2xl font-black ${
-                    summaryData.glucoseTrend === 'rising' 
-                      ? 'text-amber-600 dark:text-amber-400' 
-                      : summaryData.glucoseTrend === 'falling' 
-                        ? 'text-blue-600 dark:text-blue-400' 
-                        : 'text-slate-700 dark:text-slate-300'
-                  }`}>
-                    {summaryData.glucoseTrend === 'rising' && <ArrowUp className="w-5 h-5 inline" />}
-                    {summaryData.glucoseTrend === 'falling' && <ArrowDown className="w-5 h-5 inline" />}
-                    {summaryData.glucoseTrend === 'stable' && '→'}
-                  </span>
-                  <span className="text-xs font-bold text-slate-600 dark:text-slate-300 capitalize">{summaryData.glucoseTrend}</span>
-                </div>
+              <div className="flex items-center gap-1.5">
+                <span className={`text-2xl font-black ${
+                  summaryData.glucoseTrend === 'rising'
+                    ? 'text-amber-600 dark:text-amber-400'
+                    : summaryData.glucoseTrend === 'falling'
+                      ? 'text-blue-600 dark:text-blue-400'
+                      : 'text-slate-700 dark:text-slate-300'
+                }`}>
+                  {summaryData.glucoseTrend === 'rising' && <ArrowUp className="w-5 h-5 inline" />}
+                  {summaryData.glucoseTrend === 'falling' && <ArrowDown className="w-5 h-5 inline" />}
+                  {summaryData.glucoseTrend === 'stable' && '→'}
+                </span>
+                <span className="text-xs font-bold text-slate-600 dark:text-slate-300 capitalize">{summaryData.glucoseTrend}</span>
               </div>
+            </div>
 
-              {/* Estimated HbA1c */}
-              <div className="flex-shrink-0 w-[160px] sm:w-auto bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="p-1.5 bg-teal-50 dark:bg-teal-950/20 text-teal-600 dark:text-teal-400 rounded-lg">
-                    <Target className="w-4 h-4" />
-                  </div>
-                  <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Estimated HbA1c</span>
+            {/* Estimated HbA1c */}
+            <div className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm p-3.5 sm:p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-1.5 bg-teal-50 dark:bg-teal-950/20 text-teal-600 dark:text-teal-400 rounded-lg">
+                  <Target className="w-4 h-4" />
                 </div>
-                <div className="flex items-baseline gap-1.5">
-                  <span className={`text-2xl font-black ${getHbA1cColor(summaryData.estimatedHbA1c)}`}>
-                    {summaryData.estimatedHbA1c?.toFixed(1) ?? '--'}
-                  </span>
-                  {summaryData.estimatedHbA1c && (
-                    <span className="text-xs text-slate-500 font-medium">%</span>
-                  )}
-                </div>
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Estimated HbA1c</span>
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className={`text-2xl font-black ${getHbA1cColor(summaryData.estimatedHbA1c)}`}>
+                  {summaryData.estimatedHbA1c?.toFixed(1) ?? '--'}
+                </span>
+                {summaryData.estimatedHbA1c && (
+                  <span className="text-xs text-slate-500 font-medium">%</span>
+                )}
               </div>
             </div>
           </div>
 
           {/* Tab Navigation - Horizontal Scrollable */}
-          <div className="overflow-x-auto scrollbar-hide -mx-3 sm:mx-0">
-            <div className="flex gap-2 px-3 sm:px-0 min-w-max">
+          <div className="w-full max-w-full overflow-x-auto pb-2 scrollbar-none touch-pan-x -mx-2 sm:mx-0 px-2 sm:px-0">
+            <div className="flex gap-2 min-w-max">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
@@ -347,12 +365,17 @@ export default function DiabetesManagementPage() {
       {/* Emergency Alert Overlay */}
       {showEmergencyAlert && (
         <EmergencyHypoAlert 
-          isActive={showEmergencyAlert} 
-          onDismiss={() => setShowEmergencyAlert(false)} 
+          isActive={showEmergencyAlert}
+          onDismiss={() => setShowEmergencyAlert(false)}
         />
       )}
 
-      <SiteFooter />
+      {/* Modern PWA Mobile Navigation Dock */}
+      <MobileBottomNav
+        activeTab="care"
+        onTabChange={(tab) => navigate(tab === 'today' ? '/app' : `/app?tab=${tab}`)}
+        onQuickScanClick={() => navigate('/app')}
+      />
     </div>
   );
 }

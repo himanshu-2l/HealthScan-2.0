@@ -454,10 +454,11 @@ export const EmergencyButton: React.FC<EmergencyButtonProps> = ({
   return (
     <button
       onClick={handleClick}
+      aria-label="Emergency Hypoglycemia SOS Button"
       className={`
-        fixed bottom-6 right-6 z-50
+        fixed bottom-20 sm:bottom-24 md:bottom-6 right-4 sm:right-6 z-40 md:z-50 mb-[env(safe-area-inset-bottom,0px)]
         flex items-center gap-2
-        px-6 py-4
+        px-4 sm:px-6 py-3 sm:py-4
         bg-gradient-to-r from-red-600 to-red-500
         hover:from-red-500 hover:to-red-400
         text-white font-bold

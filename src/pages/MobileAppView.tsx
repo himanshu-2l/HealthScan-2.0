@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AppNavbar } from '../components/pwa/AppNavbar';
 import { MobileBottomNav, NavTabId } from '../components/pwa/MobileBottomNav';
 import { TodayDashboard } from '../components/pwa/TodayDashboard';
@@ -19,8 +19,7 @@ import {
   Watch, 
   Phone, 
   ShieldCheck, 
-  Download, 
-  ArrowRight, 
+  Download,
   ChevronRight,
   FileText,
   Smartphone,
@@ -28,12 +27,52 @@ import {
 } from 'lucide-react';
 import { getAllResults } from '../services/healthDataService';
 
-export const MobileAppView: React.FC = () => {
+const VALID_TABS: NavTabId[] = ['today', 'labs', 'care', 'records'];
+
+interface MobileAppViewProps {
+  initialTab?: NavTabId;
+}
+
+export const MobileAppView: React.FC<MobileAppViewProps> = ({ initialTab }) => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<NavTabId>('today');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlTab = searchParams.get('tab') as NavTabId | null;
+
+  const [activeTab, setActiveTab] = useState<NavTabId>(() => {
+    if (urlTab && VALID_TABS.includes(urlTab)) return urlTab;
+    if (initialTab && VALID_TABS.includes(initialTab)) return initialTab;
+    return 'today';
+  });
+
   const [isScanModalOpen, setIsScanModalOpen] = useState<boolean>(false);
   const [refreshKey, setRefreshKey] = useState<number>(0);
   const { showOnboarding, completeOnboarding } = useOnboarding();
+
+  // Keep activeTab in sync with URL search param
+  useEffect(() => {
+    if (urlTab && VALID_TABS.includes(urlTab) && urlTab !== activeTab) {
+      setActiveTab(urlTab);
+    } else if (!urlTab && activeTab !== 'today' && !searchParams.has('tab')) {
+      setActiveTab('today');
+    }
+  }, [urlTab, activeTab, searchParams]);
+
+  const handleTabChange = useCallback((tab: NavTabId) => {
+    if (tab === 'scan') {
+      setIsScanModalOpen(true);
+      return;
+    }
+    setActiveTab(tab);
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (tab === 'today') {
+        next.delete('tab');
+      } else {
+        next.set('tab', tab);
+      }
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
 
   const {
     isInstalled,
@@ -46,7 +85,7 @@ export const MobileAppView: React.FC = () => {
 
   const handleScanComplete = () => {
     setRefreshKey(prev => prev + 1);
-    setActiveTab('today');
+    handleTabChange('today');
   };
 
   return (
@@ -63,9 +102,9 @@ export const MobileAppView: React.FC = () => {
       )}
 
       {/* 1. TOP NAVBAR (Full on Desktop, Clean on Mobile) */}
-      <AppNavbar 
-        activeTab={activeTab} 
-        onTabChange={(tab) => setActiveTab(tab)} 
+      <AppNavbar
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
         onStartScan={() => setIsScanModalOpen(true)}
         onInstallPWA={promptInstall}
       />
@@ -74,10 +113,10 @@ export const MobileAppView: React.FC = () => {
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 pb-24 md:pb-12">
         {/* TAB 1: TODAY */}
         {activeTab === 'today' && (
-          <TodayDashboard 
+          <TodayDashboard
             key={refreshKey}
             onStartScan={() => setIsScanModalOpen(true)}
-            onNavigateTab={(tab) => setActiveTab(tab)}
+            onNavigateTab={handleTabChange}
             onInstallPWA={promptInstall}
             isStandalone={isStandalone}
           />
@@ -597,7 +636,7 @@ export const MobileAppView: React.FC = () => {
       {/* 3. MOBILE-ONLY BOTTOM NAVIGATION DOCK (Hidden on md+ screens) */}
       <MobileBottomNav
         activeTab={activeTab}
-        onTabChange={(tab) => setActiveTab(tab)}
+        onTabChange={handleTabChange}
         onQuickScanClick={() => setIsScanModalOpen(true)}
       />
 

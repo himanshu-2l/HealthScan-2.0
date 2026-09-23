@@ -94,7 +94,7 @@ function autocorrelatePitch(buf: FloatArray, sampleRate: number) {
 
   for (let lag = MIN_LAG; lag <= MAX_LAG; lag++) {
     let sum = 0;
-    let count = SIZE - lag;
+    const count = SIZE - lag;
     for (let i = 0; i < count; i++) {
       sum += norm[i] * norm[i + lag];
     }
@@ -963,11 +963,13 @@ export const VoiceLab: React.FC = () => {
                   variant={isRecording ? "destructive" : permission === "granted" ? "default" : "secondary"}
                   size="lg"
                   disabled={isAnalyzing}
-                  onMouseDown={startRecording}
-                  onMouseUp={stopRecording}
-                  onTouchStart={startRecording}
-                  onTouchEnd={stopRecording}
-                  className={`relative min-w-[200px] h-14 rounded-2xl text-base font-semibold shadow-sm transition-all transform active:scale-95 ${isRecording ? 'animate-pulse ring-4 ring-red-500/30 bg-red-600' : 'bg-teal-600 hover:bg-teal-700 text-white'
+                  onMouseDown={(e) => { e.preventDefault(); startRecording(); }}
+                  onMouseUp={(e) => { e.preventDefault(); stopRecording(); }}
+                  onTouchStart={(e) => { e.preventDefault(); startRecording(); }}
+                  onTouchEnd={(e) => { e.preventDefault(); stopRecording(); }}
+                  onTouchCancel={(e) => { e.preventDefault(); stopRecording(); }}
+                  onContextMenu={(e) => e.preventDefault()}
+                  className={`relative min-w-[200px] h-14 rounded-2xl text-base font-semibold shadow-sm transition-all transform active:scale-95 touch-none select-none ${isRecording ? 'animate-pulse ring-4 ring-red-500/30 bg-red-600' : 'bg-teal-600 hover:bg-teal-700 text-white'
                     }`}
                 >
                   {isAnalyzing ? (

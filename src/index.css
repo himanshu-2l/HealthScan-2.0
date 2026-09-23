@@ -109,10 +109,20 @@ body {
     padding: 1rem;
   }
   
-  /* Ensure touch targets are at least 44px */
-  button, a, input, select, textarea, [role="button"] {
+  /* Accessible touch targets for interactive controls without distorting inline elements */
+  .touch-target {
     min-height: 44px;
     min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Primary button controls receive accessible touch height */
+  button.btn-primary,
+  button.btn-action,
+  .btn-touch {
+    min-height: 44px;
   }
   
   /* But allow smaller inputs inside forms with proper spacing */
