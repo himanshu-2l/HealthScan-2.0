@@ -200,42 +200,7 @@ export const PersonalizedRecommendations: React.FC = () => {
       const healthData = collectHealthData();
       const hasAnyData = Object.keys(healthData).length > 0;
 
-      const prompt = `You are a health advisor. Based on the following health data, provide personalized health recommendations.
-
-${hasAnyData ? `Health Data: ${JSON.stringify(healthData, null, 2)}` : 'No specific health data available - provide general healthy recommendations for an average adult.'}
-
-Respond ONLY with valid JSON in this exact format (no markdown, no code blocks):
-{
-  "dietPlan": {
-    "dailyCalories": <number>,
-    "meals": {
-      "breakfast": { "name": "<string>", "description": "<string>", "calories": <number> },
-      "lunch": { "name": "<string>", "description": "<string>", "calories": <number> },
-      "dinner": { "name": "<string>", "description": "<string>", "calories": <number> },
-      "snacks": { "name": "<string>", "description": "<string>", "calories": <number> }
-    },
-    "nutrientsToFocus": ["<string>", "<string>", "<string>", "<string>"],
-    "nutrientsToAvoid": ["<string>", "<string>", "<string>"],
-    "hydrationGoal": <number of glasses>
-  },
-  "exercisePlan": {
-    "weeklyGoal": "<string>",
-    "activities": [
-      { "name": "<string>", "duration": "<string>", "frequency": "<string>", "intensity": "<string>", "icon": "walk|yoga|cardio|strength" }
-    ],
-    "activityLevel": "<string>",
-    "cautions": ["<string>"]
-  },
-  "lifestyleTips": ["<string>", "<string>", "<string>", "<string>", "<string>"],
-  "sleepRecommendations": {
-    "recommendedDuration": "<string>",
-    "bedtimeRoutine": ["<string>", "<string>", "<string>"],
-    "sleepHygieneTips": ["<string>", "<string>", "<string>"],
-    "environmentTips": ["<string>", "<string>", "<string>"]
-  }
-}`;
-
-      const res = await callAIProxy('recommendations', { prompt });
+      const res = await callAIProxy('recommendations', healthData);
 
       if (!res.ok) {
         throw new Error('AI analysis unavailable, try again or consult a clinician');

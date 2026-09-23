@@ -226,33 +226,33 @@ export const DoctorReport: React.FC = () => {
     setIsGeneratingAI(true);
     setAiError('');
 
-    try {
-      const prompt = `As a medical AI assistant, generate a brief clinical summary for a physician based on the following patient health data. Keep it professional and concise (2-3 paragraphs max).
+      const payload = {
+        patientProfile: {
+          name: patientProfile?.name || undefined,
+          age: patientProfile?.age || undefined,
+          gender: patientProfile?.gender || undefined,
+        },
+        medicalId: {
+          bloodType: medicalId?.bloodType || undefined,
+          allergies: medicalId?.allergies || undefined,
+          medications: medicalId?.medications || undefined,
+          conditions: medicalId?.conditions || undefined,
+        },
+        vitalSigns: {
+          latestBP: bpStats?.latest ? `${bpStats.latest.systolic}/${bpStats.latest.diastolic} mmHg` : undefined,
+          avgBP: bpStats ? `${bpStats.avgSystolic}/${bpStats.avgDiastolic} mmHg` : undefined,
+          heartRate: healthReadings?.heartRate ? `${healthReadings.heartRate} bpm` : undefined,
+          temperature: healthReadings?.temperature ? `${healthReadings.temperature}°F` : undefined,
+          spO2: healthReadings?.spO2 ? `${healthReadings.spO2}%` : undefined,
+        },
+        bloodGlucose: {
+          fasting: glucoseStats?.latest?.fasting ? `${glucoseStats.latest.fasting} mg/dL` : undefined,
+          postMeal: glucoseStats?.latest?.postMeal ? `${glucoseStats.latest.postMeal} mg/dL` : undefined,
+          avgFasting: glucoseStats?.avgFasting ? `${glucoseStats.avgFasting} mg/dL` : undefined,
+        },
+      };
 
-Patient Information:
-- Name: ${patientProfile?.name || 'Not provided'}
-- Age: ${patientProfile?.age || 'Not provided'}
-- Gender: ${patientProfile?.gender || 'Not provided'}
-- Blood Type: ${medicalId?.bloodType || 'Not provided'}
-- Allergies: ${medicalId?.allergies?.join(', ') || 'None reported'}
-- Current Medications: ${medicalId?.medications?.join(', ') || 'None reported'}
-- Medical Conditions: ${medicalId?.conditions?.join(', ') || 'None reported'}
-
-Vital Signs (Latest):
-- Blood Pressure: ${bpStats?.latest ? `${bpStats.latest.systolic}/${bpStats.latest.diastolic} mmHg` : 'No data'}
-- BP Average (30-day): ${bpStats ? `${bpStats.avgSystolic}/${bpStats.avgDiastolic} mmHg` : 'No data'}
-- Heart Rate: ${healthReadings?.heartRate ? `${healthReadings.heartRate} bpm` : 'No data'}
-- Temperature: ${healthReadings?.temperature ? `${healthReadings.temperature}°F` : 'No data'}
-- SpO2: ${healthReadings?.spO2 ? `${healthReadings.spO2}%` : 'No data'}
-
-Blood Glucose (Latest):
-- Fasting: ${glucoseStats?.latest?.fasting ? `${glucoseStats.latest.fasting} mg/dL` : 'No data'}
-- Post-Meal: ${glucoseStats?.latest?.postMeal ? `${glucoseStats.latest.postMeal} mg/dL` : 'No data'}
-- Average Fasting: ${glucoseStats?.avgFasting ? `${glucoseStats.avgFasting} mg/dL` : 'No data'}
-
-Please provide observations, potential concerns, and any recommendations for the physician's review.`;
-
-      const res = await callAIProxy('doctor-report', { prompt });
+      const res = await callAIProxy('doctor-report', payload);
       if (!res.ok) {
         throw new Error('AI analysis unavailable, try again or consult a clinician');
       }

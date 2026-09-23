@@ -156,58 +156,14 @@ export const HealthPredictions: React.FC = () => {
     const healthData = collectHealthData();
 
     try {
-      // Build the prompt
-      const prompt = `You are a health analysis AI assistant. Analyze the following health data and provide predictions.
+      const payload = {
+        bpReadings: healthData.bpReadings,
+        glucoseReadings: healthData.glucoseReadings,
+        totalBPReadings: healthData.totalBPReadings,
+        totalGlucoseReadings: healthData.totalGlucoseReadings,
+      };
 
-HEALTH DATA:
-${healthData.totalBPReadings > 0 ? `
-Blood Pressure Readings (${healthData.totalBPReadings} total, showing recent):
-${JSON.stringify(healthData.bpReadings.slice(0, 10), null, 2)}
-` : 'No blood pressure data available.'}
-
-${healthData.totalGlucoseReadings > 0 ? `
-Glucose Readings (${healthData.totalGlucoseReadings} total, showing recent):
-${JSON.stringify(healthData.glucoseReadings.slice(0, 10), null, 2)}
-` : 'No glucose data available.'}
-
-${!healthData.totalBPReadings && !healthData.totalGlucoseReadings ? `
-No health tracking data is available yet. Please provide general health tips and baseline risk assessments based on average population statistics.
-` : ''}
-
-Please analyze this data and respond with ONLY a valid JSON object (no markdown, no code blocks, no extra text) in this exact format:
-{
-  "overallScore": <number 0-100 representing overall health score>,
-  "heartRisk": <number 0-100 representing heart disease risk percentage>,
-  "diabetesRisk": <number 0-100 representing diabetes progression risk percentage>,
-  "stressLevel": <number 1-10 representing stress score>,
-  "trends": {
-    "heart": "<'improving' | 'stable' | 'declining'>",
-    "diabetes": "<'improving' | 'stable' | 'declining'>",
-    "stress": "<'improving' | 'stable' | 'declining'>",
-    "overall": "<'improving' | 'stable' | 'declining'>"
-  },
-  "insights": [
-    "<insight 1 - brief observation about the data>",
-    "<insight 2>",
-    "<insight 3>"
-  ],
-  "recommendations": [
-    "<recommendation 1 - actionable health tip>",
-    "<recommendation 2>",
-    "<recommendation 3>",
-    "<recommendation 4>"
-  ],
-  "detailedAnalysis": {
-    "heart": "<2-3 sentence detailed analysis of cardiovascular health>",
-    "diabetes": "<2-3 sentence detailed analysis of diabetes risk>",
-    "stress": "<2-3 sentence detailed analysis of stress and mental health>",
-    "overall": "<2-3 sentence summary of overall health trajectory>"
-  }
-}
-
-Be realistic but encouraging. If data is limited, acknowledge this and provide general guidance.`;
-
-      const res = await callAIProxy('health-predictions', { prompt });
+      const res = await callAIProxy('health-predictions', payload);
 
       if (!res.ok) {
         throw new Error('AI analysis unavailable, try again or consult a clinician');
