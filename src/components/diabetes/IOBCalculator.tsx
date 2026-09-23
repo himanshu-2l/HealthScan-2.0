@@ -286,17 +286,17 @@ export const IOBCalculator: React.FC = () => {
               {currentIOB < 2 ? (
                 <>
                   <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                  <span className="text-emerald-400 font-medium">Low IOB - Safe to dose</span>
+                  <span className="text-emerald-400 font-medium">Low active insulin (&lt;2u)</span>
                 </>
               ) : currentIOB <= 5 ? (
                 <>
                   <AlertTriangle className="w-5 h-5 text-amber-400" />
-                  <span className="text-amber-400 font-medium">Moderate IOB - Consider current insulin</span>
+                  <span className="text-amber-400 font-medium">Moderate IOB - Active insulin present</span>
                 </>
               ) : (
                 <>
                   <AlertTriangle className="w-5 h-5 text-red-400" />
-                  <span className="text-red-400 font-medium">High IOB - Stacking risk!</span>
+                  <span className="text-red-400 font-medium">High IOB - Stacking risk</span>
                 </>
               )}
             </div>

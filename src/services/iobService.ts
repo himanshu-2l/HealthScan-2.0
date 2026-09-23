@@ -101,7 +101,6 @@ export const getIOBTimeline = (
 ): IOBPoint[] => {
   const timeline: IOBPoint[] = [];
   const now = new Date();
-  const settings = getPatientSettings();
   const intervals = hours * 4; // 15-minute intervals
 
   for (let i = 0; i <= intervals; i++) {
@@ -217,7 +216,8 @@ export const savePatientSettings = (settings: PatientSettings): void => {
 };
 
 /**
- * Calculate meal bolus dose based on carbs
+ * Evaluate meal bolus context (Informational only)
+ * CLINICAL SAFETY: HealthScan does NOT calculate or recommend insulin doses.
  */
 export const calculateMealDose = (
   carbs: number,
@@ -225,48 +225,24 @@ export const calculateMealDose = (
   settings?: PatientSettings
 ): DoseRecommendation => {
   const patientSettings = settings || getPatientSettings();
-
-  // Meal dose: carbs / ICR
-  const mealDose = carbs / patientSettings.insulinToCarbRatio;
-
-  // Correction dose: (current - target) / CF
-  const glucoseDiff = currentGlucose - patientSettings.targetGlucose;
-  const correctionDose = glucoseDiff > 0 ? glucoseDiff / patientSettings.correctionFactor : 0;
-
-  // Current IOB
   const doses = getInsulinDoses();
   const currentIOB = calculateIOB(doses);
+  const roundedIOB = Math.round(currentIOB * 100) / 100;
 
-  // Final dose accounts for IOB (don't subtract if glucose is high)
-  let finalDose = mealDose + correctionDose;
-  if (currentIOB > 0 && glucoseDiff <= 0) {
-    finalDose = Math.max(0, finalDose - currentIOB);
-  } else if (currentIOB > 0) {
-    // Partial IOB consideration for high glucose
-    finalDose = Math.max(0, finalDose - currentIOB * 0.5);
-  }
-
-  // Build explanation
-  let explanation = `Meal dose: ${mealDose.toFixed(1)}u for ${carbs}g carbs (1:${patientSettings.insulinToCarbRatio})`;
-  if (correctionDose > 0) {
-    explanation += ` + ${correctionDose.toFixed(1)}u correction (${glucoseDiff}mg/dL ÷ ${patientSettings.correctionFactor})`;
-  }
-  if (currentIOB > 0) {
-    explanation += ` - ${currentIOB.toFixed(1)}u IOB adjustment`;
-  }
-  explanation += ` = ${finalDose.toFixed(1)}u recommended`;
+  const explanation = `Meal carbs: ${carbs}g, current glucose: ${currentGlucose} mg/dL (target: ${patientSettings.targetGlucose} mg/dL). Active IOB: ${roundedIOB.toFixed(1)}u. Refer to your clinician-prescribed ratios and care plan for dosing decisions.`;
 
   return {
-    mealDose: Math.round(mealDose * 10) / 10,
-    correctionDose: Math.round(correctionDose * 10) / 10,
-    currentIOB: Math.round(currentIOB * 100) / 100,
-    finalDose: Math.round(finalDose * 10) / 10,
+    mealDose: 0,
+    correctionDose: 0,
+    currentIOB: roundedIOB,
+    finalDose: 0,
     explanation,
   };
 };
 
 /**
- * Check for insulin stacking risk
+ * Check for insulin stacking risk (Informational tracking)
+ * CLINICAL SAFETY: Does NOT recommend numeric dose adjustments.
  */
 export const checkStackingRisk = (
   newDose: number,
@@ -286,15 +262,11 @@ export const checkStackingRisk = (
     timeSinceLastDose = (Date.now() - lastDoseTime) / (1000 * 60);
   }
 
-  // Predict glucose in 2 hours
+  // Predict glucose in 2 hours for trend context
   const predictedGlucoseIn2Hours = Math.max(
     70,
     currentGlucose - currentIOB * settings.correctionFactor
   );
-
-  // Calculate safe max additional dose
-  const glucoseDiff = currentGlucose - settings.targetGlucose;
-  const safeMaxDose = Math.max(0, glucoseDiff / settings.correctionFactor - currentIOB);
 
   // Determine risk
   const isAtRisk = currentIOB > 3 || (currentIOB > 1.5 && timeSinceLastDose < 120);
@@ -302,11 +274,11 @@ export const checkStackingRisk = (
   let warningMessage = '';
   if (isAtRisk) {
     if (currentIOB > 5) {
-      warningMessage = `High IOB (${currentIOB.toFixed(1)}u) - Risk of hypoglycemia. Wait ${Math.ceil((settings.rapidInsulinDuration * 60 - timeSinceLastDose) / 15) * 15} minutes before dosing.`;
+      warningMessage = `High active insulin (${currentIOB.toFixed(1)}u) detected. Risk of hypoglycemia — monitor glucose closely and adhere to your care plan.`;
     } else if (timeSinceLastDose < 60) {
-      warningMessage = `Dosed ${Math.round(timeSinceLastDose)} minutes ago. Insulin stacking risk - consider waiting.`;
+      warningMessage = `Dosed ${Math.round(timeSinceLastDose)} minutes ago. Rapid insulin stacking risk — monitor glucose closely and follow your care plan.`;
     } else {
-      warningMessage = `Active insulin (${currentIOB.toFixed(1)}u) may cover this. Consider reducing dose by ${Math.min(newDose * 0.5, currentIOB).toFixed(1)}u.`;
+      warningMessage = `Active insulin (${currentIOB.toFixed(1)}u) present. Review active IOB with your care team before administering additional insulin to prevent stacking.`;
     }
   } else if (currentIOB > 0) {
     warningMessage = `Note: ${currentIOB.toFixed(1)}u active insulin. Monitor glucose closely.`;
@@ -319,7 +291,7 @@ export const checkStackingRisk = (
     currentIOB: Math.round(currentIOB * 100) / 100,
     timeSinceLastDose: Math.round(timeSinceLastDose),
     predictedGlucoseIn2Hours: Math.round(predictedGlucoseIn2Hours),
-    safeMaxDose: Math.round(safeMaxDose * 10) / 10,
+    safeMaxDose: 0,
     warningMessage,
   };
 };

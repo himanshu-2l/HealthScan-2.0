@@ -1,6 +1,8 @@
 /**
- * Smart Dose Recommendation Service
- * Calculates insulin doses based on glucose, carbs, and IOB
+ * Meal Carbohydrate & Glycemic Information Service
+ * Informational tracking of meal carbohydrates, current glucose, and active IOB.
+ * CLINICAL SAFETY: HealthScan does NOT calculate, prescribe, or recommend insulin doses.
+ * All dosing decisions must be made in accordance with the patient's clinician-prescribed plan.
  */
 
 import {
@@ -12,19 +14,10 @@ import {
   calculateIOB,
   getInsulinDoses,
 } from './iobService';
-import { MEAL_DATABASE } from './mealPlannerService';
-
-const DEFAULT_SETTINGS: PatientSettings = {
-  insulinToCarbRatio: 10,
-  correctionFactor: 50,
-  targetGlucose: 120,
-  rapidInsulinDuration: 4,
-  longInsulinDuration: 24,
-  rapidInsulinPeak: 75,
-};
 
 /**
- * Calculate recommended insulin dose based on glucose, carbs, and IOB
+ * Provide informational meal carbohydrate and glycemic summary.
+ * CLINICAL SAFETY: Does NOT compute or recommend insulin doses.
  */
 export function calculateRecommendedDose(
   currentGlucose: number,
@@ -32,69 +25,22 @@ export function calculateRecommendedDose(
   patientSettings?: PatientSettings,
   currentIOB?: number
 ): DoseRecommendation {
-  // Get settings (default if not provided)
   const settings = patientSettings || getPatientSettings();
-
-  // Meal dose = mealCarbs / insulinToCarbRatio
-  const mealDose = mealCarbs / settings.insulinToCarbRatio;
-
-  // Correction dose = max(0, (currentGlucose - targetGlucose) / correctionFactor)
-  const glucoseDiff = currentGlucose - settings.targetGlucose;
-  const correctionDose = glucoseDiff > 0 ? glucoseDiff / settings.correctionFactor : 0;
-
-  // IOB = currentIOB ?? calculateIOB(getInsulinDoses())
   const iob = currentIOB ?? calculateIOB(getInsulinDoses());
-
-  // Final dose = max(0, mealDose + correctionDose - iob)
-  const rawDose = mealDose + correctionDose - iob;
-  const finalDose = Math.max(0, rawDose);
-
-  // Round to nearest 0.5 unit
-  const roundedFinalDose = Math.round(finalDose * 2) / 2;
-  const roundedMealDose = Math.round(mealDose * 10) / 10;
-  const roundedCorrectionDose = Math.round(correctionDose * 10) / 10;
   const roundedIOB = Math.round(iob * 100) / 100;
 
-  // Generate plain-language explanation
-  let explanation = '';
-
-  if (mealCarbs > 0 && glucoseDiff > 0) {
-    // Both meal and correction needed
-    explanation = `You need ${roundedMealDose.toFixed(1)} units for your ${mealCarbs}g of carbs ` +
-      `plus ${roundedCorrectionDose.toFixed(1)} units to bring down your high blood sugar ` +
-      `(currently ${currentGlucose} mg/dL, target is ${settings.targetGlucose} mg/dL).`;
-  } else if (mealCarbs > 0) {
-    // Only meal dose needed
-    explanation = `You need ${roundedMealDose.toFixed(1)} units for your ${mealCarbs}g of carbs.`;
-  } else if (glucoseDiff > 0) {
-    // Only correction needed
-    explanation = `You need ${roundedCorrectionDose.toFixed(1)} units to bring down your ` +
-      `high blood sugar (currently ${currentGlucose} mg/dL, target is ${settings.targetGlucose} mg/dL).`;
-  } else {
-    // No insulin needed
-    explanation = `Your blood sugar is below target (${currentGlucose} mg/dL). ` +
-      `No correction needed.`;
+  // Informational summary directing user to clinician care plan
+  let explanation = `Logged: ${mealCarbs}g carbs, Current glucose: ${currentGlucose} mg/dL (target: ${settings.targetGlucose} mg/dL).`;
+  if (roundedIOB > 0) {
+    explanation += ` Active insulin on board (IOB): ${roundedIOB.toFixed(1)}u.`;
   }
-
-  // Add IOB adjustment to explanation
-  if (roundedIOB > 0 && roundedFinalDose > 0) {
-    explanation += ` We subtracted ${roundedIOB.toFixed(1)} units for insulin already active in your body.`;
-  } else if (roundedIOB > 0 && roundedFinalDose === 0) {
-    explanation += ` The ${roundedIOB.toFixed(1)} units of active insulin in your body should cover this.`;
-  }
-
-  // Final recommendation
-  if (roundedFinalDose > 0) {
-    explanation += ` Recommended dose: ${roundedFinalDose.toFixed(1)} units.`;
-  } else {
-    explanation += ` No additional insulin needed at this time.`;
-  }
+  explanation += ' Follow your physician-prescribed diabetes care plan for all dosing decisions.';
 
   return {
-    mealDose: roundedMealDose,
-    correctionDose: roundedCorrectionDose,
+    mealDose: 0,
+    correctionDose: 0,
     currentIOB: roundedIOB,
-    finalDose: roundedFinalDose,
+    finalDose: 0,
     explanation,
   };
 }

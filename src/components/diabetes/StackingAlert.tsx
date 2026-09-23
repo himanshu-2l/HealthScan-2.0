@@ -10,13 +10,11 @@ import {
   AlertTriangle,
   Shield,
   ArrowDown,
-  ArrowUp,
   Check,
   X,
   Clock,
   Droplet,
   TrendingDown,
-  AlertCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { checkStackingRisk } from '@/services/iobService';
@@ -61,27 +59,20 @@ export const StackingAlert: React.FC<StackingAlertProps> = ({
   const severity = useMemo((): SeverityLevel => {
     if (!stackingData) return 'low';
 
-    const { currentIOB, predictedGlucoseIn2Hours, safeMaxDose } = stackingData;
+    const { currentIOB, predictedGlucoseIn2Hours } = stackingData;
 
     if (predictedGlucoseIn2Hours < 70 || currentIOB > 5) return 'critical';
-    if (predictedGlucoseIn2Hours < 90 || currentIOB > 3 || (safeMaxDose <= 0 && newDose > 0)) return 'high';
+    if (predictedGlucoseIn2Hours < 90 || currentIOB > 3) return 'high';
     if (predictedGlucoseIn2Hours < 110 || currentIOB > 1.5) return 'moderate';
     return 'low';
-  }, [stackingData, newDose]);
+  }, [stackingData]);
 
-  // Get predicted glucose if user takes full dose
+  // Get predicted glucose if user logs dose
   const predictedWithFullDose = useMemo(() => {
     if (!stackingData) return currentGlucose;
-    // Rough estimate: each unit drops glucose by ~50mg/dL (correction factor)
     const additionalDrop = (newDose + stackingData.currentIOB) * 50;
     return Math.max(40, currentGlucose - additionalDrop);
   }, [stackingData, newDose, currentGlucose]);
-
-  // Safe recommended dose
-  const safeDose = useMemo(() => {
-    if (!stackingData) return Math.max(0, newDose);
-    return stackingData.safeMaxDose;
-  }, [stackingData, newDose]);
 
   // Get severity colors
   const getSeverityColors = () => {
@@ -279,55 +270,34 @@ export const StackingAlert: React.FC<StackingAlertProps> = ({
             </div>
           </div>
 
-          {/* Dose Comparison */}
+          {/* Dose and IOB Context */}
           <div className="grid grid-cols-2 gap-3">
-            {/* Requested Dose */}
-            <div className={cn(
-              'rounded-xl p-4 border-2 text-center',
-              newDose > safeDose && safeDose >= 0
-                ? 'border-red-500/50 bg-red-500/10'
-                : 'border-white/10 bg-white/[0.02]'
-            )}>
-              <div className="text-xs text-white/50 mb-1">Requested Dose</div>
-              <div className={cn(
-                'text-3xl font-bold',
-                newDose > safeDose && safeDose >= 0 ? 'text-red-400' : 'text-white'
-              )}>
+            {/* Entered Dose */}
+            <div className="rounded-xl p-4 border border-white/10 bg-white/[0.02] text-center">
+              <div className="text-xs text-white/50 mb-1">Dose to Log</div>
+              <div className="text-3xl font-bold text-white">
                 {newDose.toFixed(1)}
               </div>
               <div className="text-sm text-white/50">units</div>
-              {newDose > safeDose && safeDose >= 0 && (
-                <div className="mt-2 flex items-center justify-center gap-1 text-red-400">
-                  <AlertCircle className="w-3.5 h-3.5" />
-                  <span className="text-xs">Dangerous</span>
-                </div>
-              )}
             </div>
 
-            {/* Safe Dose */}
-            <div className="border-2 border-emerald-500/50 bg-emerald-500/10 rounded-xl p-4 text-center">
-              <div className="text-xs text-white/50 mb-1">Safe Recommended</div>
-              <div className="text-3xl font-bold text-emerald-400">
-                {safeDose.toFixed(1)}
+            {/* Active IOB */}
+            <div className="border border-amber-500/30 bg-amber-500/10 rounded-xl p-4 text-center">
+              <div className="text-xs text-white/50 mb-1">Active IOB</div>
+              <div className="text-3xl font-bold text-amber-400">
+                {stackingData.currentIOB.toFixed(1)}
               </div>
               <div className="text-sm text-white/50">units</div>
-              {safeDose > 0 && (
-                <div className="mt-2 flex items-center justify-center gap-1 text-emerald-400">
-                  <Shield className="w-3.5 h-3.5" />
-                  <span className="text-xs">Safe</span>
-                </div>
-              )}
             </div>
           </div>
 
-          {/* Warning text if dose is dangerous */}
-          {newDose > safeDose && (
+          {/* Warning text if predicted glucose is low */}
+          {predictedWithFullDose < 70 && (
             <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 flex gap-3">
               <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
               <p className="text-sm text-red-300/90">
-                Taking <strong>{newDose.toFixed(1)} units</strong> could cause your blood sugar
-                to drop to <strong>{predictedWithFullDose} mg/dL</strong> which is
-                {predictedWithFullDose < 70 ? ' dangerously low!' : ' below your target range.'}
+                Administering <strong>{newDose.toFixed(1)} units</strong> with <strong>{stackingData.currentIOB.toFixed(1)}u active IOB</strong> may cause your blood glucose
+                to drop to <strong>{predictedWithFullDose} mg/dL</strong> (hypoglycemia risk).
               </p>
             </div>
           )}
@@ -339,33 +309,34 @@ export const StackingAlert: React.FC<StackingAlertProps> = ({
             </p>
           )}
 
+          {/* Clinical Safety Disclaimer */}
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3 flex gap-3 text-left">
+            <Shield className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-slate-300 leading-relaxed">
+              HealthScan does not calculate or adjust insulin doses. Always verify doses against your clinician-prescribed care plan and correction scales.
+            </p>
+          </div>
+
           {/* Action Buttons */}
           {!showConfirmDialog ? (
             <div className="space-y-3">
-              {/* Primary: Take Safe Dose */}
-              <Button
-                onClick={() => onProceed(safeDose)}
-                className={cn(
-                  'w-full h-14 text-lg font-medium',
-                  'bg-emerald-600 hover:bg-emerald-700 text-white'
-                )}
-              >
-                <Check className="w-5 h-5 mr-2" />
-                Take Safe Dose ({safeDose.toFixed(1)} units)
-              </Button>
-
-              {/* Secondary: Take Requested Dose Anyway */}
-              {newDose > safeDose && safeDose >= 0 && (
+              {/* Primary: Proceed or Confirm */}
+              {predictedWithFullDose < 70 ? (
                 <Button
                   variant="outline"
                   onClick={() => setShowConfirmDialog(true)}
-                  className={cn(
-                    'w-full h-12',
-                    'border-red-500/50 text-red-400 hover:bg-red-500/10 hover:text-red-300'
-                  )}
+                  className="w-full h-12 border-red-500/50 text-red-400 hover:bg-red-500/10 hover:text-red-300"
                 >
                   <AlertTriangle className="w-4 h-4 mr-2" />
-                  Take Requested Dose Anyway ({newDose.toFixed(1)} units)
+                  Review Stacking Risk ({newDose.toFixed(1)} units)
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => onProceed(newDose)}
+                  className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
+                >
+                  <Check className="w-4 h-4 mr-2" />
+                  Confirm & Log Dose ({newDose.toFixed(1)} units)
                 </Button>
               )}
 
@@ -384,27 +355,19 @@ export const StackingAlert: React.FC<StackingAlertProps> = ({
             <div className="space-y-4">
               <div className="bg-red-500/20 border border-red-500/40 rounded-xl p-4 text-center">
                 <AlertTriangle className="w-10 h-10 text-red-400 mx-auto mb-3" />
-                <h3 className="font-semibold text-white mb-2">Are you sure?</h3>
+                <h3 className="font-semibold text-white mb-2">High Stacking Risk</h3>
                 <p className="text-sm text-red-300/90">
-                  This may cause your blood sugar to drop to{' '}
-                  <strong className="text-red-400">{predictedWithFullDose} mg/dL</strong>
-                  {predictedWithFullDose < 70 && (
-                    <span className="block mt-1">
-                      This is dangerously low and may require immediate treatment.
-                    </span>
-                  )}
+                  Predicted post-dose glucose: <strong className="text-red-400">{predictedWithFullDose} mg/dL</strong>.
+                  Follow your clinician-prescribed hypoglycemia protocol if blood glucose drops below 70 mg/dL.
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <Button
                   onClick={() => onProceed(newDose)}
-                  className={cn(
-                    'h-12',
-                    'bg-red-600 hover:bg-red-700 text-white'
-                  )}
+                  className="h-12 bg-red-600 hover:bg-red-700 text-white"
                 >
-                  I understand the risk
+                  Log Dose Anyway
                 </Button>
                 <Button
                   variant="outline"

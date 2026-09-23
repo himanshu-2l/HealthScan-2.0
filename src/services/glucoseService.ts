@@ -191,17 +191,21 @@ export const getGlucoseCategory = (
   severity: 'normal' | 'prediabetic' | 'diabetic' | 'critical';
   color: string;
 } => {
-  // Critical levels
-  if (fasting && fasting >= 250) {
+  // Hypoglycemia check across both fasting and post-meal readings (< 70 mg/dL)
+  const isFastingHypo = fasting !== undefined && fasting !== null && fasting < 70;
+  const isPostMealHypo = postMeal !== undefined && postMeal !== null && postMeal < 70;
+  if (isFastingHypo || isPostMealHypo) {
     return {
-      category: 'Critical Hyperglycemia',
+      category: 'Hypoglycemia',
       severity: 'critical',
       color: 'red',
     };
   }
-  if (fasting && fasting < 70) {
+
+  // Critical hyperglycemia levels
+  if (fasting && fasting >= 250) {
     return {
-      category: 'Hypoglycemia',
+      category: 'Critical Hyperglycemia',
       severity: 'critical',
       color: 'red',
     };
@@ -347,7 +351,7 @@ export const predictGlucoseTrend = (readings: GlucoseReading[]): GlucosePredicti
     
     // Determine risk level
     let riskLevel: 'low' | 'moderate' | 'high' | 'critical' = 'moderate';
-    if (predictedFasting >= 250 || predictedFasting < 70 || predictedPostMeal >= 300) {
+    if (predictedFasting >= 250 || predictedFasting < 70 || predictedPostMeal >= 300 || predictedPostMeal < 70) {
       riskLevel = 'critical';
     } else if (predictedFasting >= 126 || predictedPostMeal >= 200) {
       riskLevel = 'high';

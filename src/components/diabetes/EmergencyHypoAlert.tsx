@@ -12,7 +12,6 @@ import {
   Clock,
   Heart,
   X,
-  ChevronRight,
   CheckCircle2,
   User,
 } from 'lucide-react';
@@ -108,11 +107,11 @@ export const EmergencyHypoAlert: React.FC<EmergencyHypoAlertProps> = ({
   const [alertSent, setAlertSent] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Check if alert should be shown
+  // Check if alert should be shown (< 70 mg/dL)
   const shouldShowAlert = useCallback(() => {
     if (isActive) return true;
-    if (currentGlucose !== undefined && currentGlucose < 60) return true;
-    if (predictedGlucose !== undefined && predictedGlucose < 60) return true;
+    if (currentGlucose !== undefined && currentGlucose !== null && currentGlucose < 70) return true;
+    if (predictedGlucose !== undefined && predictedGlucose !== null && predictedGlucose < 70) return true;
     return false;
   }, [currentGlucose, predictedGlucose, isActive]);
 
@@ -215,11 +214,16 @@ export const EmergencyHypoAlert: React.FC<EmergencyHypoAlertProps> = ({
             {currentGlucose ?? predictedGlucose ?? '??'}
           </div>
           <div className="text-white/60 text-lg">mg/dL</div>
-          {(currentGlucose !== undefined && currentGlucose < 60) ||
-          (predictedGlucose !== undefined && predictedGlucose < 60) ? (
+          {(currentGlucose !== undefined && currentGlucose < 70) ||
+          (predictedGlucose !== undefined && predictedGlucose < 70) ? (
             <div className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-red-500/30 rounded-full border border-red-400/40">
               <AlertTriangle className="w-5 h-5 text-white" />
-              <span className="text-white font-semibold">SEVERE HYPOGLYCEMIA</span>
+              <span className="text-white font-semibold">
+                {((currentGlucose !== undefined && currentGlucose < 54) ||
+                  (predictedGlucose !== undefined && predictedGlucose < 54))
+                  ? 'SEVERE HYPOGLYCEMIA (<54 mg/dL)'
+                  : 'HYPOGLYCEMIA ALERT (<70 mg/dL)'}
+              </span>
             </div>
           ) : null}
         </div>
