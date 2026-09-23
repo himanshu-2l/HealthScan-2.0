@@ -90,6 +90,50 @@ To enable the AI ChatBot:
    - Enter API key in "Gemini API Key" field
    - Key is stored in browser localStorage
 
+### Google Fit & Smartwatch Telemetry Integration
+
+To enable live Google Fit sync and real smartwatch telemetry:
+
+1. **Google Cloud Console Setup**:
+   - Go to the [Google Cloud Console](https://console.cloud.google.com/).
+   - Create or select your Google Cloud project.
+   - Navigate to **APIs & Services > Library** and search for **Fitness API**. Click **Enable**.
+   - Navigate to **APIs & Services > OAuth consent screen**:
+     - Choose **External** user type and fill in required application details.
+     - Add required scopes:
+       - `https://www.googleapis.com/auth/fitness.activity.read`
+       - `https://www.googleapis.com/auth/fitness.heart_rate.read`
+       - `https://www.googleapis.com/auth/fitness.sleep.read`
+       - `https://www.googleapis.com/auth/fitness.body.read`
+     - While in **Testing** status, add the Google accounts you want to test with under **Test users**.
+   - Navigate to **APIs & Services > Credentials**:
+     - Click **Create Credentials > OAuth client ID**.
+     - Application type: **Web application**.
+     - **Authorized JavaScript origins**:
+       - Local: `http://localhost:5173`
+       - Production: `https://<your-project>.vercel.app`
+     - **Authorized redirect URIs** (must match `GOOGLE_REDIRECT_URI` exactly with no trailing slash):
+       - Local: `http://localhost:3005/auth/google/callback` (or your backend port)
+       - Production: `https://<your-project>.vercel.app/auth/google/callback`
+     - Copy the generated **Client ID** and **Client Secret**.
+
+2. **Environment Configuration**:
+   ```env
+   # Google Fit Credentials
+   GOOGLE_CLIENT_ID=your_client_id.apps.googleusercontent.com
+   GOOGLE_CLIENT_SECRET=your_client_secret
+   GOOGLE_REDIRECT_URI=https://<your-project>.vercel.app/auth/google/callback
+   FRONTEND_URL=https://<your-project>.vercel.app
+
+   # Database & Secure Token Storage (Required for persistent OAuth tokens)
+   MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/healthscan?retryWrites=true&w=majority
+   TOKEN_ENCRYPTION_KEY=generate_a_64_hex_character_key_here
+   ```
+
+3. **Vercel Deployment**:
+   - Add `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, `FRONTEND_URL`, `MONGODB_URI`, `TOKEN_ENCRYPTION_KEY`, `JWT_SECRET`, and `SESSION_SECRET` in **Vercel > Project Settings > Environment Variables** for Production and Preview.
+   - All `/api/*` endpoints and `/auth/google/callback` route through `api/index.js` to the Express backend.
+
 ## Project Structure
 
 ```

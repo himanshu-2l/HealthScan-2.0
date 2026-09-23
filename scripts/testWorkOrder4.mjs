@@ -3,7 +3,7 @@ import http from 'http';
 import jwt from 'jsonwebtoken';
 
 if (!process.env.JWT_SECRET) {
-  process.env.JWT_SECRET = 'healthscan-jwt-dev-secret-test-only-key-32chars';
+  process.env.JWT_SECRET = 'test-only-jwt-secret-key-32chars';
 }
 
 const { default: app } = await import('../backend/src/app.js');
@@ -14,7 +14,7 @@ const {
   doctorReportSchema,
   healthPredictionsSchema,
   recommendationsSchema
-} = await import('../api/gemini-proxy.js');
+} = await import('../backend/src/handlers/geminiProxy.js');
 
 console.log('====================================================');
 console.log('HEALTHSCAN WORK ORDER 4 VERIFICATION SUITE');

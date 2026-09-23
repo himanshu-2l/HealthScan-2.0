@@ -1,5 +1,5 @@
 import assert from 'assert';
-import { getGeminiModelName } from '../api/gemini-proxy.js';
+import { getGeminiModelName } from '../backend/src/handlers/geminiProxy.js';
 
 console.log('🧪 Starting Work Order 6 Verification Suite...\n');
 

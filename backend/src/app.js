@@ -14,7 +14,7 @@ import MongoStore from 'connect-mongo';
 import jwt from 'jsonwebtoken';
 import googleFitRoutes, { setUserGoogleTokens } from './routes/googleFitRoutes.js';
 import googleFitService from '../googleFitService.js';
-import geminiProxyHandler from '../../api/gemini-proxy.js';
+import geminiProxyHandler from './handlers/geminiProxy.js';
 import { getJwtSecret } from './config/jwt.js';
 
 dotenv.config();
@@ -206,7 +206,12 @@ app.use('/api/google-fit', googleFitRoutes);
 // Google OAuth callback endpoint with CSRF state verification
 app.get('/auth/google/callback', async (req, res) => {
   const { code, state } = req.query;
-  const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const baseUrl = process.env.FRONTEND_URL;
+
+  if (!baseUrl) {
+    console.error('FRONTEND_URL environment variable is required for OAuth callback redirect');
+    return res.status(500).json({ error: 'FRONTEND_URL is required' });
+  }
 
   if (!code) {
     return res.redirect(`${baseUrl}/dashboard?error=no_code`);

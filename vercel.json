@@ -5,8 +5,12 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/auth/google/callback",
+      "destination": "/api/index"
+    },
+    {
       "source": "/api/(.*)",
-      "destination": "/api/$1"
+      "destination": "/api/index"
     },
     {
       "source": "/(.*)",

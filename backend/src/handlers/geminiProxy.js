@@ -1,8 +1,8 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { z } from 'zod';
-import { getJwtSecret } from '../backend/src/config/jwt.js';
-import { verifyToken } from '../backend/src/utils/tokenVerifier.js';
-import { enforceRateLimit } from '../backend/src/utils/userRateLimiter.js';
+import { getJwtSecret } from '../config/jwt.js';
+import { verifyToken } from '../utils/tokenVerifier.js';
+import { enforceRateLimit } from '../utils/userRateLimiter.js';
 
 /**
  * Gemini AI Proxy — Server-side only.

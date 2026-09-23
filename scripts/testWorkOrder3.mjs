@@ -3,13 +3,11 @@ import http from 'http';
 import jwt from 'jsonwebtoken';
 
 if (!process.env.JWT_SECRET) {
-  process.env.JWT_SECRET = 'healthscan-jwt-dev-secret-test-only-key-32chars';
+  process.env.JWT_SECRET = 'test-only-jwt-secret-key-32chars';
 }
 
 const { default: app } = await import('../backend/src/app.js');
-const { default: serverlessTempHandler } = await import('../api/body-temperature.js');
-const { default: serverlessFitDataHandler } = await import('../api/google-fit/data/index.js');
-const { default: serverlessFitTypeHandler } = await import('../api/google-fit/data/[type].js');
+const { default: vercelHandler } = await import('../api/index.js');
 
 console.log('====================================================');
 console.log('HEALTHSCAN WORK ORDER 3 VERIFICATION SUITE');
@@ -47,14 +45,24 @@ async function request(path, options = {}) {
 }
 
 function mockRes() {
+  let resolvePromise;
+  const promise = new Promise((resolve) => {
+    resolvePromise = resolve;
+  });
+
   const res = {
     statusCode: 200,
     headers: {},
     data: null,
-    setHeader(name, val) { this.headers[name] = val; },
+    _header: null,
+    getHeader(name) { return this.headers[name?.toLowerCase()] || this.headers[name]; },
+    setHeader(name, val) { this.headers[name] = val; if (name) this.headers[name.toLowerCase()] = val; },
+    removeHeader(name) { delete this.headers[name]; if (name) delete this.headers[name.toLowerCase()]; },
     status(code) { this.statusCode = code; return this; },
-    json(obj) { this.data = obj; return this; },
-    send(str) { this.data = str; return this; }
+    json(obj) { this.data = obj; resolvePromise(this); return this; },
+    send(str) { this.data = str; resolvePromise(this); return this; },
+    end() { resolvePromise(this); return this; },
+    wait() { return promise; }
   };
   return res;
 }
@@ -78,10 +86,7 @@ async function runTests() {
   const filesToAudit = [
     'backend/src/app.js',
     'backend/src/routes/googleFitRoutes.js',
-    'api/body-temperature.js',
-    'api/google-fit/data/index.js',
-    'api/google-fit/data/[type].js',
-    'server.js'
+    'api/index.js'
   ];
 
   for (const file of filesToAudit) {
@@ -111,11 +116,12 @@ async function runTests() {
 
   // 3. /api/body-temperature in Serverless function
   const serverlessRes = mockRes();
-  await serverlessTempHandler({ method: 'GET', headers: {} }, serverlessRes);
+  vercelHandler({ method: 'GET', url: '/api/body-temperature', headers: {}, connection: { encrypted: false }, socket: { encrypted: false } }, serverlessRes);
+  await serverlessRes.wait();
   if (serverlessRes.statusCode === 501 && serverlessRes.data?.error === 'Not Implemented') {
-    pass('Serverless api/body-temperature returns 501 Not Implemented in production');
+    pass('Serverless api/index.js returns 501 Not Implemented in production');
   } else {
-    fail(`Serverless api/body-temperature expected 501, got ${serverlessRes.statusCode}`);
+    fail(`Serverless api/index.js expected 501, got ${serverlessRes.statusCode}`);
   }
 
   // 4. /api/google-fit/data in Express without authentication
@@ -156,12 +162,16 @@ async function runTests() {
     fail(`/api/google-fit/status expected connected: false, got:`, fitStatusRes.body);
   }
 
-  // 8. Serverless api/google-fit/data/index.js
+  // 8. Serverless api/index.js /api/google-fit/data
   const serverlessFitRes = mockRes();
-  await serverlessFitDataHandler({
+  vercelHandler({
     method: 'GET',
-    headers: { authorization: `Bearer ${testToken}` }
+    url: '/api/google-fit/data',
+    headers: { authorization: `Bearer ${testToken}` },
+    connection: { encrypted: false },
+    socket: { encrypted: false }
   }, serverlessFitRes);
+  await serverlessFitRes.wait();
   if (serverlessFitRes.statusCode === 401 || serverlessFitRes.statusCode === 409) {
     pass(`Serverless /api/google-fit/data returns ${serverlessFitRes.statusCode} without Google tokens`);
   } else {

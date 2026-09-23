@@ -22,9 +22,11 @@ class GoogleFitService {
   isConfigured() {
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    const redirectUri = process.env.GOOGLE_REDIRECT_URI;
     return Boolean(
       clientId &&
       clientSecret &&
+      redirectUri &&
       clientId !== 'your_google_client_id' &&
       !clientId.startsWith('your_')
     );
@@ -37,7 +39,11 @@ class GoogleFitService {
   createClient(tokens = null) {
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    const redirectUri = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5174/auth/google/callback';
+    const redirectUri = process.env.GOOGLE_REDIRECT_URI;
+
+    if (!redirectUri) {
+      throw new Error('GOOGLE_REDIRECT_URI environment variable is required');
+    }
 
     if (!this.isConfigured()) {
       throw new Error('Google OAuth credentials not configured on server.');

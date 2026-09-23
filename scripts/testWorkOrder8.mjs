@@ -2,7 +2,7 @@ import assert from 'assert';
 import http from 'http';
 import app from '../backend/src/app.js';
 
-process.env.JWT_SECRET = 'healthscan-jwt-dev-secret-test-only-key-32chars';
+process.env.JWT_SECRET = 'test-only-jwt-secret-key-32chars';
 const TEST_STAGING_FRONTEND = 'https://health-scan-staging.app';
 process.env.FRONTEND_URL = TEST_STAGING_FRONTEND;
 

@@ -2,9 +2,9 @@ import assert from 'assert';
 import jwt from 'jsonwebtoken';
 import { verifyToken } from '../backend/src/utils/tokenVerifier.js';
 import { checkRateLimit, resetRateLimitStore } from '../backend/src/utils/userRateLimiter.js';
-import geminiProxyHandler from '../api/gemini-proxy.js';
+import geminiProxyHandler from '../backend/src/handlers/geminiProxy.js';
 
-process.env.JWT_SECRET = 'healthscan-jwt-dev-secret-test-only-key-32chars';
+process.env.JWT_SECRET = 'test-only-jwt-secret-key-32chars';
 const TEST_SECRET = process.env.JWT_SECRET;
 
 async function runTests() {

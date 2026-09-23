@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import { getJwtSecret } from '../src/config/jwt.js';
 import app from '../src/app.js';
 import { isDemoDataAllowed } from '../src/routes/googleFitRoutes.js';
-import bodyTemperatureHandler from '../../api/body-temperature.js';
+import vercelHandler from '../../api/index.js';
 import { generateToken } from '../src/middleware/auth.js';
 
 describe('WO-14: JWT Secret & Demo Data Security Tests', () => {
@@ -120,29 +120,14 @@ describe('WO-14: JWT Secret & Demo Data Security Tests', () => {
       expect(res.body.simulated).toBe(false);
     });
 
-    it('disallows demo data in api/body-temperature.js (Vercel handler) when NODE_ENV is production', async () => {
+    it('disallows demo data in api/index.js (Vercel handler) when NODE_ENV is production', async () => {
       process.env.NODE_ENV = 'production';
       process.env.ENABLE_DEMO_DATA = 'true';
 
-      let statusCode = 200;
-      let responseBody = {};
-      const mockReq = { method: 'GET', headers: {} };
-      const mockRes = {
-        setHeader: () => mockRes,
-        status: (code) => {
-          statusCode = code;
-          return mockRes;
-        },
-        json: (data) => {
-          responseBody = data;
-          return mockRes;
-        }
-      };
-
-      await bodyTemperatureHandler(mockReq, mockRes);
-      expect(statusCode).toBe(501);
-      expect(responseBody.error).toBe('Not Implemented');
-      expect(responseBody.simulated).toBe(false);
+      const res = await request(vercelHandler).get('/api/body-temperature');
+      expect(res.status).toBe(501);
+      expect(res.body.error).toBe('Not Implemented');
+      expect(res.body.simulated).toBe(false);
     });
 
     it('allows demo data in development when ENABLE_DEMO_DATA is true', async () => {

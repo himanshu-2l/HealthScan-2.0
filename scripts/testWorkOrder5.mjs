@@ -7,9 +7,9 @@ import {
   cleanJsonText,
   medicineVisionResultSchema,
   symptomCheckResultSchema
-} from '../api/gemini-proxy.js';
+} from '../backend/src/handlers/geminiProxy.js';
 
-process.env.JWT_SECRET = 'healthscan-jwt-dev-secret-test-only-key-32chars';
+process.env.JWT_SECRET = 'test-only-jwt-secret-key-32chars';
 const TEST_SECRET = process.env.JWT_SECRET;
 const validToken = jwt.sign({ uid: 'test-user', email: 'test@healthscan.io', role: 'user' }, TEST_SECRET, { expiresIn: '1h' });
 

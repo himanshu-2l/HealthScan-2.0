@@ -3,7 +3,7 @@ import http from 'http';
 import fs from 'fs';
 import app from '../backend/src/app.js';
 
-process.env.JWT_SECRET = 'healthscan-jwt-dev-secret-test-only-key-32chars';
+process.env.JWT_SECRET = 'test-only-jwt-secret-key-32chars';
 
 async function runTests() {
   console.log('🧪 Starting Work Order 10 Verification Suite...\n');
