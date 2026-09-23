@@ -181,7 +181,7 @@ export const generateToken = (user, expiresIn = '24h') => {
       name: user.name,
       role: user.role || 'user'
     },
-    JWT_SECRET,
+    getJwtSecret(),
     { expiresIn }
   );
 };
