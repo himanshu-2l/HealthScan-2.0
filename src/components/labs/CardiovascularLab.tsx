@@ -78,6 +78,10 @@ export const CardiovascularLab: React.FC = () => {
   const timerRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
   const rrIntervalsRef = useRef<number[]>([]);
+  const heartRateRef = useRef<number | null>(null);
+  const spo2Ref = useRef<number | null>(null);
+  const confidenceRef = useRef(0);
+  const testDurationRef = useRef(0);
   const lastBeatTimeRef = useRef<number | null>(null);
   const lastBeatTickRef = useRef<number>(0);
   const isBeatActiveRef = useRef<boolean>(false);
@@ -393,13 +397,21 @@ export const CardiovascularLab: React.FC = () => {
       setStatus('Please grant camera access to begin cardiovascular assessment.');
       return;
     }
+    if (!streamRef.current) {
+      setStatus('Camera access is required before starting the assessment.');
+      return;
+    }
 
     pulseAudio.init();
     setIsRecording(true);
     setTestDuration(0);
     setHeartRate(null);
+    heartRateRef.current = null;
     setSpo2(null);
+    spo2Ref.current = null;
     setConfidence(0);
+    confidenceRef.current = 0;
+    testDurationRef.current = 0;
     setResults(null);
     setBeatCount(0);
     rrIntervalsRef.current = [];
@@ -422,9 +434,12 @@ export const CardiovascularLab: React.FC = () => {
     pulseDetector.start(
       (bpm, conf, intervals, currentSpo2, fingerActive, isBeat) => {
         setHeartRate(bpm);
+        heartRateRef.current = bpm;
         setConfidence(conf);
+        confidenceRef.current = conf;
         if (currentSpo2 !== undefined && currentSpo2 > 0) {
           setSpo2(currentSpo2);
+          spo2Ref.current = currentSpo2;
         }
         if (fingerActive !== undefined) {
           setFingerDetected(fingerActive);
@@ -436,12 +451,11 @@ export const CardiovascularLab: React.FC = () => {
         }
 
         // Collect genuine RR intervals from peak detection
-        if (intervals && intervals.length > 0) {
-          intervals.forEach(intv => {
-            if (intv >= 300 && intv <= 2000) {
-              rrIntervalsRef.current.push(intv);
-            }
-          });
+        if (isBeat && intervals && intervals.length > 0) {
+          const latestInterval = intervals[intervals.length - 1];
+          if (latestInterval >= 300 && latestInterval <= 2000) {
+            rrIntervalsRef.current.push(latestInterval);
+          }
           if (rrIntervalsRef.current.length > 120) {
             rrIntervalsRef.current = rrIntervalsRef.current.slice(-120);
           }
@@ -455,14 +469,17 @@ export const CardiovascularLab: React.FC = () => {
     // Start timer with rhythmic heartbeat watchdog
     timerRef.current = window.setInterval(() => {
       const elapsed = (Date.now() - startTimeRef.current) / 1000;
+      testDurationRef.current = elapsed;
       setTestDuration(elapsed);
 
       // Rhythm watchdog: if we have a locked physiological BPM, ensure visual & audio pulse fire steadily
-      const currentBpm = (heartRate && heartRate >= 40 && heartRate <= 190 && confidence >= 0.35) ? heartRate : null;
+      const liveHeartRate = heartRateRef.current;
+      const liveConfidence = confidenceRef.current;
+      const currentBpm = (liveHeartRate && liveHeartRate >= 40 && liveHeartRate <= 190 && liveConfidence >= 0.35) ? liveHeartRate : null;
       if (currentBpm) {
         const beatIntervalMs = 60000 / currentBpm;
         if (Date.now() - lastBeatTickRef.current >= beatIntervalMs) {
-          triggerPulseBeat(spo2 ?? null);
+          triggerPulseBeat(spo2Ref.current);
         }
       }
 
@@ -501,7 +518,7 @@ export const CardiovascularLab: React.FC = () => {
   };
 
   const analyzeResults = () => {
-    const finalBpm = heartRate || (rrIntervalsRef.current.length > 0 
+    const finalBpm = heartRateRef.current || (rrIntervalsRef.current.length > 0
       ? Math.round(60000 / (rrIntervalsRef.current.reduce((a, b) => a + b, 0) / rrIntervalsRef.current.length))
       : null);
 
@@ -515,9 +532,9 @@ export const CardiovascularLab: React.FC = () => {
     }
 
     // Clinical Safety: Insufficient genuine cardiac beats must NEVER be supplemented with synthetic data
-    if (rrIntervalsRef.current.length < 10) {
+    if (rrIntervalsRef.current.length < 10 || confidenceRef.current < 0.4 || testDurationRef.current < 10) {
       setStatus(
-        'Insufficient cardiac beat signals detected (fewer than 10 valid beats recorded). ' +
+        'Insufficient clean cardiac data (requires at least 10 valid beats, 10 seconds, and Moderate signal quality). ' +
         'Cannot compute clinical HRV or cardiovascular risk from insufficient data. ' +
         'Please ensure steady sensor contact and repeat the measurement.'
       );
@@ -527,7 +544,7 @@ export const CardiovascularLab: React.FC = () => {
     }
 
     // SpO2: Use genuine optical estimate or explicit null (never fabricate a fake normal 98% fallback)
-    const detectedSpo2 = spo2 ?? pulseDetector.getLatestSpo2();
+    const detectedSpo2 = spo2Ref.current ?? pulseDetector.getLatestSpo2();
     const finalSpo2 = (typeof detectedSpo2 === 'number' && !isNaN(detectedSpo2) && detectedSpo2 >= 50 && detectedSpo2 <= 100)
       ? detectedSpo2
       : null;
@@ -539,7 +556,7 @@ export const CardiovascularLab: React.FC = () => {
     const numericAge = typeof age === 'number' && !isNaN(age) && age > 0 ? age : (parseInt(String(age), 10) || 35);
     const estimatedBP = estimateBloodPressure(
       hrvMetrics.meanRR,
-      confidence / 100,
+      confidenceRef.current,
       numericAge
     );
 
@@ -558,8 +575,8 @@ export const CardiovascularLab: React.FC = () => {
       hrvMetrics,
       estimatedBP,
       riskAssessment,
-      testDuration: Math.round(testDuration),
-      confidence,
+      testDuration: Math.round(testDurationRef.current),
+      confidence: confidenceRef.current,
       provenance: {
         heartRate: 'MEASURED',
         spo2: finalSpo2 !== null ? 'ESTIMATED' : 'UNAVAILABLE',
@@ -593,7 +610,7 @@ export const CardiovascularLab: React.FC = () => {
             riskAssessment.riskLevel === 'high' ? 'high' : 'critical',
         interpretation: `Heart Rate: ${finalBpm} BPM | SpO2: ${finalSpo2 !== null ? `${finalSpo2}% (Optical Estimate)` : 'Unavailable'} | HRV Score: ${hrvMetrics.hrvScore}/100 | Risk Level: ${riskAssessment.riskLevel}`,
         recommendations: riskAssessment.recommendations,
-        duration: testDuration * 1000,
+        duration: testDurationRef.current * 1000,
         status: 'final',
       };
       saveTestResult(healthTestResult);
