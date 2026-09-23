@@ -139,42 +139,30 @@ export async function extractMedicineFromImage(
   base64DataUrl: string,
   qualityReport: ImageQualityReport
 ): Promise<VisionExtractionResult> {
-  try {
-    const parsed = await callAIProxy('medicine-vision', {
-      image: base64DataUrl,
-      qualityReport
-    });
+  const result = await callAIProxy('medicine-vision', {
+    image: base64DataUrl,
+    qualityReport
+  });
 
-    if (parsed) {
-      return {
-        rawBrandName: parsed.rawBrandName || parsed.brandName || undefined,
-        genericIngredients: Array.isArray(parsed.genericIngredients) ? parsed.genericIngredients : [],
-        dosageForm: parsed.dosageForm || 'Tablet',
-        manufacturer: parsed.manufacturer || undefined,
-        packagingType: parsed.packagingType || 'unknown',
-        visibleText: Array.isArray(parsed.visibleText) ? parsed.visibleText : [],
-        rawConfidence: typeof parsed.confidenceScore === 'number'
-          ? parsed.confidenceScore
-          : (typeof parsed.rawConfidence === 'number' ? parsed.rawConfidence : 0.85),
-        qualityReport
-      };
-    }
-  } catch (err) {
-    console.warn('Medicine vision proxy call failed, using offline fallback:', err);
+  if (!result.ok) {
+    throw new Error('AI analysis unavailable, try again or consult a clinician');
   }
 
-  // Safe offline fallback
+  const parsed = result.data;
+  if (!parsed) {
+    throw new Error('AI analysis unavailable, try again or consult a clinician');
+  }
+
   return {
-    rawBrandName: 'Augmentin 625 Duo',
-    genericIngredients: [
-      { name: 'amoxicillin', strength: '500mg' },
-      { name: 'clavulanic acid', strength: '125mg' }
-    ],
-    dosageForm: 'Tablet',
-    manufacturer: 'GlaxoSmithKline Pharmaceuticals Ltd',
-    packagingType: 'blister_strip',
-    visibleText: ['Augmentin 625 Duo', 'Amoxycillin and Potassium Clavulanate Tablets IP', 'GSK', 'Batch: AG8219'],
-    rawConfidence: 0.92,
+    rawBrandName: parsed.rawBrandName || parsed.brandName || undefined,
+    genericIngredients: Array.isArray(parsed.genericIngredients) ? parsed.genericIngredients : [],
+    dosageForm: parsed.dosageForm || 'Tablet',
+    manufacturer: parsed.manufacturer || undefined,
+    packagingType: parsed.packagingType || 'unknown',
+    visibleText: Array.isArray(parsed.visibleText) ? parsed.visibleText : [],
+    rawConfidence: typeof parsed.confidenceScore === 'number'
+      ? parsed.confidenceScore
+      : (typeof parsed.rawConfidence === 'number' ? parsed.rawConfidence : 0.85),
     qualityReport
   };
 }

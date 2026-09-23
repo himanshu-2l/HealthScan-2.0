@@ -331,9 +331,11 @@ export const MedicineLensLab: React.FC = () => {
       }
 
       processMedicineQuery(query, evidence);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Vision analysis error:', err);
-      setError(err.message || 'Failed to analyze packaging. Please enter the medicine name manually.');
+      const message = err instanceof Error ? err.message : 'AI analysis unavailable, try again or consult a clinician';
+      setError(message);
+      setResult(null);
       setIsProcessing(false);
     }
   };
@@ -771,11 +773,36 @@ export const MedicineLensLab: React.FC = () => {
               </div>
             )}
 
-            {/* Error Message */}
+            {/* Error Message / Unavailable State */}
             {error && (
-              <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-900 dark:text-rose-200 text-xs flex items-start gap-2">
-                <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
-                <span>{error}</span>
+              <div className="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-900 dark:text-rose-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-semibold block">{error}</span>
+                    <span className="text-slate-600 dark:text-slate-400 mt-0.5 block">Consult a licensed physician or pharmacist for verified medicine information.</span>
+                  </div>
+                </div>
+                {capturedImage && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      if (capturedImage && qualityReport) {
+                        runVisionAnalysis(capturedImage, qualityReport);
+                      } else {
+                        setError(null);
+                        setCapturedImage(null);
+                        startCamera();
+                      }
+                    }}
+                    className="text-xs flex items-center gap-1.5 self-start sm:self-auto flex-shrink-0"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>Try Again</span>
+                  </Button>
+                )}
               </div>
             )}
 

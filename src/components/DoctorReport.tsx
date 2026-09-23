@@ -252,11 +252,16 @@ Blood Glucose (Latest):
 
 Please provide observations, potential concerns, and any recommendations for the physician's review.`;
 
-      const result = await callAIProxy('doctor-report', { prompt });
-      setAiSummary(result);
+      const res = await callAIProxy('doctor-report', { prompt });
+      if (!res.ok) {
+        throw new Error('AI analysis unavailable, try again or consult a clinician');
+      }
+      setAiSummary(res.data);
+      setAiError(null);
     } catch (error) {
       console.error('Error generating AI summary:', error);
-      setAiError('Failed to generate AI summary. Please try again.');
+      setAiSummary('');
+      setAiError('AI analysis unavailable, try again or consult a clinician');
     } finally {
       setIsGeneratingAI(false);
     }
@@ -850,8 +855,21 @@ Please provide observations, potential concerns, and any recommendations for the
           </Button>
         </div>
         {aiError && (
-          <div className="p-4 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800/40 rounded-xl mb-4">
-            <p className="text-rose-700 dark:text-rose-300 text-xs font-medium">{aiError}</p>
+          <div className="p-4 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800/40 rounded-xl mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <p className="text-rose-700 dark:text-rose-300 text-xs font-semibold">{aiError}</p>
+              <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">Please share raw vital sign charts and lab reports directly with your attending physician.</p>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={generateAISummary}
+              disabled={isGeneratingAI}
+              className="text-xs h-8 flex-shrink-0 self-start sm:self-auto border-rose-200 dark:border-rose-800"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isGeneratingAI ? 'animate-spin' : ''}`} />
+              Try Again
+            </Button>
           </div>
         )}
         {aiSummary ? (

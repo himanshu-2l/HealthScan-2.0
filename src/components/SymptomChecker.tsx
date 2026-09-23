@@ -22,7 +22,8 @@ import {
   ShieldAlert,
   Stethoscope,
   Pill,
-  Phone
+  Phone,
+  RefreshCw
 } from 'lucide-react';
 import { VoiceInputButton } from './ui/VoiceInputButton';
 
@@ -133,17 +134,22 @@ export default function SymptomChecker() {
         ...(symptomDescription ? [symptomDescription] : [])
       ].join(', ');
 
-      const parsed: AnalysisResult = await callAIProxy('symptom-check', {
+      const res = await callAIProxy<AnalysisResult>('symptom-check', {
         bodyArea: selectedArea.name,
         symptoms: allSymptoms,
         duration: duration || 'Not specified',
         severity,
       });
-      setAnalysisResult(parsed);
+
+      if (!res.ok || !res.data) {
+        throw new Error('AI analysis unavailable, try again or consult a clinician');
+      }
+
+      setAnalysisResult(res.data);
       setCurrentStep(4);
     } catch (err) {
       console.error('Analysis error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to analyze symptoms. Please try again.');
+      setError('AI analysis unavailable, try again or consult a clinician');
       setCurrentStep(2);
     } finally {
       setIsAnalyzing(false);
@@ -352,9 +358,25 @@ export default function SymptomChecker() {
       </div>
 
       {error && (
-        <div className="bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800/40 rounded-xl p-4 flex items-center gap-3">
-          <AlertTriangle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0" />
-          <p className="text-rose-700 dark:text-rose-300 text-xs sm:text-sm">{error}</p>
+        <div className="bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800/40 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-rose-700 dark:text-rose-300 text-xs sm:text-sm font-semibold">{error}</p>
+              <p className="text-slate-600 dark:text-slate-400 text-xs mt-1">
+                General clinical advisory: If you experience difficulty breathing, sudden severe pain, high fever, or confusion, seek immediate medical attention or call emergency services.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleAnalyze}
+            disabled={isAnalyzing}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold self-start sm:self-auto shrink-0 transition-colors"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isAnalyzing ? 'animate-spin' : ''}`} />
+            Try Again
+          </button>
         </div>
       )}
 

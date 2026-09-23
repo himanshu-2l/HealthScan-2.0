@@ -207,7 +207,16 @@ Please analyze this data and respond with ONLY a valid JSON object (no markdown,
 
 Be realistic but encouraging. If data is limited, acknowledge this and provide general guidance.`;
 
-      const text = await callAIProxy('health-predictions', { prompt });
+      const res = await callAIProxy('health-predictions', { prompt });
+
+      if (!res.ok) {
+        throw new Error('AI analysis unavailable, try again or consult a clinician');
+      }
+
+      const text = res.data;
+      if (!text || typeof text !== 'string') {
+        throw new Error('AI analysis unavailable, try again or consult a clinician');
+      }
 
       // Parse JSON response
       let parsedResponse: HealthPrediction;
@@ -222,7 +231,7 @@ Be realistic but encouraging. If data is limited, acknowledge this and provide g
         parsedResponse = JSON.parse(cleanedText);
       } catch (parseError) {
         console.error('Failed to parse Gemini response:', text);
-        throw new Error('Failed to parse AI response');
+        throw new Error('AI analysis unavailable, try again or consult a clinician');
       }
 
       setPredictions(parsedResponse);
@@ -236,19 +245,8 @@ Be realistic but encouraging. If data is limited, acknowledge this and provide g
 
     } catch (err) {
       console.error('Error analyzing health data:', err);
-      setError(err instanceof Error ? err.message : 'Failed to analyze health data');
-      
-      // Try to load cached predictions
-      const cached = localStorage.getItem('healthscan_predictions_cache');
-      if (cached) {
-        try {
-          const { predictions: cachedPredictions, timestamp } = JSON.parse(cached);
-          setPredictions(cachedPredictions);
-          setLastAnalyzed(new Date(timestamp));
-        } catch {
-          // Ignore cache parse errors
-        }
-      }
+      setPredictions(null);
+      setError('AI analysis unavailable, try again or consult a clinician');
     } finally {
       setIsLoading(false);
     }
@@ -384,14 +382,27 @@ Be realistic but encouraging. If data is limited, acknowledge this and provide g
         </div>
       </div>
 
-      {/* Error State */}
+      {/* Error / Unavailable State */}
       {error && (
-        <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-4 flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-red-400 mt-0.5" />
-          <div>
-            <p className="text-red-400 font-medium">Analysis Error</p>
-            <p className="text-white/60 text-sm mt-1">{error}</p>
+        <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-red-400 font-medium">AI Analysis Unavailable</p>
+              <p className="text-white/70 text-sm mt-1">{error}</p>
+              <p className="text-white/40 text-xs mt-2 italic">
+                General non-clinical advisory: Continue tracking daily vital signs and log regular activity. If you experience acute symptoms or feel unwell, consult a licensed clinician immediately.
+              </p>
+            </div>
           </div>
+          <Button
+            onClick={analyzeHealthData}
+            disabled={isLoading}
+            className="bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 rounded-xl px-4 py-2 text-sm flex-shrink-0 self-start sm:self-auto"
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            Try Again
+          </Button>
         </div>
       )}
 

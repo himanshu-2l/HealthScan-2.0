@@ -198,7 +198,13 @@ Please provide helpful, accurate, and personalized analysis about the user's BP 
 
 Remember: ${languageInstruction}`;
 
-      const botResponse = await callAIProxy('bp-chat', { prompt }) || 'I apologize, but I encountered an error receiving a valid response. Please try again.';
+      const res = await callAIProxy('bp-chat', { prompt });
+
+      if (!res.ok) {
+        throw new Error('AI analysis unavailable, try again or consult a clinician');
+      }
+
+      const botResponse = res.data || 'I apologize, but I encountered an error receiving a valid response. Please try again.';
 
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -212,7 +218,7 @@ Remember: ${languageInstruction}`;
       console.error('Error calling Gemini API:', error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: 'I apologize, but I\'m having trouble connecting right now. Please check your API configuration and try again.',
+        content: 'AI analysis unavailable, try again or consult a clinician.',
         sender: 'bot',
         timestamp: new Date()
       };

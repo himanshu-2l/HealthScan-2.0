@@ -235,19 +235,29 @@ Respond ONLY with valid JSON in this exact format (no markdown, no code blocks):
   }
 }`;
 
-      let text = await callAIProxy('recommendations', { prompt });
+      const res = await callAIProxy('recommendations', { prompt });
+
+      if (!res.ok) {
+        throw new Error('AI analysis unavailable, try again or consult a clinician');
+      }
+
+      let text = res.data;
+      if (!text || typeof text !== 'string') {
+        throw new Error('AI analysis unavailable, try again or consult a clinician');
+      }
 
       // Clean up the response
       text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
 
       const parsed: Recommendations = JSON.parse(text);
       setRecommendations(parsed);
+      setError(null);
 
       // Cache the results
       localStorage.setItem('personalized_recommendations', JSON.stringify(parsed));
     } catch (err) {
       console.error('Error generating recommendations:', err);
-      setError(err instanceof Error ? err.message : 'Failed to generate recommendations');
+      setError('AI analysis unavailable, try again or consult a clinician');
       if (!recommendations) {
         setRecommendations(defaultRecommendations);
       }
@@ -713,11 +723,27 @@ Respond ONLY with valid JSON in this exact format (no markdown, no code blocks):
         </button>
       </div>
 
-      {/* Error Message */}
+      {/* Error Message / Unavailable State */}
       {error && (
-        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-center gap-3">
-          <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
-          <p className="text-red-400 text-sm">{error}</p>
+        <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-red-400 font-medium">AI Analysis Unavailable</p>
+              <p className="text-white/70 text-sm mt-1">{error}</p>
+              <p className="text-white/40 text-xs mt-2 italic">
+                Showing generic non-clinical wellness suggestions below. Please consult a licensed dietitian or physician for personalized medical advice.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={generateRecommendations}
+            disabled={isLoading}
+            className="flex items-center gap-2 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-300 rounded-xl text-sm font-medium transition-colors flex-shrink-0 self-start sm:self-auto"
+          >
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+            Try Again
+          </button>
         </div>
       )}
 

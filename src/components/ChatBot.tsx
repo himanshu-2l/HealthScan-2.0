@@ -189,7 +189,13 @@ ${languageInstruction}
 Provide a brief, accurate response (max 3 sentences) about health screening, tests, or general health questions. Focus on key information only.`;
       }
 
-      const botResponse = await callAIProxy('chat', { prompt }) || 'I apologize, but I encountered an error receiving a valid response. Please try again.';
+      const res = await callAIProxy('chat', { prompt });
+
+      if (!res.ok) {
+        throw new Error('AI analysis unavailable, try again or consult a clinician');
+      }
+
+      const botResponse = res.data || 'I apologize, but I encountered an error receiving a valid response. Please try again.';
 
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -201,25 +207,9 @@ Provide a brief, accurate response (max 3 sentences) about health screening, tes
       setMessages(prev => [...prev, botMessage]);
     } catch (error) {
       console.error('Error calling Gemini API:', error);
-      let errorContent = 'I apologize, but I\'m having trouble connecting right now. ';
-
-      if (error instanceof Error) {
-        if (error.message.includes('401') || error.message.includes('403')) {
-          errorContent += 'Please check that your Gemini API key is valid and has the necessary permissions.';
-        } else if (error.message.includes('429')) {
-          errorContent += 'The API rate limit has been exceeded. Please try again in a moment.';
-        } else if (error.message.includes('network') || error.message.includes('fetch')) {
-          errorContent += 'Please check your internet connection and try again.';
-        } else {
-          errorContent += `Error: ${error.message}`;
-        }
-      } else {
-        errorContent += 'Please check your API configuration and try again.';
-      }
-
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: errorContent,
+        content: 'AI analysis unavailable, try again or consult a clinician.',
         sender: 'bot',
         timestamp: new Date()
       };
