@@ -3,15 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Mic, MicOff, Play, Square, TrendingUp, Activity, Brain, Download, FileText, X } from "lucide-react";
+import { Mic, MicOff, Square, TrendingUp, Activity, Brain, Download, FileText } from "lucide-react";
 import { saveTestResult, generateTestResultId } from '@/services/healthDataService';
 import { HealthTestResult } from '@/types/health';
 import {
   robustStatistics,
   validateDataQuality,
-  calculateAccuracyScore,
-  movingAverage,
-  removeOutliers
+  calculateAccuracyScore
 } from '@/utils/statisticalAccuracy';
 
 // Voice analysis types and utilities (enhanced from the provided prototype)
@@ -144,23 +142,6 @@ function detectPitchFFT(analyser: AnalyserNode, sampleRate: number) {
   return null;
 }
 
-// Generate realistic values for analysis
-function generateRealisticValues() {
-  // Generate realistic pitch (common human voice range)
-  const basePitches = [120, 140, 160, 180, 200, 220, 240, 260, 280, 300];
-  const randomPitch = basePitches[Math.floor(Math.random() * basePitches.length)];
-  const pitchVariation = (Math.random() - 0.5) * 20; // ±10Hz variation
-  const f0 = randomPitch + pitchVariation;
-
-  // Generate realistic jitter (0.01 to 0.08 is normal range)
-  const jitter = 0.01 + Math.random() * 0.07;
-
-  // Generate realistic RMS (0.02 to 0.15 is good range)
-  const rms = 0.02 + Math.random() * 0.13;
-
-  return { f0, jitter, rms };
-}
-
 // Calculate risk score from specific values
 function calculateRiskScore(rms: number, jitter: number | null, f0: number | null) {
   let score = 0;
@@ -174,26 +155,6 @@ function calculateRiskScore(rms: number, jitter: number | null, f0: number | nul
   if (!f0) score += 0.3;
 
   return Math.min(1, score);
-}
-
-// Generate recommendations from specific values
-function generateRecommendationsFromValues(rms: number, jitter: number | null, f0: number | null) {
-  const recommendations = [];
-
-  if (rms < 0.03) {
-    recommendations.push("Consider speaking louder for better signal quality");
-  }
-  if (jitter && jitter > 0.06) {
-    recommendations.push("Voice shows some instability - practice sustained vowel sounds");
-  }
-  if (!f0) {
-    recommendations.push("No clear pitch detected - ensure steady vocalization");
-  }
-  if (recommendations.length === 0) {
-    recommendations.push("Voice characteristics appear normal");
-  }
-
-  return recommendations;
 }
 
 function hzToNote(f: number) {
@@ -485,7 +446,6 @@ export const VoiceLab: React.FC = () => {
   const [status, setStatus] = useState<string>("Click 'Enable Microphone' to begin");
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [recordingData, setRecordingData] = useState<Blob | null>(null);
   const [analysisResults, setAnalysisResults] = useState<AnalysisResults | null>(null);
 
   // Ref for the report section to enable auto-scroll
@@ -511,6 +471,9 @@ export const VoiceLab: React.FC = () => {
   const pitchHistory = useRef<number[]>([]);
   const recordingTimer = useRef<NodeJS.Timeout | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const audioFrameRef = useRef<number | null>(null);
+  const isRecordingRef = useRef(false);
+  const recordingDurationRef = useRef(0);
 
   const [spectrum, setSpectrum] = useState<Uint8Array>(new Uint8Array(1024));
   const [audioDetected, setAudioDetected] = useState(false);
@@ -527,6 +490,11 @@ export const VoiceLab: React.FC = () => {
   }, []);
 
   const cleanup = () => {
+    isRecordingRef.current = false;
+    if (audioFrameRef.current !== null) {
+      cancelAnimationFrame(audioFrameRef.current);
+      audioFrameRef.current = null;
+    }
     try {
       if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
         mediaRecorderRef.current.stop();
@@ -552,6 +520,9 @@ export const VoiceLab: React.FC = () => {
   async function initAudio() {
     try {
       console.log('Initializing audio...');
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new DOMException('Microphone access is unavailable in this browser.', 'NotSupportedError');
+      }
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
@@ -581,17 +552,16 @@ export const VoiceLab: React.FC = () => {
       analyserRef.current = analyser;
 
       // Create MediaRecorder for recording
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'audio/webm;codecs=opus'
-      });
+      const preferredMimeType = 'audio/webm;codecs=opus';
+      const recorderOptions = MediaRecorder.isTypeSupported?.(preferredMimeType)
+        ? { mimeType: preferredMimeType }
+        : undefined;
+      const mediaRecorder = new MediaRecorder(stream, recorderOptions);
       mediaRecorderRef.current = mediaRecorder;
 
       // Set up recording event handlers
       mediaRecorder.ondataavailable = (event) => {
         console.log('MediaRecorder data available:', event.data.size, 'bytes');
-        if (event.data.size > 0) {
-          setRecordingData(event.data);
-        }
       };
 
       mediaRecorder.onstart = () => {
@@ -616,8 +586,6 @@ export const VoiceLab: React.FC = () => {
 
         // Debug: Log audio data to see if we're getting input
         const maxAmplitude = Math.max(...Array.from(dataArray).map(Math.abs));
-        const avgAmplitude = dataArray.reduce((sum, val) => sum + Math.abs(val), 0) / dataArray.length;
-
         if (maxAmplitude > 0.001) {
           setAudioDetected(true);
         } else {
@@ -635,7 +603,7 @@ export const VoiceLab: React.FC = () => {
         }
 
         if (finalF0 && finalF0 >= 50 && finalF0 <= 800) {
-          if (isRecording) {
+          if (isRecordingRef.current) {
             pitchHistory.current.push(finalF0);
             if (pitchHistory.current.length > 100) pitchHistory.current.shift();
 
@@ -654,7 +622,7 @@ export const VoiceLab: React.FC = () => {
             setJitter(rel);
 
             // Track peak jitter during recording
-            if (isRecording && (peakJitter.current === null || rel > peakJitter.current)) {
+            if (isRecordingRef.current && (peakJitter.current === null || rel > peakJitter.current)) {
               peakJitter.current = rel;
             }
           }
@@ -669,19 +637,26 @@ export const VoiceLab: React.FC = () => {
         setSpectrum(spec);
 
         // Continue analysis loop
-        requestAnimationFrame(analyzeAudio);
+        audioFrameRef.current = requestAnimationFrame(analyzeAudio);
       };
 
       // Start the analysis loop
       console.log('Starting audio analysis loop...');
-      requestAnimationFrame(analyzeAudio);
+      audioFrameRef.current = requestAnimationFrame(analyzeAudio);
 
       setPermission("granted");
       setStatus("Ready to record. Hold 'Record' and sustain 'aaaa' for 5 seconds");
     } catch (e) {
       console.error('Error initializing audio:', e);
       setPermission("denied");
-      setStatus("Microphone permission denied. Please enable microphone access and refresh the page.");
+      const errorName = e instanceof DOMException ? e.name : '';
+      setStatus(
+        errorName === 'NotFoundError'
+          ? 'No microphone was found. Connect a microphone and try again.'
+          : errorName === 'NotAllowedError'
+            ? 'Microphone permission was denied. Allow access in your browser settings and try again.'
+            : 'Microphone access is unavailable. Check your device and browser settings, then try again.'
+      );
     }
   }
 
@@ -703,9 +678,7 @@ export const VoiceLab: React.FC = () => {
   }, [rms, jitter, f0]);
 
   function startRecording() {
-    console.log("Recording started");
-    if (permission === "idle") {
-      initAudio();
+    if (permission !== "granted") {
       return;
     }
 
@@ -719,8 +692,11 @@ export const VoiceLab: React.FC = () => {
     peakF0.current = null;
     peakJitter.current = null;
 
+    isRecordingRef.current = true;
+    recordingDurationRef.current = 0;
     setIsRecording(true);
     setRecordingDuration(0);
+    setAnalysisResults(null);
     setStatus("Recording... Sustain a steady 'aaaa' sound");
 
     // Start MediaRecorder
@@ -729,7 +705,9 @@ export const VoiceLab: React.FC = () => {
     recordingTimer.current = setInterval(() => {
       setRecordingDuration(prev => {
         const newDuration = prev + 0.1;
+        recordingDurationRef.current = newDuration;
         if (newDuration >= 5) {
+          recordingDurationRef.current = 5;
           stopRecording();
           return 5;
         }
@@ -739,7 +717,12 @@ export const VoiceLab: React.FC = () => {
   }
 
   function stopRecording() {
+    if (!isRecordingRef.current || mediaRecorderRef.current?.state !== 'recording') {
+      return;
+    }
+
     console.log("Recording stopped");
+    isRecordingRef.current = false;
     setIsRecording(false);
     if (recordingTimer.current) {
       clearInterval(recordingTimer.current);
@@ -756,9 +739,6 @@ export const VoiceLab: React.FC = () => {
 
     // Simulate analysis time
     setTimeout(() => {
-      setIsAnalyzing(false);
-      setStatus("Analysis complete! You can record again or view detailed results.");
-
       // Use robust statistics from recording history for improved accuracy
       let finalPitch: number | null = null;
       let finalJitter: number | null = null;
@@ -769,8 +749,6 @@ export const VoiceLab: React.FC = () => {
         const validPitches = pitchHistory.current.filter(p => p > 0 && p < 1000 && isFinite(p));
         if (validPitches.length >= 5) {
           const pitchStats = robustStatistics(validPitches, true);
-          const pitchQuality = validateDataQuality(validPitches, 5, 30);
-
           // Use trimmed mean for pitch (more robust than peak)
           finalPitch = pitchStats.trimmedMean;
 
@@ -786,21 +764,24 @@ export const VoiceLab: React.FC = () => {
       // Use peak RMS as fallback, but prefer robust statistics if we have history
       finalRms = peakRms.current;
 
-      // If we don't have sufficient real data, generate realistic fake values
-      if (!finalPitch || !finalJitter || finalRms === 0) {
-        const fakeValues = generateRealisticValues();
-        finalPitch = finalPitch || fakeValues.f0;
-        finalJitter = finalJitter || fakeValues.jitter;
-        finalRms = finalRms || fakeValues.rms;
-        console.log('Using generated values due to insufficient data:', {
-          pitchHistoryLength: pitchHistory.current.length,
-          finalPitch,
-          finalJitter,
-          finalRms
-        });
+      const hasSufficientSample =
+        recordingDurationRef.current >= 2 &&
+        pitchHistory.current.length >= 10 &&
+        finalPitch !== null &&
+        finalJitter !== null &&
+        finalRms >= 0.001;
+
+      if (!hasSufficientSample) {
+        setIsAnalyzing(false);
+        setAnalysisResults(null);
+        setStatus("No usable voice sample detected. Record for at least 2 seconds with a steady, audible 'aaaa'.");
+        return;
       }
 
-      // Generate analysis results using peak/fake values
+      setIsAnalyzing(false);
+      setStatus("Analysis complete! You can record again or view detailed results.");
+
+      // Generate analysis results using measured values only
       const results: AnalysisResults = {
         timestamp: new Date().toISOString(),
         pitch: finalPitch,
@@ -963,12 +944,11 @@ export const VoiceLab: React.FC = () => {
                   variant={isRecording ? "destructive" : permission === "granted" ? "default" : "secondary"}
                   size="lg"
                   disabled={isAnalyzing}
-                  onMouseDown={(e) => { e.preventDefault(); startRecording(); }}
-                  onMouseUp={(e) => { e.preventDefault(); stopRecording(); }}
-                  onTouchStart={(e) => { e.preventDefault(); startRecording(); }}
-                  onTouchEnd={(e) => { e.preventDefault(); stopRecording(); }}
-                  onTouchCancel={(e) => { e.preventDefault(); stopRecording(); }}
-                  onContextMenu={(e) => e.preventDefault()}
+                  onClick={permission === "granted" ? undefined : initAudio}
+                  onPointerDown={(event) => { event.preventDefault(); if (permission === "granted") startRecording(); }}
+                  onPointerUp={(event) => { event.preventDefault(); if (permission === "granted") stopRecording(); }}
+                  onPointerCancel={(event) => { event.preventDefault(); if (permission === "granted") stopRecording(); }}
+                  onContextMenu={(event) => event.preventDefault()}
                   className={`relative min-w-[200px] h-14 rounded-2xl text-base font-semibold shadow-sm transition-all transform active:scale-95 touch-none select-none ${isRecording ? 'animate-pulse ring-4 ring-red-500/30 bg-red-600' : 'bg-teal-600 hover:bg-teal-700 text-white'
                     }`}
                 >
@@ -1055,9 +1035,9 @@ export const VoiceLab: React.FC = () => {
 
                 <div className="text-center p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-800/30">
                   <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider mb-1">Loudness</div>
-                  <div className="text-xl font-bold text-emerald-700 dark:text-emerald-300">{rms.toFixed(3)}</div>
+                  <div className="text-xl font-bold text-emerald-700 dark:text-emerald-300">{permission === "granted" ? rms.toFixed(3) : "—"}</div>
                   <div className="text-[11px] text-emerald-600/70 dark:text-emerald-400/70 mt-0.5">
-                    {rms < 0.03 ? "Low" : rms > 0.12 ? "High" : "Normal"}
+                    {permission !== "granted" ? "No sample" : rms < 0.03 ? "Low" : rms > 0.12 ? "High" : "Normal"}
                   </div>
                 </div>
 
@@ -1067,15 +1047,15 @@ export const VoiceLab: React.FC = () => {
                     {jitter ? jitter.toFixed(3) : "—"}
                   </div>
                   <div className="text-[11px] text-purple-600/70 dark:text-purple-400/70 mt-0.5">
-                    {jitter && jitter > 0.06 ? "Fluctuating" : "Stable"}
+                    {jitter === null ? "No sample" : jitter > 0.06 ? "Fluctuating" : "Stable"}
                   </div>
                 </div>
 
                 <div className="text-center p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/30">
                   <div className="text-xs font-semibold text-amber-700 dark:text-amber-300 uppercase tracking-wider mb-1">Quality Score</div>
-                  <div className="text-xl font-bold text-amber-700 dark:text-amber-300">{((1 - riskScore) * 100).toFixed(0)}%</div>
+                  <div className="text-xl font-bold text-amber-700 dark:text-amber-300">{analysisResults ? `${analysisResults.qualityScore}%` : "—"}</div>
                   <div className="text-[11px] text-amber-600/70 dark:text-amber-400/70 mt-0.5">
-                    {riskScore < 0.3 ? "Optimal" : riskScore < 0.6 ? "Moderate" : "Checkup Recommended"}
+                    {analysisResults ? (analysisResults.riskLevel === 'Low' ? "Optimal" : analysisResults.riskLevel === 'Medium' ? "Moderate" : "Checkup Recommended") : "Awaiting sample"}
                   </div>
                 </div>
               </div>
@@ -1085,7 +1065,7 @@ export const VoiceLab: React.FC = () => {
                 <div className="text-xs text-slate-700 dark:text-slate-300 font-semibold">Screening Assessment Gauge</div>
                 <div className="relative">
                   <Progress
-                    value={riskScore * 100}
+                    value={analysisResults ? riskScore * 100 : 0}
                     className="h-2.5 bg-slate-100 dark:bg-white/10"
                   />
                 </div>
