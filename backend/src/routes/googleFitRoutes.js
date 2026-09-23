@@ -35,15 +35,16 @@ export const removeUserGoogleTokens = (userId) => {
 
 export const isGoogleFitConfigured = () => googleFitService.isConfigured();
 
-// Generate realistic mock fitness data for demonstration when offline/unconnected
+// Generate mock fitness data for local demonstration only when ENABLE_DEMO_DATA=true
 export const getMockFitnessData = () => {
   const now = new Date();
   const heartRate = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(now.getTime() - (6 - i) * 24 * 60 * 60 * 1000);
     return {
       timestamp: d.toISOString(),
-      bpm: Math.floor(65 + Math.random() * 20),
-      source: 'Google Fit (Simulated)'
+      bpm: 72 + ((i * 3) % 10),
+      source: 'Google Fit (Simulated)',
+      simulated: true
     };
   });
 
@@ -51,8 +52,9 @@ export const getMockFitnessData = () => {
     const d = new Date(now.getTime() - (6 - i) * 24 * 60 * 60 * 1000);
     return {
       date: d.toISOString().split('T')[0],
-      steps: Math.floor(6000 + Math.random() * 4500),
-      source: 'Google Fit (Simulated)'
+      steps: 7500 + ((i * 450) % 2000),
+      source: 'Google Fit (Simulated)',
+      simulated: true
     };
   });
 
@@ -60,8 +62,9 @@ export const getMockFitnessData = () => {
     const d = new Date(now.getTime() - (6 - i) * 24 * 60 * 60 * 1000);
     return {
       date: d.toISOString().split('T')[0],
-      calories: Math.floor(1800 + Math.random() * 600),
-      source: 'Google Fit (Simulated)'
+      calories: 2100 + ((i * 120) % 400),
+      source: 'Google Fit (Simulated)',
+      simulated: true
     };
   });
 
@@ -69,9 +72,10 @@ export const getMockFitnessData = () => {
     const d = new Date(now.getTime() - (6 - i) * 24 * 60 * 60 * 1000);
     return {
       date: d.toISOString().split('T')[0],
-      durationHours: (6.5 + Math.random() * 1.8).toFixed(1),
+      durationHours: (7.0 + ((i * 0.3) % 1.5)).toFixed(1),
       sleepType: 'Deep/REM',
-      source: 'Google Fit (Simulated)'
+      source: 'Google Fit (Simulated)',
+      simulated: true
     };
   });
 
@@ -81,6 +85,7 @@ export const getMockFitnessData = () => {
   const avgSleepHours = (sleep.reduce((sum, s) => sum + parseFloat(s.durationHours), 0) / sleep.length).toFixed(1);
 
   return {
+    simulated: true,
     heartRate,
     steps,
     calories,
@@ -92,7 +97,8 @@ export const getMockFitnessData = () => {
       totalCalories,
       avgCalories: Math.round(totalCalories / 7),
       avgSleepHours,
-      period: '7 days'
+      period: '7 days',
+      simulated: true
     }
   };
 };
@@ -143,8 +149,8 @@ router.get('/auth', requireAuth, (req, res) => {
 router.get('/status', requireAuth, (req, res) => {
   const configured = googleFitService.isConfigured();
   const userId = req.user.userId || req.user.uid;
-  const hasToken = userGoogleTokens.has(userId) || Boolean(req.session?.googleFitTokens);
-  const connected = Boolean(req.session?.googleFitConnected || hasToken);
+  const hasToken = Boolean(userGoogleTokens.get(userId) || req.session?.googleFitTokens);
+  const connected = Boolean(configured && hasToken);
 
   res.json({
     connected,
@@ -176,21 +182,34 @@ router.post('/disconnect', requireAuth, (req, res) => {
  */
 router.get('/data', requireAuth, async (req, res) => {
   try {
+    const configured = googleFitService.isConfigured();
+    if (!configured) {
+      if (process.env.ENABLE_DEMO_DATA === 'true') {
+        return res.json(getMockFitnessData());
+      }
+      return res.status(409).json({
+        error: 'Google Fit not configured',
+        configured: false,
+        connected: false
+      });
+    }
+
     const userId = req.user.userId || req.user.uid;
     const tokens = userGoogleTokens.get(userId) || req.session?.googleFitTokens;
-    const isConnected = Boolean(req.session?.googleFitConnected || tokens);
 
-    if (!isConnected) {
-      return res.status(401).json({ error: 'Google Fit not connected' });
+    if (!tokens) {
+      if (process.env.ENABLE_DEMO_DATA === 'true') {
+        return res.json(getMockFitnessData());
+      }
+      return res.status(401).json({
+        error: 'Google Fit not connected',
+        configured: true,
+        connected: false
+      });
     }
 
-    if (googleFitService.isConfigured() && tokens) {
-      const data = await googleFitService.getAllFitnessData(tokens);
-      return res.json(data);
-    }
-
-    // Return mock data for demo mode if connected in session
-    return res.json(getMockFitnessData());
+    const data = await googleFitService.getAllFitnessData(tokens);
+    return res.json(data);
   } catch (error) {
     console.error('Error fetching Google Fit data:', error);
     res.status(500).json({
@@ -207,43 +226,56 @@ router.get('/data', requireAuth, async (req, res) => {
  */
 router.get('/data/:type', requireAuth, async (req, res) => {
   try {
-    const userId = req.user.userId || req.user.uid;
-    const tokens = userGoogleTokens.get(userId) || req.session?.googleFitTokens;
-    const isConnected = Boolean(req.session?.googleFitConnected || tokens);
-
-    if (!isConnected) {
-      return res.status(401).json({ error: 'Google Fit not connected' });
-    }
-
     const { type } = req.params;
     const validTypes = ['heart-rate', 'steps', 'calories', 'sleep'];
     if (!validTypes.includes(type)) {
       return res.status(400).json({ error: 'Invalid data type' });
     }
 
-    if (googleFitService.isConfigured() && tokens) {
-      switch (type) {
-        case 'heart-rate':
-          return res.json(await googleFitService.getHeartRateData(tokens));
-        case 'steps':
-          return res.json(await googleFitService.getStepsData(tokens));
-        case 'calories':
-          return res.json(await googleFitService.getCaloriesData(tokens));
-        case 'sleep':
-          return res.json(await googleFitService.getSleepData(tokens));
+    const mapTypeToKey = {
+      'heart-rate': 'heartRate',
+      'steps': 'steps',
+      'calories': 'calories',
+      'sleep': 'sleep'
+    };
+
+    const configured = googleFitService.isConfigured();
+    if (!configured) {
+      if (process.env.ENABLE_DEMO_DATA === 'true') {
+        const mockData = getMockFitnessData();
+        return res.json(mockData[mapTypeToKey[type]]);
       }
+      return res.status(409).json({
+        error: 'Google Fit not configured',
+        configured: false,
+        connected: false
+      });
     }
 
-    const mockData = getMockFitnessData();
+    const userId = req.user.userId || req.user.uid;
+    const tokens = userGoogleTokens.get(userId) || req.session?.googleFitTokens;
+
+    if (!tokens) {
+      if (process.env.ENABLE_DEMO_DATA === 'true') {
+        const mockData = getMockFitnessData();
+        return res.json(mockData[mapTypeToKey[type]]);
+      }
+      return res.status(401).json({
+        error: 'Google Fit not connected',
+        configured: true,
+        connected: false
+      });
+    }
+
     switch (type) {
       case 'heart-rate':
-        return res.json(mockData.heartRate);
+        return res.json(await googleFitService.getHeartRateData(tokens));
       case 'steps':
-        return res.json(mockData.steps);
+        return res.json(await googleFitService.getStepsData(tokens));
       case 'calories':
-        return res.json(mockData.calories);
+        return res.json(await googleFitService.getCaloriesData(tokens));
       case 'sleep':
-        return res.json(mockData.sleep);
+        return res.json(await googleFitService.getSleepData(tokens));
     }
   } catch (error) {
     console.error(`Error fetching ${req.params.type} data:`, error);

@@ -148,27 +148,27 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Existing endpoints ported to new structure
+// Body temperature endpoint - returns 501 unless demo data mode is explicitly enabled
 app.get('/api/body-temperature', (req, res) => {
-  try {
-    const baseTemp = 36.5;
-    const variation = (Math.random() - 0.5) * 0.8;
-    const temperatureCelsius = baseTemp + variation;
-    res.json({
-      temperature: parseFloat(temperatureCelsius.toFixed(2)),
+  if (process.env.ENABLE_DEMO_DATA === 'true') {
+    return res.json({
+      temperature: 36.6,
       unit: 'celsius',
       timestamp: new Date().toISOString(),
-      sensorId: 'IOT-TEMP-001',
-      status: 'active'
-    });
-  } catch (error) {
-    res.status(500).json({
-      error: 'Internal Server Error',
-      message: 'Failed to generate temperature data',
-      requestId: req.requestId
+      sensorId: 'IOT-TEMP-DEMO',
+      status: 'simulated',
+      simulated: true
     });
   }
+
+  return res.status(501).json({
+    error: 'Not Implemented',
+    message: 'Body temperature sensor hardware integration not connected. A real IoT sensor source is required.',
+    simulated: false,
+    requestId: req.requestId
+  });
 });
+
 
 app.post('/api/gemini-proxy', requireAuth, aiProxyLimiter, (req, res) => geminiProxyHandler(req, res));
 

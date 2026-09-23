@@ -24,15 +24,16 @@ function authenticateRequest(req) {
   }
 }
 
-// Generate realistic mock fitness data for demonstration when offline/unconnected
+// Generate mock fitness data for local demonstration only when ENABLE_DEMO_DATA=true
 function getMockFitnessData() {
   const now = new Date();
   const heartRate = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(now.getTime() - (6 - i) * 24 * 60 * 60 * 1000);
     return {
       timestamp: d.toISOString(),
-      bpm: Math.floor(65 + Math.random() * 20),
-      source: 'Google Fit (Simulated)'
+      bpm: 72 + ((i * 3) % 10),
+      source: 'Google Fit (Simulated)',
+      simulated: true
     };
   });
 
@@ -40,8 +41,9 @@ function getMockFitnessData() {
     const d = new Date(now.getTime() - (6 - i) * 24 * 60 * 60 * 1000);
     return {
       date: d.toISOString().split('T')[0],
-      steps: Math.floor(6000 + Math.random() * 4500),
-      source: 'Google Fit (Simulated)'
+      steps: 7500 + ((i * 450) % 2000),
+      source: 'Google Fit (Simulated)',
+      simulated: true
     };
   });
 
@@ -49,8 +51,9 @@ function getMockFitnessData() {
     const d = new Date(now.getTime() - (6 - i) * 24 * 60 * 60 * 1000);
     return {
       date: d.toISOString().split('T')[0],
-      calories: Math.floor(1800 + Math.random() * 600),
-      source: 'Google Fit (Simulated)'
+      calories: 2100 + ((i * 120) % 400),
+      source: 'Google Fit (Simulated)',
+      simulated: true
     };
   });
 
@@ -58,9 +61,10 @@ function getMockFitnessData() {
     const d = new Date(now.getTime() - (6 - i) * 24 * 60 * 60 * 1000);
     return {
       date: d.toISOString().split('T')[0],
-      durationHours: (6.5 + Math.random() * 1.8).toFixed(1),
+      durationHours: (7.0 + ((i * 0.3) % 1.5)).toFixed(1),
       sleepType: 'Deep/REM',
-      source: 'Google Fit (Simulated)'
+      source: 'Google Fit (Simulated)',
+      simulated: true
     };
   });
 
@@ -100,20 +104,46 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Invalid data type' });
     }
 
-    const mockData = getMockFitnessData();
+    const configured = Boolean(
+      process.env.GOOGLE_CLIENT_ID &&
+      process.env.GOOGLE_CLIENT_SECRET &&
+      !process.env.GOOGLE_CLIENT_ID.startsWith('your_')
+    );
 
-    switch (type) {
-      case 'heart-rate':
-        return res.status(200).json(mockData.heartRate);
-      case 'steps':
-        return res.status(200).json(mockData.steps);
-      case 'calories':
-        return res.status(200).json(mockData.calories);
-      case 'sleep':
-        return res.status(200).json(mockData.sleep);
-      default:
-        return res.status(400).json({ error: 'Invalid data type' });
+    if (!configured) {
+      if (process.env.ENABLE_DEMO_DATA === 'true') {
+        const mockData = getMockFitnessData();
+        const mapTypeToKey = {
+          'heart-rate': 'heartRate',
+          'steps': 'steps',
+          'calories': 'calories',
+          'sleep': 'sleep'
+        };
+        return res.status(200).json(mockData[mapTypeToKey[type]]);
+      }
+      return res.status(409).json({
+        error: 'Google Fit not configured',
+        configured: false,
+        connected: false
+      });
     }
+
+    if (process.env.ENABLE_DEMO_DATA === 'true') {
+      const mockData = getMockFitnessData();
+      const mapTypeToKey = {
+        'heart-rate': 'heartRate',
+        'steps': 'steps',
+        'calories': 'calories',
+        'sleep': 'sleep'
+      };
+      return res.status(200).json(mockData[mapTypeToKey[type]]);
+    }
+
+    return res.status(401).json({
+      error: 'Google Fit not connected',
+      configured: true,
+      connected: false
+    });
   } catch (error) {
     console.error(`Error fetching ${req.query.type} data:`, error);
     return res.status(500).json({
