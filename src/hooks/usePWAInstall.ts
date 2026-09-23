@@ -39,12 +39,7 @@ export function usePWAInstall(): UsePWAInstallReturn {
 
   const [isInstalled, setIsInstalled] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
-    if (isStandalone) return true;
-    try {
-      return localStorage.getItem('healthscan_pwa_installed') === 'true';
-    } catch {
-      return false;
-    }
+    return Boolean(isStandalone);
   });
 
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -52,9 +47,6 @@ export function usePWAInstall(): UsePWAInstallReturn {
   useEffect(() => {
     if (isStandalone) {
       setIsInstalled(true);
-      try {
-        localStorage.setItem('healthscan_pwa_installed', 'true');
-      } catch {}
     }
 
     // Check Chrome / Edge getInstalledRelatedApps API if available
@@ -73,20 +65,13 @@ export function usePWAInstall(): UsePWAInstallReturn {
       // Prevent browser default mini-infobar
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
-      // If browser fires beforeinstallprompt, app is definitely not installed in current browser
       if (!isStandalone) {
         setIsInstalled(false);
-        try {
-          localStorage.removeItem('healthscan_pwa_installed');
-        } catch {}
       }
     };
 
     const handleAppInstalled = () => {
       setIsInstalled(true);
-      try {
-        localStorage.setItem('healthscan_pwa_installed', 'true');
-      } catch {}
       setDeferredPrompt(null);
       setIsModalOpen(false);
     };
@@ -107,10 +92,8 @@ export function usePWAInstall(): UsePWAInstallReturn {
         const choiceResult = await deferredPrompt.userChoice;
         if (choiceResult.outcome === 'accepted') {
           setIsInstalled(true);
-          try {
-            localStorage.setItem('healthscan_pwa_installed', 'true');
-          } catch {}
           setDeferredPrompt(null);
+          setIsModalOpen(false);
           return true;
         }
       } catch (err) {

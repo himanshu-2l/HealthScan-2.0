@@ -29,6 +29,8 @@ export const PWAInstallModal: React.FC<PWAInstallModalProps> = ({
   isIOS,
   isInstalled,
 }) => {
+  const [manualGuideVisible, setManualGuideVisible] = React.useState(false);
+
   if (!isOpen) return null;
   if (typeof document === 'undefined') return null;
 
@@ -165,6 +167,40 @@ export const PWAInstallModal: React.FC<PWAInstallModalProps> = ({
                 Click below to install directly to your device without downloading from Google Play or App Store.
               </p>
             </div>
+
+            {manualGuideVisible && (
+              <div className="p-4 rounded-xl bg-teal-500/10 border border-teal-500/25 space-y-3">
+                <div className="text-xs font-bold text-teal-700 dark:text-teal-300 uppercase tracking-wider">
+                  How to install in Chrome / Android / Edge:
+                </div>
+                <div className="space-y-2.5 text-xs text-slate-700 dark:text-slate-300">
+                  <div className="flex items-start gap-2.5">
+                    <div className="w-5 h-5 rounded-full bg-teal-500/20 text-teal-700 dark:text-teal-300 font-bold flex items-center justify-center shrink-0 text-[10px]">
+                      1
+                    </div>
+                    <div className="flex-1 pt-0.5">
+                      Tap the <span className="font-semibold text-slate-900 dark:text-white">three dots menu (⋮)</span> in the top-right corner of your browser.
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <div className="w-5 h-5 rounded-full bg-teal-500/20 text-teal-700 dark:text-teal-300 font-bold flex items-center justify-center shrink-0 text-[10px]">
+                      2
+                    </div>
+                    <div className="flex-1 pt-0.5">
+                      Select <span className="font-semibold text-slate-900 dark:text-white">"Install app"</span> or <span className="font-semibold text-slate-900 dark:text-white">"Add to Home screen"</span>.
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <div className="w-5 h-5 rounded-full bg-teal-500/20 text-teal-700 dark:text-teal-300 font-bold flex items-center justify-center shrink-0 text-[10px]">
+                      3
+                    </div>
+                    <div className="flex-1 pt-0.5">
+                      Tap <span className="font-semibold text-slate-900 dark:text-white">"Install"</span> to confirm!
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -173,12 +209,17 @@ export const PWAInstallModal: React.FC<PWAInstallModalProps> = ({
           {!isInstalled && !isIOS && (
             <button
               onClick={async () => {
-                await onInstall();
+                const res = await onInstall();
+                if (res) {
+                  onClose();
+                } else {
+                  setManualGuideVisible(true);
+                }
               }}
               className="w-full py-3.5 px-5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-semibold text-sm tracking-wide shadow-sm hover:shadow transition-all active:scale-[0.98] flex items-center justify-center gap-2"
             >
               <Download className="w-4 h-4" />
-              <span>Download & Install App</span>
+              <span>{manualGuideVisible ? "Try Instant Install Again" : "Download & Install App"}</span>
             </button>
           )}
 

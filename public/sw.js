@@ -1,11 +1,13 @@
 // HealthScan Clinical PWA Service Worker
-const CACHE_NAME = 'healthscan-v3';
+const CACHE_NAME = 'healthscan-v4';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
   '/pwa-icon.svg',
   '/favicon.svg',
+  '/icon-192.png',
+  '/icon-512.png',
   '/models/hand_landmarker.task',
   '/models/mediapipe/wasm/vision_wasm_internal.js',
   '/models/mediapipe/wasm/vision_wasm_internal.wasm',
