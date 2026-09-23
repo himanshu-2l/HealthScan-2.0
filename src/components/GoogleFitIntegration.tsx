@@ -20,7 +20,9 @@ import {
   Dumbbell,
   Scale,
   ExternalLink,
+  Sparkles,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { getAuthHeaders } from '@/utils/authUtils';
 
 // Using relative URLs - Vite proxy handles routing to backend
@@ -46,7 +48,9 @@ interface GoogleFitIntegrationProps {
 }
 
 export const GoogleFitIntegration: React.FC<GoogleFitIntegrationProps> = ({ onViewAllWearables }) => {
+  const navigate = useNavigate();
   const [connected, setConnected] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fitnessData, setFitnessData] = useState<FitnessData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -54,14 +58,66 @@ export const GoogleFitIntegration: React.FC<GoogleFitIntegrationProps> = ({ onVi
   const [heartRateData, setHeartRateData] = useState<Array<{ timestamp: Date; bpm: number; source: string }> | null>(null);
   const [latestHeartRate, setLatestHeartRate] = useState<number | null>(null);
 
+  const syncToConnectedWearables = (isConnected: boolean) => {
+    const STORAGE_KEY = 'healthscan_connected_wearables';
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      let list: Array<{ deviceId: string; connectedAt: string; lastSync: string }> = stored ? JSON.parse(stored) : [];
+      if (isConnected) {
+        const now = new Date().toISOString();
+        const existingIdx = list.findIndex(w => w.deviceId === 'google-fit');
+        if (existingIdx >= 0) {
+          list[existingIdx].lastSync = now;
+        } else {
+          list.push({ deviceId: 'google-fit', connectedAt: now, lastSync: now });
+        }
+      } else {
+        list = list.filter(w => w.deviceId !== 'google-fit');
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+      window.dispatchEvent(new CustomEvent('wearable-status-change'));
+    } catch (err) {
+      console.error('Failed to sync wearable status to storage:', err);
+    }
+  };
+
+  const generateRealisticFitnessData = (baseBpm = 74): FitnessData => {
+    const now = Date.now();
+    const heartRate = Array.from({ length: 15 }, (_, i) => ({
+      timestamp: new Date(now - i * 4 * 60000),
+      bpm: Math.round(baseBpm + Math.sin(i * 0.7) * 5 + (Math.random() * 4 - 2)),
+      source: 'raw:com.google.heart_rate.bpm:WearOS'
+    }));
+
+    return {
+      heartRate,
+      steps: [
+        { date: new Date(), steps: 8432, source: 'WearOS Sensor' }
+      ],
+      calories: [
+        { date: new Date(), calories: 542, source: 'WearOS Sensor' }
+      ],
+      sleep: [
+        { date: new Date(), durationHours: '7.5', sleepType: 'Deep/REM Restorative', source: 'WearOS Sleep Algorithm' }
+      ],
+      summary: {
+        avgHeartRate: baseBpm,
+        totalSteps: 8432,
+        avgSteps: 8432,
+        totalCalories: 542,
+        avgCalories: 542,
+        avgSleepHours: '7.5',
+        period: '24 hours'
+      }
+    };
+  };
+
   useEffect(() => {
     // Check for Google Fit connection success from redirect
     const urlParams = new URLSearchParams(window.location.search);
 
     if (urlParams.get('google_fit') === 'connected') {
-      // Clear the query parameter without exposing tokens in URL history
       window.history.replaceState({}, '', window.location.pathname);
-      // Refresh connection status and fetch data
       setTimeout(() => {
         checkConnectionStatus();
       }, 500);
@@ -70,7 +126,43 @@ export const GoogleFitIntegration: React.FC<GoogleFitIntegrationProps> = ({ onVi
     }
   }, []);
 
+  // Live heart rate micro-fluctuations in demo mode for realistic continuous telemetry
+  useEffect(() => {
+    if (!connected || !isDemoMode) return;
+    const interval = setInterval(() => {
+      setLatestHeartRate(prev => {
+        const base = 74;
+        const delta = Math.round((Math.random() * 6 - 3));
+        const newBpm = Math.min(92, Math.max(65, (prev || base) + delta));
+        setHeartRateData(prevData => {
+          if (!prevData) return prevData;
+          const newEntry = {
+            timestamp: new Date(),
+            bpm: newBpm,
+            source: 'raw:com.google.heart_rate.bpm:WearOS'
+          };
+          return [newEntry, ...prevData.slice(0, 14)];
+        });
+        return newBpm;
+      });
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [connected, isDemoMode]);
+
   const checkConnectionStatus = async () => {
+    // Check if demo/simulated mode was previously connected
+    const isDemo = localStorage.getItem('healthscan_google_fit_demo') === 'true';
+    if (isDemo) {
+      setIsDemoMode(true);
+      setConnected(true);
+      const mock = generateRealisticFitnessData();
+      setFitnessData(mock);
+      setHeartRateData(mock.heartRate);
+      setLatestHeartRate(mock.heartRate[0].bpm);
+      syncToConnectedWearables(true);
+      return;
+    }
+
     try {
       const headers = await getAuthHeaders();
       const response = await fetch('/api/google-fit/status', {
@@ -79,20 +171,16 @@ export const GoogleFitIntegration: React.FC<GoogleFitIntegrationProps> = ({ onVi
         credentials: 'include',
       });
 
-      // Handle non-OK responses gracefully
       if (!response.ok) {
-        console.warn('Google Fit status check failed with status:', response.status);
         setConnected(false);
         return;
       }
 
-      // Try to parse JSON, handle empty or invalid responses
       let data;
       try {
         const text = await response.text();
         data = text ? JSON.parse(text) : { connected: false };
       } catch (parseError) {
-        console.warn('Failed to parse Google Fit status response:', parseError);
         setError('Could not read Google Fit connection status. Please try reconnecting.');
         setConnected(false);
         return;
@@ -102,6 +190,7 @@ export const GoogleFitIntegration: React.FC<GoogleFitIntegrationProps> = ({ onVi
       setConnected(isConnected);
 
       if (isConnected) {
+        syncToConnectedWearables(true);
         fetchFitnessData();
         fetchHeartRateData();
       }
@@ -109,6 +198,24 @@ export const GoogleFitIntegration: React.FC<GoogleFitIntegrationProps> = ({ onVi
       console.warn('Google Fit status check unavailable:', err);
       setConnected(false);
     }
+  };
+
+  const handleConnectSimulated = () => {
+    setLoading(true);
+    setError(null);
+    setNotConfigured(false);
+    setTimeout(() => {
+      const mock = generateRealisticFitnessData(74);
+      setFitnessData(mock);
+      setHeartRateData(mock.heartRate);
+      setLatestHeartRate(mock.heartRate[0].bpm);
+      setConnected(true);
+      setIsDemoMode(true);
+      localStorage.setItem('healthscan_google_fit_demo', 'true');
+      localStorage.setItem('healthscan_google_fit_connected', 'true');
+      syncToConnectedWearables(true);
+      setLoading(false);
+    }, 400);
   };
 
   const handleConnect = async () => {
@@ -122,15 +229,13 @@ export const GoogleFitIntegration: React.FC<GoogleFitIntegrationProps> = ({ onVi
         credentials: 'include',
       });
 
-      // Handle non-OK responses gracefully
       if (!response.ok) {
         console.warn('Google Fit auth failed with status:', response.status);
         setNotConfigured(true);
-        setError('Google Fit is not available. Please try again later.');
+        setError('Google Cloud OAuth credentials are not set on server. You can use Instant Smartwatch Sync below to test full telemetry without GCP keys.');
         return;
       }
 
-      // Try to parse JSON, handle empty or invalid responses
       let data;
       try {
         const text = await response.text();
@@ -138,26 +243,26 @@ export const GoogleFitIntegration: React.FC<GoogleFitIntegrationProps> = ({ onVi
       } catch (parseError) {
         console.warn('Failed to parse Google Fit auth response:', parseError);
         setNotConfigured(true);
-        setError('Google Fit is not available. Please try again later.');
+        setError('Google Cloud OAuth credentials are not set on server. You can use Instant Smartwatch Sync below to test full telemetry without GCP keys.');
         return;
       }
 
-      // Check if server indicates not configured
       if (data.configured === false || data.error) {
         setNotConfigured(true);
-        setError(data.message || 'Google Fit is not configured on this server.');
+        setError(data.message || 'Google OAuth credentials not configured. Use Instant Smartwatch Sync to test.');
         return;
       }
 
       if (data.authUrl) {
         window.location.href = data.authUrl;
       } else {
-        setError('Failed to get authentication URL');
+        setNotConfigured(true);
+        setError('Failed to obtain Google OAuth URL. You can use Instant Smartwatch Sync below.');
       }
     } catch (err) {
       console.warn('Google Fit connection unavailable:', err);
       setNotConfigured(true);
-      setError('Google Fit is not available. Please try again later.');
+      setError('Google Cloud OAuth API endpoint is unavailable. You can use Instant Smartwatch Sync below to preview live telemetry.');
     } finally {
       setLoading(false);
     }
@@ -168,7 +273,6 @@ export const GoogleFitIntegration: React.FC<GoogleFitIntegrationProps> = ({ onVi
       setLoading(true);
       const headers = await getAuthHeaders();
 
-      // Try to call disconnect endpoint, but don't fail if it errors
       try {
         await fetch('/api/google-fit/disconnect', {
           method: 'POST',
@@ -179,8 +283,12 @@ export const GoogleFitIntegration: React.FC<GoogleFitIntegrationProps> = ({ onVi
         console.warn('Disconnect API call failed, continuing with local cleanup:', fetchErr);
       }
 
-      // Clean up local state
+      localStorage.removeItem('healthscan_google_fit_demo');
+      localStorage.removeItem('healthscan_google_fit_connected');
+      syncToConnectedWearables(false);
+
       setConnected(false);
+      setIsDemoMode(false);
       setFitnessData(null);
       setHeartRateData(null);
       setLatestHeartRate(null);
@@ -189,6 +297,7 @@ export const GoogleFitIntegration: React.FC<GoogleFitIntegrationProps> = ({ onVi
     } catch (err) {
       console.warn('Failed to disconnect Google Fit:', err);
       setConnected(false);
+      setIsDemoMode(false);
       setFitnessData(null);
       setHeartRateData(null);
       setLatestHeartRate(null);
@@ -292,12 +401,18 @@ export const GoogleFitIntegration: React.FC<GoogleFitIntegrationProps> = ({ onVi
           </div>
           <Badge
             variant={connected ? 'default' : 'secondary'}
-            className={connected ? 'bg-green-600 text-white border-0' : 'bg-secondary text-secondary-foreground'}
+            className={
+              connected
+                ? isDemoMode
+                  ? 'bg-teal-600 text-white border-0'
+                  : 'bg-green-600 text-white border-0'
+                : 'bg-secondary text-secondary-foreground'
+            }
           >
             {connected ? (
               <>
                 <CheckCircle className="mr-1 h-3 w-3" />
-                Connected
+                {isDemoMode ? 'Simulated Sync Active' : 'Connected to Google Fit'}
               </>
             ) : (
               <>
@@ -314,12 +429,12 @@ export const GoogleFitIntegration: React.FC<GoogleFitIntegrationProps> = ({ onVi
         <div className="flex items-center justify-center gap-3 text-sm py-3 flex-wrap">
           <div className="flex items-center gap-2">
             <Watch className="h-5 w-5 text-blue-500" />
-            <span className="text-foreground font-medium">Noise Watch</span>
+            <span className="text-foreground font-medium">Noise / Wear OS</span>
           </div>
           <span className="text-muted-foreground font-bold text-lg">→</span>
           <div className="flex items-center gap-2">
             <Activity className="h-5 w-5 text-green-500" />
-            <span className="text-foreground font-medium">NoiseFit</span>
+            <span className="text-foreground font-medium">Companion App</span>
           </div>
           <span className="text-muted-foreground font-bold text-lg">→</span>
           <div className="flex items-center gap-2">
@@ -334,35 +449,55 @@ export const GoogleFitIntegration: React.FC<GoogleFitIntegrationProps> = ({ onVi
         </div>
 
         <p className="text-sm text-center text-muted-foreground font-medium">
-          Your fitness data will be synced automatically
+          {connected
+            ? 'Continuous biometric stream is actively synchronizing with HealthScan.'
+            : 'Connect your wearable via Google Fit or launch Instant Smartwatch Simulation'}
         </p>
 
-        {/* Connection Button */}
-        <div className="flex justify-center">
+        {/* Connection Controls */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           {!connected ? (
-            <Button
-              onClick={handleConnect}
-              disabled={loading}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-8 border-0 shadow-lg shadow-blue-900/20"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Connecting...
-                </>
-              ) : (
-                <>
-                  <Activity className="mr-2 h-4 w-4" />
-                  Connect Google Fit
-                </>
-              )}
-            </Button>
+            <>
+              <Button
+                onClick={handleConnect}
+                disabled={loading}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 border-0 shadow-lg shadow-blue-900/20 w-full sm:w-auto"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Connecting...
+                  </>
+                ) : (
+                  <>
+                    <Activity className="mr-2 h-4 w-4" />
+                    Connect Google Fit (OAuth)
+                  </>
+                )}
+              </Button>
+              <Button
+                onClick={handleConnectSimulated}
+                disabled={loading}
+                variant="outline"
+                className="border-teal-500/40 text-teal-600 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/40 w-full sm:w-auto"
+              >
+                <Sparkles className="mr-2 h-4 w-4 text-teal-500" />
+                Instant Demo / Smartwatch Sync
+              </Button>
+            </>
           ) : (
-            <div className="flex gap-3">
+            <div className="flex flex-wrap items-center justify-center gap-3">
               <Button
                 onClick={() => {
-                  fetchFitnessData();
-                  fetchHeartRateData();
+                  if (isDemoMode) {
+                    const mock = generateRealisticFitnessData();
+                    setFitnessData(mock);
+                    setHeartRateData(mock.heartRate);
+                    setLatestHeartRate(mock.heartRate[0].bpm);
+                  } else {
+                    fetchFitnessData();
+                    fetchHeartRateData();
+                  }
                 }}
                 disabled={loading}
                 variant="outline"
@@ -373,7 +508,7 @@ export const GoogleFitIntegration: React.FC<GoogleFitIntegrationProps> = ({ onVi
                 ) : (
                   <RefreshCw className="mr-2 h-4 w-4" />
                 )}
-                Refresh Data
+                Refresh Telemetry
               </Button>
               <Button
                 onClick={handleDisconnect}
@@ -387,19 +522,25 @@ export const GoogleFitIntegration: React.FC<GoogleFitIntegrationProps> = ({ onVi
           )}
         </div>
 
-        {/* Error Message */}
+        {/* Error / Fallback Notice */}
         {error && (
-          <Alert variant={notConfigured ? 'default' : 'destructive'} className={notConfigured ? 'bg-yellow-900/20 border-yellow-900/50 text-yellow-200' : 'bg-red-900/20 border-red-900/50 text-red-200'}>
-            <XCircle className="h-4 w-4" />
-            <AlertDescription>
-              {notConfigured ? (
-                <>
-                  <strong>Google Fit Integration Not Available</strong>
-                  <br />
-                  {error}
-                </>
-              ) : (
-                error
+          <Alert variant={notConfigured ? 'default' : 'destructive'} className={notConfigured ? 'bg-amber-950/30 border-amber-500/30 text-amber-200' : 'bg-red-900/20 border-red-900/50 text-red-200'}>
+            <XCircle className="h-4 w-4 text-amber-400" />
+            <AlertDescription className="space-y-2 text-sm">
+              <div>
+                <strong className="text-amber-300 font-semibold">Integration Notice:</strong> {error}
+              </div>
+              {notConfigured && !connected && (
+                <div className="pt-2">
+                  <Button
+                    size="sm"
+                    onClick={handleConnectSimulated}
+                    className="bg-teal-600 hover:bg-teal-700 text-white text-xs border-0 font-medium"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                    Activate Instant Simulated Smartwatch Sync
+                  </Button>
+                </div>
               )}
             </AlertDescription>
           </Alert>
@@ -597,7 +738,7 @@ export const GoogleFitIntegration: React.FC<GoogleFitIntegrationProps> = ({ onVi
                 if (onViewAllWearables) {
                   onViewAllWearables();
                 } else {
-                  console.log('Navigate to Smartwatch Support page');
+                  navigate('/smartwatch');
                 }
               }}
               variant="outline"

@@ -17,7 +17,17 @@ import {
   RefreshCw,
   Zap,
   Smartphone,
+  Settings,
 } from 'lucide-react';
+import { useSettings } from '@/contexts/SettingsContext';
+import { GoogleFitIntegration } from './GoogleFitIntegration';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 
 interface DeviceInfo {
   id: string;
@@ -74,8 +84,8 @@ const SUPPORTED_DEVICES: DeviceInfo[] = [
     setupSteps: [
       'Install Google Fit on your phone and watch',
       'Sign in with your Google account',
-      'Go to HealthScan Settings > Connect Google Fit',
-      'Authorize data access when prompted',
+      'Go to HealthScan Settings > Wearables tab, or click Connect Google Fit below',
+      'Authorize data access when prompted (or use Instant Smartwatch Sync for demo)',
     ],
   },
   {
@@ -105,7 +115,7 @@ const SUPPORTED_DEVICES: DeviceInfo[] = [
       'Open Samsung Health on your phone',
       'Go to Settings > Connected Services',
       'Enable Google Fit sync',
-      'Connect HealthScan via Google Fit',
+      'Connect HealthScan via Google Fit direct or in Settings > Wearables',
     ],
   },
   {
@@ -126,14 +136,15 @@ const SUPPORTED_DEVICES: DeviceInfo[] = [
 ];
 
 export const SmartwatchSupport: React.FC = () => {
+  const { openSettings } = useSettings();
   const [devices, setDevices] = useState<DeviceInfo[]>(SUPPORTED_DEVICES);
   const [expandedDevice, setExpandedDevice] = useState<string | null>(null);
   const [connectedWearables, setConnectedWearables] = useState<ConnectedWearable[]>([]);
   const [syncProgress, setSyncProgress] = useState(0);
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
+  const [isGoogleFitModalOpen, setIsGoogleFitModalOpen] = useState(false);
 
-  useEffect(() => {
-    // Load connected wearables from localStorage
+  const refreshWearables = () => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       try {
@@ -161,10 +172,34 @@ export const SmartwatchSupport: React.FC = () => {
       } catch (e) {
         console.error('Failed to parse connected wearables:', e);
       }
+    } else {
+      setConnectedWearables([]);
+      setDevices(prev => prev.map(device => ({
+        ...device,
+        connected: false,
+        lastSync: undefined,
+      })));
+      setSyncProgress(0);
     }
+  };
+
+  useEffect(() => {
+    refreshWearables();
+    window.addEventListener('wearable-status-change', refreshWearables);
+    window.addEventListener('storage', refreshWearables);
+
+    return () => {
+      window.removeEventListener('wearable-status-change', refreshWearables);
+      window.removeEventListener('storage', refreshWearables);
+    };
   }, []);
 
   const handleConnect = (deviceId: string) => {
+    if (deviceId === 'google-fit') {
+      setIsGoogleFitModalOpen(true);
+      return;
+    }
+
     const now = new Date().toISOString();
     const newWearable: ConnectedWearable = {
       deviceId,
@@ -172,7 +207,7 @@ export const SmartwatchSupport: React.FC = () => {
       lastSync: now,
     };
 
-    const updated = [...connectedWearables, newWearable];
+    const updated = [...connectedWearables.filter(w => w.deviceId !== deviceId), newWearable];
     setConnectedWearables(updated);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
 
@@ -184,9 +219,15 @@ export const SmartwatchSupport: React.FC = () => {
 
     setSyncProgress(Math.min((updated.length / SUPPORTED_DEVICES.length) * 100, 100));
     setLastSyncTime(now);
+    window.dispatchEvent(new CustomEvent('wearable-status-change'));
   };
 
   const handleDisconnect = (deviceId: string) => {
+    if (deviceId === 'google-fit') {
+      localStorage.removeItem('healthscan_google_fit_demo');
+      localStorage.removeItem('healthscan_google_fit_connected');
+    }
+
     const updated = connectedWearables.filter(w => w.deviceId !== deviceId);
     setConnectedWearables(updated);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
@@ -198,6 +239,7 @@ export const SmartwatchSupport: React.FC = () => {
     ));
 
     setSyncProgress(Math.min((updated.length / SUPPORTED_DEVICES.length) * 100, 100));
+    window.dispatchEvent(new CustomEvent('wearable-status-change'));
   };
 
   const connectedCount = devices.filter(d => d.connected).length;
@@ -310,19 +352,30 @@ export const SmartwatchSupport: React.FC = () => {
                   </div>
                 </div>
                 {device.connected ? (
-                  <button
-                    onClick={() => handleDisconnect(device.id)}
-                    className="px-3.5 py-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 rounded-full text-xs sm:text-sm font-medium border border-emerald-200 dark:border-emerald-800/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors flex items-center gap-1.5 shadow-xs"
-                  >
-                    <CheckCircle className="w-4 h-4" />
-                    Connected
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {device.id === 'google-fit' && (
+                      <button
+                        onClick={() => setIsGoogleFitModalOpen(true)}
+                        className="px-3 py-1.5 bg-slate-100 dark:bg-white/[0.08] hover:bg-slate-200 dark:hover:bg-white/[0.14] text-slate-700 dark:text-slate-300 rounded-full text-xs font-semibold border border-slate-200/80 dark:border-white/10 transition-colors"
+                      >
+                        Manage / Sync
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleDisconnect(device.id)}
+                      className="px-3.5 py-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 rounded-full text-xs sm:text-sm font-medium border border-emerald-200 dark:border-emerald-800/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors flex items-center gap-1.5 shadow-xs"
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                      Connected
+                    </button>
+                  </div>
                 ) : (
                   <button
                     onClick={() => handleConnect(device.id)}
-                    className="px-4 py-1.5 bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 rounded-full text-xs sm:text-sm font-medium border border-slate-200/80 dark:border-white/10 hover:bg-teal-50 dark:hover:bg-teal-950/40 hover:text-teal-700 dark:hover:text-teal-300 hover:border-teal-200 dark:hover:border-teal-800/50 transition-colors shadow-xs"
+                    className="px-4 py-1.5 bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 rounded-full text-xs sm:text-sm font-medium border border-slate-200/80 dark:border-white/10 hover:bg-teal-50 dark:hover:bg-teal-950/40 hover:text-teal-700 dark:hover:text-teal-300 hover:border-teal-200 dark:hover:border-teal-800/50 transition-colors shadow-xs flex items-center gap-1.5"
                   >
-                    Connect
+                    {device.id === 'google-fit' && <Activity className="w-3.5 h-3.5 text-teal-500" />}
+                    {device.id === 'google-fit' ? 'Connect Google Fit' : 'Connect'}
                   </button>
                 )}
               </div>
@@ -360,7 +413,7 @@ export const SmartwatchSupport: React.FC = () => {
               </button>
 
               {expandedDevice === device.id && (
-                <div className="mt-4 pt-4 border-t border-slate-200/80 dark:border-white/10">
+                <div className="mt-4 pt-4 border-t border-slate-200/80 dark:border-white/10 space-y-3">
                   <ol className="space-y-2">
                     {device.setupSteps.map((step, index) => (
                       <li key={index} className="flex items-start gap-2.5 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
@@ -371,6 +424,30 @@ export const SmartwatchSupport: React.FC = () => {
                       </li>
                     ))}
                   </ol>
+
+                  {(device.id === 'google-fit' || device.id === 'samsung') && (
+                    <div className="mt-3 p-3 bg-teal-50/80 dark:bg-teal-950/30 rounded-xl border border-teal-200/70 dark:border-teal-800/40 flex flex-wrap items-center justify-between gap-2.5">
+                      <div className="text-xs text-teal-800 dark:text-teal-200 font-medium">
+                        Instant Setup: Connect Google Fit or open Settings:
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setIsGoogleFitModalOpen(true)}
+                          className="px-3 py-1 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1 shadow-xs transition-colors"
+                        >
+                          <Activity className="w-3.5 h-3.5" />
+                          Connect Google Fit Direct
+                        </button>
+                        <button
+                          onClick={() => openSettings('wearables')}
+                          className="px-3 py-1 bg-white dark:bg-slate-800 border border-teal-300 dark:border-teal-700/60 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 rounded-lg text-xs font-semibold flex items-center gap-1 shadow-xs transition-colors"
+                        >
+                          <Settings className="w-3.5 h-3.5 text-teal-500" />
+                          Open Settings &gt; Wearables
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -431,6 +508,24 @@ export const SmartwatchSupport: React.FC = () => {
           </span>
         </div>
       </div>
+
+      {/* Google Fit Integration Dialog Modal */}
+      <Dialog open={isGoogleFitModalOpen} onOpenChange={setIsGoogleFitModalOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-slate-900 border-white/10 text-white p-6">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl font-bold text-white">
+              <Watch className="w-5 h-5 text-teal-400" />
+              Google Fit & Smartwatch Telemetry
+            </DialogTitle>
+            <DialogDescription className="text-slate-400 text-sm">
+              Link your Google Fit account or launch the Instant Smartwatch Telemetry Simulator to stream real-time heart rate, steps, and sleep stages.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4">
+            <GoogleFitIntegration onViewAllWearables={() => setIsGoogleFitModalOpen(false)} />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -7,38 +7,57 @@ import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { X, Settings, Volume2, Camera, Brain, Download, Trash2, RotateCcw, Shield } from 'lucide-react';
+import { X, Settings, Volume2, Camera, Brain, Download, Trash2, RotateCcw, Shield, Watch, Activity } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useEHR } from '@/contexts/EHRContext';
+import { GoogleFitIntegration } from './GoogleFitIntegration';
 
 interface SettingsModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+  isOpen?: boolean;
+  onClose?: () => void;
+  defaultTab?: string;
 }
 
-export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
-  const { settings, updateSetting, resetSettings, exportSettings } = useSettings();
+export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, defaultTab }) => {
+  const { 
+    settings, 
+    updateSetting, 
+    resetSettings, 
+    exportSettings,
+    isSettingsOpen,
+    activeTab,
+    closeSettings,
+    setActiveTab
+  } = useSettings();
   const { ehrSettings, updateEHRSettings } = useEHR();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  const effectiveIsOpen = isOpen !== undefined ? isOpen : isSettingsOpen;
+  const currentTab = defaultTab || activeTab || 'audio';
+
+  const handleClose = () => {
+    if (onClose) onClose();
+    closeSettings();
+  };
 
   // Handle Escape key to close modal
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && isOpen) {
-        onClose();
+      if (event.key === 'Escape' && effectiveIsOpen) {
+        handleClose();
       }
     };
     
-    if (isOpen) {
+    if (effectiveIsOpen) {
       document.addEventListener('keydown', handleEscape);
       // Auto-focus close button when modal opens
       closeButtonRef.current?.focus();
     }
     
     return () => document.removeEventListener('keydown', handleEscape);
-  }, [isOpen, onClose]);
+  }, [effectiveIsOpen]);
 
-  if (!isOpen) return null;
+  if (!effectiveIsOpen) return null;
 
   return (
     <div 
@@ -47,7 +66,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
       aria-modal="true"
       aria-labelledby="settings-modal-title"
     >
-      <Card className="glass-panel w-full max-w-4xl max-h-[80vh] overflow-hidden border-0">
+      <Card className="glass-panel w-full max-w-4xl max-h-[85vh] overflow-hidden border-0">
         <CardHeader className="flex flex-row items-center justify-between pb-4">
           <CardTitle id="settings-modal-title" className="flex items-center gap-2 text-white">
             <Settings className="w-6 h-6 text-purple-400" aria-hidden="true" />
@@ -57,7 +76,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
             ref={closeButtonRef}
             variant="ghost"
             size="icon"
-            onClick={onClose}
+            onClick={handleClose}
             className="text-gray-400 hover:text-white min-h-[44px] min-w-[44px]"
             aria-label="Close settings"
           >
@@ -65,12 +84,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
           </Button>
         </CardHeader>
 
-        <CardContent className="overflow-y-auto">
-          <Tabs defaultValue="audio" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6 mb-6">
+        <CardContent className="overflow-y-auto max-h-[calc(85vh-90px)]">
+          <Tabs value={currentTab} onValueChange={(val) => setActiveTab(val)} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 mb-6 gap-1">
               <TabsTrigger value="audio">Audio</TabsTrigger>
               <TabsTrigger value="video">Video</TabsTrigger>
               <TabsTrigger value="analysis">Analysis</TabsTrigger>
+              <TabsTrigger value="wearables" className="flex items-center gap-1.5 data-[state=active]:text-teal-400">
+                <Watch className="w-3.5 h-3.5" />
+                Wearables
+              </TabsTrigger>
               <TabsTrigger value="privacy">Privacy</TabsTrigger>
               <TabsTrigger value="accessibility">Access</TabsTrigger>
               <TabsTrigger value="ehr">EHR</TabsTrigger>
@@ -206,6 +229,111 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                         <SelectItem value="advanced">Advanced</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="wearables" className="space-y-6">
+              {/* Google Fit Direct Component */}
+              <GoogleFitIntegration onViewAllWearables={() => {
+                handleClose();
+                window.location.href = '/smartwatch';
+              }} />
+
+              {/* Wearable Sensor Telemetry Configuration */}
+              <div className="glass-panel p-4 space-y-4">
+                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-teal-400" />
+                  Sensor Telemetry Preferences
+                </h3>
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-gray-300">Continuous Sync Frequency</Label>
+                    <Select
+                      value={settings.syncFrequency || '5min'}
+                      onValueChange={(value) => updateSetting('syncFrequency', value)}
+                    >
+                      <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="realtime">Continuous Real-Time (every 5s)</SelectItem>
+                        <SelectItem value="1min">High Frequency (every 1 min)</SelectItem>
+                        <SelectItem value="5min">Balanced (every 5 min - Recommended)</SelectItem>
+                        <SelectItem value="15min">Battery Saver (every 15 min)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-gray-300">Continuous Heart Rate (PPG)</Label>
+                      <p className="text-xs text-gray-400">Stream beats per minute and HRV fluctuations</p>
+                    </div>
+                    <Switch
+                      checked={settings.syncHeartRate}
+                      onCheckedChange={(checked) => updateSetting('syncHeartRate', checked)}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-gray-300">Step Counter & Movement</Label>
+                      <p className="text-xs text-gray-400">Pedometer telemetry and active cadence</p>
+                    </div>
+                    <Switch
+                      checked={settings.syncSteps}
+                      onCheckedChange={(checked) => updateSetting('syncSteps', checked)}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-gray-300">Sleep Architecture</Label>
+                      <p className="text-xs text-gray-400">Deep, Light, and REM stage duration</p>
+                    </div>
+                    <Switch
+                      checked={settings.syncSleep}
+                      onCheckedChange={(checked) => updateSetting('syncSleep', checked)}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-gray-300">Blood Oxygen (SpO2)</Label>
+                      <p className="text-xs text-gray-400">Periodic arterial oxygen saturation</p>
+                    </div>
+                    <Switch
+                      checked={settings.syncSpO2}
+                      onCheckedChange={(checked) => updateSetting('syncSpO2', checked)}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-gray-300">Active Energy / Calories</Label>
+                      <p className="text-xs text-gray-400">Metabolic burn rate and expenditure</p>
+                    </div>
+                    <Switch
+                      checked={settings.syncCalories}
+                      onCheckedChange={(checked) => updateSetting('syncCalories', checked)}
+                    />
+                  </div>
+
+                  <div className="pt-3 border-t border-gray-700">
+                    <Button
+                      variant="outline"
+                      className="w-full border-teal-500/40 text-teal-300 hover:bg-teal-500/10"
+                      onClick={() => {
+                        handleClose();
+                        window.location.href = '/smartwatch';
+                      }}
+                    >
+                      <Watch className="w-4 h-4 mr-2 text-teal-400" />
+                      Manage All Devices in Smartwatch Hub
+                    </Button>
                   </div>
                 </div>
               </div>

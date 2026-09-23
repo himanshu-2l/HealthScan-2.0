@@ -25,6 +25,16 @@ export interface AppSettings {
   highContrast: boolean;
   largeText: boolean;
   reducedMotion: boolean;
+
+  // Wearables & Smartwatch Settings
+  smartwatchSyncEnabled: boolean;
+  googleFitSyncEnabled: boolean;
+  syncFrequency: string;
+  syncHeartRate: boolean;
+  syncSteps: boolean;
+  syncSleep: boolean;
+  syncSpO2: boolean;
+  syncCalories: boolean;
 }
 
 const defaultSettings: AppSettings = {
@@ -51,7 +61,17 @@ const defaultSettings: AppSettings = {
   // Accessibility
   highContrast: false,
   largeText: false,
-  reducedMotion: false
+  reducedMotion: false,
+
+  // Wearables & Smartwatch Settings
+  smartwatchSyncEnabled: true,
+  googleFitSyncEnabled: false,
+  syncFrequency: '5min',
+  syncHeartRate: true,
+  syncSteps: true,
+  syncSleep: true,
+  syncSpO2: true,
+  syncCalories: true
 };
 
 interface SettingsContextType {
@@ -60,6 +80,11 @@ interface SettingsContextType {
   resetSettings: () => void;
   exportSettings: () => void;
   importSettings: (settingsData: Partial<AppSettings>) => void;
+  isSettingsOpen: boolean;
+  activeTab: string;
+  openSettings: (tab?: string) => void;
+  closeSettings: () => void;
+  setActiveTab: (tab: string) => void;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -78,6 +103,19 @@ interface SettingsProviderProps {
 
 export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) => {
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
+  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<string>('audio');
+
+  const openSettings = (tab?: string) => {
+    if (tab) {
+      setActiveTab(tab);
+    }
+    setIsSettingsOpen(true);
+  };
+
+  const closeSettings = () => {
+    setIsSettingsOpen(false);
+  };
 
   // Load settings from localStorage on mount
   useEffect(() => {
@@ -149,7 +187,12 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
       updateSetting,
       resetSettings,
       exportSettings,
-      importSettings
+      importSettings,
+      isSettingsOpen,
+      activeTab,
+      openSettings,
+      closeSettings,
+      setActiveTab
     }}>
       {children}
     </SettingsContext.Provider>
