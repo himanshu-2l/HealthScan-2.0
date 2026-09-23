@@ -1,7 +1,8 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import { getJwtSecret } from '../backend/src/config/jwt.js';
+import { verifyToken } from '../backend/src/utils/tokenVerifier.js';
+import { enforceRateLimit } from '../backend/src/utils/userRateLimiter.js';
 
 /**
  * Gemini AI Proxy — Server-side only.
@@ -153,9 +154,9 @@ Never provide definitive medical diagnoses or prescribe medications. Always advi
 /**
  * Verify request authentication
  * Accepts either pre-authenticated req.user (from Express requireAuth)
- * or validates the Authorization Bearer JWT directly.
+ * or validates the Authorization Bearer token (Firebase ID token or HealthScan JWT) directly.
  */
-function authenticateRequest(req) {
+async function authenticateRequest(req) {
   if (req.user) {
     return req.user;
   }
@@ -166,14 +167,7 @@ function authenticateRequest(req) {
   }
 
   const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : authHeader;
-  const jwtSecret = getJwtSecret();
-
-  try {
-    const decoded = jwt.verify(token, jwtSecret);
-    return decoded;
-  } catch {
-    return null;
-  }
+  return await verifyToken(token);
 }
 
 export default async function handler(req, res) {
@@ -184,13 +178,19 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Enforce authentication
-  const user = authenticateRequest(req);
+  // Enforce authentication across runtimes
+  const user = await authenticateRequest(req);
   if (!user) {
     return res.status(401).json({
       error: 'Unauthorized',
       message: 'Valid authentication token required to access AI services'
     });
+  }
+
+  // Enforce rate limiting across Vercel and Express
+  const isAllowed = await enforceRateLimit(req, res, user);
+  if (!isAllowed) {
+    return;
   }
 
   // Validate request body

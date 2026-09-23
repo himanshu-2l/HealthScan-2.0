@@ -18,65 +18,9 @@ const extractToken = (req) => {
   return authHeader;
 };
 
-/**
- * Verify Firebase ID token
- * Falls back to JWT verification if firebase-admin is not available
- * @param {string} token 
- * @returns {Promise<object|null>}
- */
-const verifyToken = async (token) => {
-  try {
-    // Try to dynamically import firebase-admin if available
-    let firebaseAdmin;
-    try {
-      firebaseAdmin = await import('firebase-admin');
-      
-      // Initialize Firebase Admin if not already initialized
-      if (!firebaseAdmin.apps?.length) {
-        // Check for service account credentials
-        if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-          const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-          firebaseAdmin.initializeApp({
-            credential: firebaseAdmin.credential.cert(serviceAccount)
-          });
-        } else if (process.env.FIREBASE_PROJECT_ID) {
-          // Use application default credentials
-          firebaseAdmin.initializeApp({
-            projectId: process.env.FIREBASE_PROJECT_ID
-          });
-        }
-      }
-      
-      // Verify Firebase token
-      if (firebaseAdmin.apps?.length) {
-        const decodedToken = await firebaseAdmin.auth().verifyIdToken(token);
-        return {
-          uid: decodedToken.uid,
-          email: decodedToken.email,
-          name: decodedToken.name,
-          picture: decodedToken.picture,
-          provider: 'firebase'
-        };
-      }
-    } catch (firebaseError) {
-      // Firebase Admin not available or not configured, fall back to JWT
-      console.log('Firebase Admin not available, using JWT verification');
-    }
-    
-    // Fall back to JWT verification
-    const decoded = jwt.verify(token, JWT_SECRET);
-    return {
-      uid: decoded.userId || decoded.uid || decoded.sub,
-      email: decoded.email,
-      name: decoded.name,
-      role: decoded.role,
-      provider: 'jwt'
-    };
-  } catch (error) {
-    console.error('Token verification failed:', error.message);
-    return null;
-  }
-};
+import { verifyToken } from '../utils/tokenVerifier.js';
+
+export { verifyToken };
 
 /**
  * Required authentication middleware
