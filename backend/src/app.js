@@ -9,6 +9,7 @@ import authRoutes from './routes/authRoutes.js';
 import { apiLimiter, aiProxyLimiter, authLimiter } from './middleware/rateLimiter.js';
 import { requireAuth, generateToken } from './middleware/auth.js';
 import session from 'express-session';
+import MongoStore from 'connect-mongo';
 import jwt from 'jsonwebtoken';
 import googleFitRoutes, { setUserGoogleTokens } from './routes/googleFitRoutes.js';
 import googleFitService from '../googleFitService.js';
@@ -106,17 +107,28 @@ if (!process.env.SESSION_SECRET) {
   console.warn('SECURITY WARNING: SESSION_SECRET is not set. Using insecure development fallback secret. Set SESSION_SECRET in production.');
 }
 
-app.use(session({
+const sessionOptions = {
   secret: process.env.SESSION_SECRET || 'healthscan-session-dev-secret-do-not-use-in-production',
   resave: false,
-  saveUninitialized: true,
+  saveUninitialized: false,
   cookie: {
-    secure: false,
+    secure: isProduction,
     httpOnly: true,
     sameSite: 'lax',
     maxAge: 24 * 60 * 60 * 1000,
   },
-}));
+};
+
+if (process.env.MONGODB_URI) {
+  sessionOptions.store = MongoStore.create({
+    mongoUrl: process.env.MONGODB_URI,
+    collectionName: 'sessions',
+    ttl: 24 * 60 * 60,
+    autoRemove: 'native',
+  });
+}
+
+app.use(session(sessionOptions));
 
 // Apply global rate limiting
 app.use(apiLimiter);
@@ -211,7 +223,7 @@ app.get('/auth/google/callback', async (req, res) => {
     const userId = decodedState.userId;
 
     if (userId) {
-      setUserGoogleTokens(userId, tokens);
+      await setUserGoogleTokens(userId, tokens);
     }
 
     if (req.session) {

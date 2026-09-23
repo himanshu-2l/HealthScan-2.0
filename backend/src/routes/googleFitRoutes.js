@@ -6,30 +6,81 @@ import googleFitService from '../../googleFitService.js';
 import { requireAuth } from '../middleware/auth.js';
 import { getJwtSecret } from '../config/jwt.js';
 
+import mongoose from 'mongoose';
+import GoogleFitToken from '../models/GoogleFitToken.js';
+
 dotenv.config();
 
 const router = express.Router();
 
 /**
- * Server-Side In-Memory User Google Token Store
+ * Server-Side User Google Token Store
  * Binds Google OAuth tokens strictly to authenticated HealthScan user IDs.
- * Tokens are never transmitted to client-side localStorage or URLs.
+ * Persisted in MongoDB with AES-256-GCM encryption.
  */
 export const userGoogleTokens = new Map();
 
-export const setUserGoogleTokens = (userId, tokens) => {
-  if (userId && tokens) {
-    userGoogleTokens.set(userId, tokens);
+export const setUserGoogleTokens = async (userId, tokens) => {
+  if (!userId || !tokens) return;
+  userGoogleTokens.set(userId, tokens); // in-memory fallback
+  try {
+    if (mongoose.connection.readyState === 1) {
+      await GoogleFitToken.saveTokensForUser(userId, tokens);
+    }
+  } catch (err) {
+    console.error('Failed to persist Google Fit tokens to MongoDB:', err.message);
   }
 };
 
-export const getUserGoogleTokens = (userId) => {
-  return userId ? userGoogleTokens.get(userId) : null;
+export const getUserGoogleTokens = async (userId) => {
+  if (!userId) return null;
+
+  let tokens = null;
+  try {
+    if (mongoose.connection.readyState === 1) {
+      const doc = await GoogleFitToken.findOne({ userId });
+      if (doc) {
+        tokens = doc.getTokens();
+      }
+    }
+  } catch (err) {
+    console.error('Failed to read Google Fit tokens from MongoDB:', err.message);
+  }
+
+  // Fallback to in-memory store
+  if (!tokens) {
+    tokens = userGoogleTokens.get(userId) || null;
+  }
+
+  if (!tokens) return null;
+
+  // Refresh expired access token with the refresh token if needed
+  if (tokens.expiry_date && tokens.expiry_date <= Date.now() + 60000 && tokens.refresh_token) {
+    try {
+      const refreshed = await googleFitService.refreshAccessToken(tokens.refresh_token);
+      tokens = {
+        ...tokens,
+        ...refreshed,
+        refresh_token: refreshed.refresh_token || tokens.refresh_token
+      };
+      await setUserGoogleTokens(userId, tokens);
+    } catch (refreshErr) {
+      console.error('Failed to refresh Google Fit access token:', refreshErr.message);
+    }
+  }
+
+  return tokens;
 };
 
-export const removeUserGoogleTokens = (userId) => {
-  if (userId) {
-    userGoogleTokens.delete(userId);
+export const removeUserGoogleTokens = async (userId) => {
+  if (!userId) return;
+  userGoogleTokens.delete(userId);
+  try {
+    if (mongoose.connection.readyState === 1) {
+      await GoogleFitToken.deleteOne({ userId });
+    }
+  } catch (err) {
+    console.error('Failed to delete Google Fit tokens from MongoDB:', err.message);
   }
 };
 
@@ -146,11 +197,11 @@ router.get('/auth', requireAuth, (req, res) => {
  * GET /api/google-fit/status
  * Check Google Fit connection status for the authenticated user.
  */
-router.get('/status', requireAuth, (req, res) => {
+router.get('/status', requireAuth, async (req, res) => {
   const configured = googleFitService.isConfigured();
   const userId = req.user.userId || req.user.uid;
-  const hasToken = Boolean(userGoogleTokens.get(userId) || req.session?.googleFitTokens);
-  const connected = Boolean(configured && hasToken);
+  const tokens = (await getUserGoogleTokens(userId)) || req.session?.googleFitTokens;
+  const connected = Boolean(configured && tokens);
 
   res.json({
     connected,
@@ -162,9 +213,9 @@ router.get('/status', requireAuth, (req, res) => {
  * POST /api/google-fit/disconnect
  * Disconnect Google Fit and purge credentials for the authenticated user.
  */
-router.post('/disconnect', requireAuth, (req, res) => {
+router.post('/disconnect', requireAuth, async (req, res) => {
   const userId = req.user.userId || req.user.uid;
-  removeUserGoogleTokens(userId);
+  await removeUserGoogleTokens(userId);
 
   if (req.session) {
     req.session.googleFitTokens = null;
@@ -195,7 +246,7 @@ router.get('/data', requireAuth, async (req, res) => {
     }
 
     const userId = req.user.userId || req.user.uid;
-    const tokens = userGoogleTokens.get(userId) || req.session?.googleFitTokens;
+    const tokens = (await getUserGoogleTokens(userId)) || req.session?.googleFitTokens;
 
     if (!tokens) {
       if (process.env.ENABLE_DEMO_DATA === 'true') {
@@ -253,7 +304,7 @@ router.get('/data/:type', requireAuth, async (req, res) => {
     }
 
     const userId = req.user.userId || req.user.uid;
-    const tokens = userGoogleTokens.get(userId) || req.session?.googleFitTokens;
+    const tokens = (await getUserGoogleTokens(userId)) || req.session?.googleFitTokens;
 
     if (!tokens) {
       if (process.env.ENABLE_DEMO_DATA === 'true') {

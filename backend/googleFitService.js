@@ -85,6 +85,16 @@ class GoogleFitService {
   }
 
   /**
+   * Refresh expired access token with the refresh token
+   */
+  async refreshAccessToken(refreshToken) {
+    const client = this.createClient();
+    client.setCredentials({ refresh_token: refreshToken });
+    const { credentials } = await client.refreshAccessToken();
+    return credentials;
+  }
+
+  /**
    * Fetch heart rate data (last 7 days) using user-specific tokens
    */
   async getHeartRateData(tokens) {
