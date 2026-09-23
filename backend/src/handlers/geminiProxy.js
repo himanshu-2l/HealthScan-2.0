@@ -161,6 +161,22 @@ async function authenticateRequest(req) {
     return req.user;
   }
 
+  // 1. Check httpOnly cookie first
+  if (req.cookies && req.cookies.healthscan_auth_token) {
+    const verified = await verifyToken(req.cookies.healthscan_auth_token);
+    if (verified) return verified;
+  }
+
+  // 2. Check Cookie header directly if cookie-parser was not used
+  if (req.headers && req.headers.cookie) {
+    const match = req.headers.cookie.match(/healthscan_auth_token=([^;]+)/);
+    if (match) {
+      const verified = await verifyToken(decodeURIComponent(match[1]));
+      if (verified) return verified;
+    }
+  }
+
+  // 3. Fall back to Authorization Bearer header
   const authHeader = req.headers?.authorization;
   if (!authHeader) {
     return null;

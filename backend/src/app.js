@@ -41,7 +41,7 @@ const securityHeaders = (req, res, next) => {
   // Content Security Policy
   res.setHeader(
     'Content-Security-Policy',
-    "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' blob: https://apis.google.com https://www.gstatic.com https://cdn.jsdelivr.net; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://*.googleapis.com https://*.firebaseio.com https://cdn.jsdelivr.net wss: ws: blob: data:; worker-src 'self' blob:; media-src 'self' blob: data: mediastream:;"
+    "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' blob: https://apis.google.com https://www.gstatic.com https://cdn.jsdelivr.net; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://*.googleapis.com https://*.firebaseio.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com wss: ws: blob: data:; worker-src 'self' blob:; media-src 'self' blob: data: mediastream:;"
   );
   // Permissions Policy - Allow camera and microphone for HealthScan diagnostic tests
   res.setHeader('Permissions-Policy', 'camera=(self), microphone=(self), geolocation=(self)');
@@ -63,11 +63,19 @@ const requestIdMiddleware = (req, res, next) => {
  */
 const getAllowedOrigins = () => {
   const envOrigins = process.env.CORS_ORIGINS;
-  if (envOrigins) {
-    return envOrigins.split(',').map(origin => origin.trim());
+  const origins = envOrigins
+    ? envOrigins.split(',').map(origin => origin.trim())
+    : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3000'];
+
+  if (process.env.FRONTEND_URL) {
+    origins.push(process.env.FRONTEND_URL.trim());
   }
-  // Default development origins
-  return ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3000'];
+  if (process.env.VERCEL_URL) {
+    origins.push(`https://${process.env.VERCEL_URL.trim()}`);
+  }
+  origins.push('https://health-scan-2-0-azure.vercel.app');
+
+  return Array.from(new Set(origins));
 };
 
 // Apply security headers first
@@ -76,14 +84,26 @@ app.use(securityHeaders);
 // Request ID for tracing
 app.use(requestIdMiddleware);
 
-// CORS with environment-based origins
+// CORS with environment-based origins and Vercel domains
 app.use(cors({
   origin: (origin, callback) => {
-    const allowedOrigins = getAllowedOrigins();
-    // Allow requests with no origin (like mobile apps or Postman)
+    // Allow requests with no origin (like mobile apps, curl, or same-origin)
     if (!origin) return callback(null, true);
     
-    if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+    const allowedOrigins = getAllowedOrigins();
+    let isAllowedOrigin = allowedOrigins.includes(origin) || allowedOrigins.includes('*');
+
+    if (!isAllowedOrigin) {
+      try {
+        const parsed = new URL(origin);
+        // Allow any vercel.app deployment and local IP / localhost
+        if (parsed.hostname.endsWith('.vercel.app') || parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') {
+          isAllowedOrigin = true;
+        }
+      } catch {}
+    }
+
+    if (isAllowedOrigin) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -91,7 +111,7 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID', 'X-Requested-With', 'Accept']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID', 'X-Requested-With', 'Accept', 'Cookie']
 }));
 
 // Route-specific body parser with higher limit for image/AI payloads

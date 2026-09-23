@@ -1,5 +1,5 @@
 // HealthScan Clinical PWA Service Worker
-const CACHE_NAME = 'healthscan-v4';
+const CACHE_NAME = 'healthscan-v5';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -56,13 +56,15 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Don't intercept API, Firebase, or external authentication calls
+  // Only intercept same-origin assets. External CDNs, Google Fonts, and APIs are fetched directly by the browser.
+  if (url.origin !== self.location.origin) {
+    return;
+  }
+
+  // Don't intercept API or authentication calls
   if (
     url.pathname.startsWith('/api') ||
-    url.pathname.startsWith('/auth') ||
-    url.hostname.includes('firebase') ||
-    url.hostname.includes('googleapis.com') ||
-    url.hostname.includes('google.com')
+    url.pathname.startsWith('/auth')
   ) {
     return;
   }
@@ -74,19 +76,24 @@ self.addEventListener('fetch', (event) => {
         if (response && response.status === 200 && response.type === 'basic') {
           const responseClone = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
-            if (event.request.url.startsWith('http://') || event.request.url.startsWith('https://')) {
-              cache.put(event.request, responseClone).catch(() => {});
-            }
+            cache.put(event.request, responseClone).catch(() => {});
           });
         }
         return response;
       })
-      .catch(() => {
-        return caches.match(event.request).then((cachedResponse) => {
-          if (cachedResponse) return cachedResponse;
-          if (event.request.mode === 'navigate' || event.request.headers.get('accept')?.includes('text/html')) {
-            return caches.match('/index.html') || caches.match('/');
-          }
+      .catch(async () => {
+        const cachedResponse = await caches.match(event.request);
+        if (cachedResponse) return cachedResponse;
+
+        if (event.request.mode === 'navigate' || event.request.headers.get('accept')?.includes('text/html')) {
+          const indexFallback = await caches.match('/index.html') || await caches.match('/');
+          if (indexFallback) return indexFallback;
+        }
+
+        return new Response('Resource offline', {
+          status: 503,
+          statusText: 'Service Unavailable',
+          headers: new Headers({ 'Content-Type': 'text/plain' })
         });
       })
   );
